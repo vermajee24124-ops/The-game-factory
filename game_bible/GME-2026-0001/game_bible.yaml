@@ -1,0 +1,73 @@
+schema_version: 1
+project_id: GME-2026-0001
+title: "Blocky Ramp Rush: Stunt Legends"
+genre: "3D Low-Poly Endless Stunt Runner + Vehicle Combat"
+platforms: [android, ios, tablets]
+connectivity: offline_first
+target_audience: "Kids & Teens 6-14"
+art_style: "Bright cartoon low-poly 3D"
+
+modes:
+  - id: endless_ramp_run
+    primary: true
+    procedural: true
+  - id: stunt_challenge
+    level_count_target: 100
+    star_rating: 3
+  - id: garage_builder
+    local_share: [bluetooth, wifi]
+  - id: arena_battle
+    local_players_target: 4
+
+currencies:
+  coins: {rarity: common, purpose: [vehicles, paint, upgrades]}
+  diamonds: {rarity: rare, purpose: [premium_vehicles, skins, revive]}
+  star_gems: {rarity: ultra_rare, purpose: [legendary_vehicles, worlds, vip]}
+
+vehicle_tiers:
+  common: [Blocky Buggy, Mini Truck, Scooter Bike, Wooden Cart]
+  rare: [Monster Truck, Desert Rover, Neon Bike, Ice Slider]
+  epic: [Dragon Rider, UFO Hover, Shark Mobile, Robot Walker]
+  legendary: [Golden Tank, Phoenix Rider, Diamond Car, Galaxy Racer]
+
+upgrades: [speed, handling, jump, armor, magnet, boost]
+
+worlds:
+  - id: new_york_city_rush
+    theme: "Skyscrapers and construction ramps"
+  - id: dubai_desert_drift
+    theme: "Sand dunes and city skyline"
+  - id: singapore_garden_run
+    theme: "Garden and rainforest"
+  - id: london_fog_ramp
+    theme: "Rainy city streets"
+  - id: tokyo_neon_nights
+    theme: "Neon night city"
+  - id: space_station
+    theme: "Zero-gravity sci-fi"
+
+controls:
+  touch:
+    swipe_left_right: lane_change
+    swipe_up: jump_flip
+    swipe_down: slide
+    tap: turbo
+    double_tap: powerup
+  keyboard:
+    left_right: lane_change
+    space: jump
+    b: boost
+    p: powerup
+
+performance_targets:
+  target_fps_mid_range: 60
+  target_fps_low_end: 30
+  startup_seconds_target: 3
+  offline_playable: true
+
+release_policy:
+  no_unapproved_network_services: true
+  no_secrets_in_client: true
+  release_requires_tests: true
+  release_requires_security_scan: true
+  release_requires_compliance_audit: true
