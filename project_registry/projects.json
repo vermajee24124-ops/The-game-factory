@@ -1,14 +1,19 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "projects": [
     {
       "project_id": "GME-2026-0001",
       "name": "Blocky Ramp Rush: Stunt Legends",
-      "status": "in_development",
+      "status": "development",
       "latest_version": "0.1.0",
       "engine": "Godot",
       "engine_channel": "stable",
       "engine_version": "4.7.2",
+      "launch_profile": "offline_first",
+      "accounts_enabled": false,
+      "backend_enabled": false,
+      "ads_enabled": false,
+      "purchases_enabled": false,
       "created_at": "2026-09-02T00:00:00Z",
       "updated_at": "2026-09-02T00:00:00Z"
     }
