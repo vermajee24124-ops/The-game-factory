@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """The Game Factory orchestration entrypoint.
 
-The entrypoint is intentionally provider- and tool-agnostic. It resolves an
-existing project by explicit ID or known project name, otherwise allocates a
-new ID. Secrets are always read from the runtime environment.
+The runner is intentionally provider- and tool-agnostic. It resolves a project
+from a Game Bible or instruction, creates a persistent project record when
+needed, and writes only non-secret project metadata into the repository.
 """
 from __future__ import annotations
 
@@ -11,10 +11,12 @@ import argparse
 import json
 import re
 import sys
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from factory.bible import find_bible, read_bible, extract_project_id, extract_title
 
 ROOT = Path(__file__).resolve().parent
 REGISTRY = ROOT / "project_registry" / "projects.json"
@@ -80,35 +82,42 @@ class ProjectRegistry:
         self.save()
 
 
-def extract_project_id(text: str) -> str | None:
+def extract_id(text: str) -> str | None:
     match = ID_PATTERN.search(text)
     return match.group(0).upper() if match else None
 
 
-def scaffold_project(project: dict[str, Any]) -> Path:
+def scaffold_project(project: dict[str, Any], bible_path: str | None = None) -> Path:
     root = ROOT / "projects" / project["project_id"]
-    for name in ("godot", "tests", "backend", "assets", "compliance", "store", "builds", "docs", "logs", "state", "tools"):
+    for name in (
+        "godot", "tests", "backend", "assets", "compliance", "store",
+        "builds", "docs", "logs", "state", "tools", "research"
+    ):
         (root / name).mkdir(parents=True, exist_ok=True)
-    (root / "manifest.json").write_text(json.dumps(project, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    manifest = dict(project)
+    manifest["bible_path"] = bible_path
+    manifest["schema_version"] = 2
+    (root / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return root
 
 
-def resolve_project(instruction: str, registry: ProjectRegistry) -> tuple[dict[str, Any], bool]:
-    project_id = extract_project_id(instruction)
+def resolve_project(instruction: str, registry: ProjectRegistry, bible_text: str | None = None) -> tuple[dict[str, Any], bool]:
+    source = bible_text or instruction
+    project_id = extract_project_id(source)
     if project_id:
         existing = registry.find_by_id(project_id)
         if existing:
             return existing, False
-        raise ValueError(f"Unknown project ID: {project_id}")
+        raise ValueError(f"Project ID {project_id} was supplied but is not registered.")
 
-    existing_by_name = registry.find_by_name(instruction)
+    existing_by_name = registry.find_by_name(source)
     if existing_by_name:
         return existing_by_name, False
 
     now = datetime.now(timezone.utc).isoformat()
     record = ProjectRecord(
         project_id=registry.next_id(),
-        name="Unspecified Game",
+        name=extract_title(source),
         created_at=now,
         updated_at=now,
     )
@@ -117,26 +126,28 @@ def resolve_project(instruction: str, registry: ProjectRegistry) -> tuple[dict[s
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="The Game Factory")
-    parser.add_argument("--instruction", required=True, help="New game request or update instruction")
+    parser.add_argument("--instruction", default="", help="New game request or project update instruction")
+    parser.add_argument("--bible", default="", help="Optional path to a Game Bible")
     parser.add_argument("--apply", action="store_true", help="Persist a new project scaffold")
     args = parser.parse_args()
 
-    instruction = args.instruction.strip()
+    bible_path: Path | None = Path(args.bible) if args.bible else find_bible(ROOT)
+    bible_text = read_bible(bible_path) if bible_path else None
+    instruction = args.instruction.strip() or (bible_text or "").strip()
     if not instruction:
-        print("Instruction cannot be empty", file=sys.stderr)
+        print("Provide --instruction or upload a Game Bible into game_bible/inbox", file=sys.stderr)
         return 2
 
     registry = ProjectRegistry(REGISTRY)
-    project, created = resolve_project(instruction, registry)
+    project, created = resolve_project(instruction, registry, bible_text=bible_text)
 
-    if created:
-        if args.apply:
-            registry.add(ProjectRecord(**project))
-            project_root = scaffold_project(project)
-            action = "create_project"
-        else:
-            project_root = ROOT / "projects" / project["project_id"]
-            action = "create_project_dry_run"
+    if created and args.apply:
+        registry.add(ProjectRecord(**project))
+        project_root = scaffold_project(project, str(bible_path) if bible_path else None)
+        action = "create_project"
+    elif created:
+        project_root = ROOT / "projects" / project["project_id"]
+        action = "create_project_dry_run"
     else:
         project_root = ROOT / "projects" / project["project_id"]
         action = "update_project"
@@ -145,6 +156,7 @@ def main() -> int:
         "action": action,
         "project_id": project["project_id"],
         "project_root": str(project_root),
+        "game_bible": str(bible_path) if bible_path else None,
         "engine": project.get("engine", "Godot"),
         "engine_channel": project.get("engine_channel", "stable"),
         "instruction": instruction,
