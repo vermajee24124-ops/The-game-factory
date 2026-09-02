@@ -16,11 +16,14 @@ on:
       - '.github/workflows/**'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: game-factory-${{ github.ref }}
   cancel-in-progress: false
+
+env:
+  PYTHONUNBUFFERED: '1'
 
 jobs:
   validate:
@@ -31,19 +34,7 @@ jobs:
       NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
       NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-      B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
-      B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
-      B2_BUCKET_NAME: ${{ secrets.B2_BUCKET_NAME }}
-      GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
-      SUPPORT_GMAIL_ADDRESS: ${{ secrets.SUPPORT_GMAIL_ADDRESS }}
-      SUPPORT_GMAIL_REFRESH_TOKEN: ${{ secrets.SUPPORT_GMAIL_REFRESH_TOKEN }}
+      Z_AI_API_KEY: ${{ secrets.Z_AI_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -88,17 +79,48 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: read
+      contents: write
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+      NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      Z_AI_API_KEY: ${{ secrets.Z_AI_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
+
       - name: Analyze request
         env:
           FACTORY_INSTRUCTION: ${{ inputs.instruction }}
         run: python -m factory.cli analyze "$FACTORY_INSTRUCTION"
+
+      - name: Apply project registry/scaffold changes
+        env:
+          FACTORY_INSTRUCTION: ${{ inputs.instruction }}
+        run: python main.py --instruction "$FACTORY_INSTRUCTION" --apply
+
+      - name: Persist generated changes with Git
+        run: |
+          git config user.name "Game-Factory-Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No repository changes to commit."
+            exit 0
+          fi
+          git commit -m "factory: apply project request"
+          git push origin HEAD:main
+
+      - name: Final repository validation
+        run: python -m factory.validate
