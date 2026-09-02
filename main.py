@@ -1,18 +1,9 @@
 #!/usr/bin/env python3
-"""The Game Factory orchestration entrypoint.
-
-This module is intentionally provider- and tool-agnostic. It reads a project
-instruction, resolves an existing project or creates a new one, and delegates
-execution to the configured workflow layers.
-
-No real credentials are stored in source control. Runtime secrets are read
-from the environment / CI secret store.
-"""
+"""The Game Factory orchestration entrypoint."""
 from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import sys
 from dataclasses import dataclass, asdict
@@ -22,7 +13,6 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 REGISTRY = ROOT / "project_registry" / "projects.json"
-
 PROJECT_ID_PATTERN = re.compile(r"\bGME-\d{4}-\d{4}\b", re.IGNORECASE)
 
 
@@ -86,90 +76,50 @@ def slugify(name: str) -> str:
 
 def create_project_scaffold(root: Path, record: ProjectRecord, bible_source: str | None = None) -> Path:
     project_root = root / "projects" / record.project_id
-    directories = [
-        "godot", "tests", "backend", "assets", "compliance", "store",
-        "builds", "docs", "logs", "state", "tools"
-    ]
-    for directory in directories:
+    for directory in ["godot", "tests", "backend", "assets", "compliance", "store", "builds", "docs", "logs", "state", "tools"]:
         (project_root / directory).mkdir(parents=True, exist_ok=True)
-
-    manifest = {
-        **asdict(record),
-        "slug": slugify(record.name),
-        "schema_version": 1,
-        "bible_source": bible_source,
-        "created_at": record.created_at,
-        "updated_at": record.updated_at,
-    }
+    manifest = {**asdict(record), "slug": slugify(record.name), "schema_version": 1, "bible_source": bible_source}
     (project_root / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     (project_root / "README.md").write_text(
-        f"# {record.name}\n\nProject ID: `{record.project_id}`\n\n"
-        "This directory is managed by The Game Factory.\n",
+        f"# {record.name}\n\nProject ID: `{record.project_id}`\n\nThis directory is managed by The Game Factory.\n",
         encoding="utf-8",
     )
     return project_root
 
 
-def resolve_or_create_project(instruction: str, registry: ProjectRegistry) -> tuple[dict[str, Any], bool]:
+def resolve_project(instruction: str, registry: ProjectRegistry) -> tuple[dict[str, Any], bool]:
     project_id = extract_project_id(instruction)
     if project_id:
         existing = registry.find(project_id)
         if existing:
             return existing, False
         raise ValueError(f"Project ID {project_id} was supplied but is not registered.")
-
     now = datetime.now(timezone.utc).isoformat()
-    record = ProjectRecord(
-        project_id=registry.next_id(),
-        name="Unspecified Game",
-        created_at=now,
-        updated_at=now,
-    )
-    registry.add(record)
+    record = ProjectRecord(project_id=registry.next_id(), name="Unspecified Game", created_at=now, updated_at=now)
     return asdict(record), True
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="The Game Factory orchestrator")
-    parser.add_argument("--instruction", required=True, help="New project or update instruction")
+    parser.add_argument("--instruction", required=True)
+    parser.add_argument("--apply", action="store_true", help="Persist a new project scaffold")
     args = parser.parse_args()
-
     instruction = args.instruction.strip()
     if not instruction:
         print("Instruction cannot be empty", file=sys.stderr)
         return 2
 
     registry = ProjectRegistry(REGISTRY)
-    project, created = resolve_or_create_project(instruction, registry)
-
-    if created:
-        scaffold = create_project_scaffold(ROOT, ProjectRecord(**project), bible_source=None)
-        print(json.dumps({
-            "action": "create_project",
-            "project_id": project["project_id"],
-            "project_path": str(scaffold),
-            "next": [
-                "analyze_game_bible",
-                "discover_capabilities",
-                "select_tools",
-                "build_and_test",
-            ],
-        }, indent=2))
+    project, created = resolve_project(instruction, registry)
+    if created and args.apply:
+        registry.add(ProjectRecord(**project))
+        scaffold = create_project_scaffold(ROOT, ProjectRecord(**project))
+        result = {"action": "create_project", "project_id": project["project_id"], "project_path": str(scaffold)}
+    elif created:
+        result = {"action": "create_project_dry_run", "project_id": project["project_id"], "apply_required": True}
     else:
-        print(json.dumps({
-            "action": "update_project",
-            "project_id": project["project_id"],
-            "status": project.get("status", "unknown"),
-            "instruction": instruction,
-            "next": [
-                "load_current_project",
-                "plan_change",
-                "run_tests_before_change",
-                "apply_update",
-                "build_and_test",
-            ],
-        }, indent=2))
-
+        result = {"action": "update_project", "project_id": project["project_id"], "instruction": instruction}
+    print(json.dumps(result, indent=2))
     return 0
 
 
