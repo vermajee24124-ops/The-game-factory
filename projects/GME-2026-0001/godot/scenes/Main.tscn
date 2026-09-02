@@ -1,0 +1,154 @@
+[gd_scene load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/vehicle.gd" id="2_vehicle"]
+[ext_resource type="Script" path="res://scripts/world.gd" id="3_world"]
+
+[sub_resource type="BoxMesh" id="BoxVehicle"]
+size = Vector3(2.2, 1.2, 4.2)
+
+[sub_resource type="StandardMaterial3D" id="VehicleMat"]
+albedo_color = Color(0.08, 0.75, 1, 1)
+metallic = 0.15
+roughness = 0.38
+
+[sub_resource type="BoxShape3D" id="VehicleShape"]
+size = Vector3(2.2, 1.2, 4.2)
+
+[sub_resource type="CylinderMesh" id="WheelMesh"]
+top_radius = 0.48
+bottom_radius = 0.48
+height = 0.32
+radial_segments = 16
+
+[sub_resource type="StandardMaterial3D" id="WheelMat"]
+albedo_color = Color(0.035, 0.035, 0.045, 1)
+roughness = 0.7
+
+[sub_resource type="SphereMesh" id="HeadMesh"]
+radius = 0.45
+height = 0.9
+
+[sub_resource type="StandardMaterial3D" id="HeadMat"]
+albedo_color = Color(1, 0.72, 0.52, 1)
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 1
+background_color = Color(0.04, 0.07, 0.12, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.32, 0.42, 0.58, 1)
+ambient_light_energy = 0.9
+
+tonemap_mode = 2
+
+[sub_resource type="BoxMesh" id="SkyMesh"]
+size = Vector3(200, 20, 600)
+
+[sub_resource type="StandardMaterial3D" id="SkyMat"]
+albedo_color = Color(0.05, 0.08, 0.15, 1)
+
+[node name="BlockyRampRush" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-48, -28, 0)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="Fill" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-25, 155, 0)
+light_energy = 0.35
+shadow_enabled = false
+
+[node name="World" type="Node3D" parent="."]
+script = ExtResource("3_world")
+
+[node name="Player" type="CharacterBody3D" parent="."]
+position = Vector3(0, 1.7, 8)
+script = ExtResource("2_vehicle")
+
+[node name="Body" type="MeshInstance3D" parent="Player"]
+mesh = SubResource("BoxVehicle")
+material_override = SubResource("VehicleMat")
+
+[node name="Collision" type="CollisionShape3D" parent="Player"]
+shape = SubResource("VehicleShape")
+
+[node name="Cabin" type="MeshInstance3D" parent="Player"]
+position = Vector3(0, 0.92, 0.2)
+scale = Vector3(0.72, 0.56, 0.52)
+mesh = SubResource("HeadMesh")
+material_override = SubResource("HeadMat")
+
+[node name="WheelFL" type="MeshInstance3D" parent="Player"]
+position = Vector3(-1.05, -0.38, -1.25)
+rotation_degrees = Vector3(90, 0, 0)
+mesh = SubResource("WheelMesh")
+material_override = SubResource("WheelMat")
+
+[node name="WheelFR" type="MeshInstance3D" parent="Player"]
+position = Vector3(1.05, -0.38, -1.25)
+rotation_degrees = Vector3(90, 0, 0)
+mesh = SubResource("WheelMesh")
+material_override = SubResource("WheelMat")
+
+[node name="WheelRL" type="MeshInstance3D" parent="Player"]
+position = Vector3(-1.05, -0.38, 1.25)
+rotation_degrees = Vector3(90, 0, 0)
+mesh = SubResource("WheelMesh")
+material_override = SubResource("WheelMat")
+
+[node name="WheelRR" type="MeshInstance3D" parent="Player"]
+position = Vector3(1.05, -0.38, 1.25)
+rotation_degrees = Vector3(90, 0, 0)
+mesh = SubResource("WheelMesh")
+material_override = SubResource("WheelMat")
+
+[node name="Camera" type="Camera3D" parent="Player"]
+position = Vector3(0, 6.5, 13)
+rotation_degrees = Vector3(-18, 0, 0)
+current = true
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="TopBar" type="PanelContainer" parent="HUD"]
+offset_left = 20.0
+offset_top = 18.0
+offset_right = 1260.0
+offset_bottom = 82.0
+
+[node name="Row" type="HBoxContainer" parent="HUD/TopBar"]
+theme_override_constants/separation = 24
+
+[node name="Score" type="Label" parent="HUD/TopBar"]
+text = "SCORE 0000000"
+size_flags_horizontal = 3
+
+[node name="Currency" type="Label" parent="HUD/TopBar"]
+text = "COINS 0000   💎 000   ⭐ 00"
+size_flags_horizontal = 3
+
+[node name="Speed" type="Label" parent="HUD/TopBar"]
+text = "00 KM/H"
+horizontal_alignment = 2
+size_flags_horizontal = 3
+
+[node name="Status" type="Label" parent="HUD"]
+offset_left = 20.0
+offset_top = 98.0
+offset_right = 1260.0
+offset_bottom = 140.0
+text = "GO!"
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="HUD"]
+offset_left = 20.0
+offset_top = 650.0
+offset_right = 1260.0
+offset_bottom = 695.0
+text = "SWIPE  •  LEFT / RIGHT  •  UP TO JUMP  •  TAP / SPACE TO BOOST"
+horizontal_alignment = 1
