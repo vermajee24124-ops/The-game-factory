@@ -1,8 +1,10 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/vehicle.gd" id="2_vehicle"]
 [ext_resource type="Script" path="res://scripts/world.gd" id="3_world"]
+[ext_resource type="Script" path="res://scripts/mode_controller.gd" id="4_mode"]
+[ext_resource type="Script" path="res://scripts/save_manager.gd" id="5_save"]
 
 [sub_resource type="BoxMesh" id="BoxVehicle"]
 size = Vector3(2.2, 1.2, 4.2)
@@ -38,14 +40,7 @@ background_color = Color(0.04, 0.07, 0.12, 1)
 ambient_light_source = 3
 ambient_light_color = Color(0.32, 0.42, 0.58, 1)
 ambient_light_energy = 0.9
-
 tonemap_mode = 2
-
-[sub_resource type="BoxMesh" id="SkyMesh"]
-size = Vector3(200, 20, 600)
-
-[sub_resource type="StandardMaterial3D" id="SkyMat"]
-albedo_color = Color(0.05, 0.08, 0.15, 1)
 
 [node name="BlockyRampRush" type="Node3D"]
 script = ExtResource("1_main")
@@ -62,6 +57,12 @@ shadow_enabled = true
 rotation_degrees = Vector3(-25, 155, 0)
 light_energy = 0.35
 shadow_enabled = false
+
+[node name="ModeController" type="Node" parent="."]
+script = ExtResource("4_mode")
+
+[node name="SaveManager" type="Node" parent="."]
+script = ExtResource("5_save")
 
 [node name="World" type="Node3D" parent="."]
 script = ExtResource("3_world")
@@ -128,7 +129,7 @@ text = "SCORE 0000000"
 size_flags_horizontal = 3
 
 [node name="Currency" type="Label" parent="HUD/TopBar"]
-text = "COINS 0000   💎 000   ⭐ 00"
+text = "COINS 0000   DIAMONDS 000   STARS 00"
 size_flags_horizontal = 3
 
 [node name="Speed" type="Label" parent="HUD/TopBar"]
@@ -141,7 +142,7 @@ offset_left = 20.0
 offset_top = 98.0
 offset_right = 1260.0
 offset_bottom = 140.0
-text = "GO!"
+text = "ENDLESS RAMP RUN"
 theme_override_font_sizes/font_size = 28
 horizontal_alignment = 1
 
@@ -150,5 +151,5 @@ offset_left = 20.0
 offset_top = 650.0
 offset_right = 1260.0
 offset_bottom = 695.0
-text = "SWIPE  •  LEFT / RIGHT  •  UP TO JUMP  •  TAP / SPACE TO BOOST"
+text = "SWIPE LEFT/RIGHT • SWIPE UP TO JUMP • TAP TO BOOST • 1-4 CHANGE MODE"
 horizontal_alignment = 1
