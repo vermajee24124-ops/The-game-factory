@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""The Game Factory orchestration entrypoint."""
+"""The Game Factory orchestration entrypoint.
+
+The entrypoint is intentionally provider- and tool-agnostic. It resolves an
+existing project by explicit ID or known project name, otherwise allocates a
+new ID. Secrets are always read from the runtime environment.
+"""
 from __future__ import annotations
 
 import argparse
@@ -13,7 +18,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 REGISTRY = ROOT / "project_registry" / "projects.json"
-PROJECT_ID_PATTERN = re.compile(r"\bGME-\d{4}-\d{4}\b", re.IGNORECASE)
+ID_PATTERN = re.compile(r"\bGME-\d{4}-\d{4}\b", re.IGNORECASE)
 
 
 @dataclass
@@ -38,26 +43,37 @@ class ProjectRegistry:
         if not self.path.exists():
             return {"schema_version": 1, "projects": []}
         try:
-            return json.loads(self.path.read_text(encoding="utf-8"))
+            value = json.loads(self.path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
             raise RuntimeError(f"Invalid project registry: {self.path}") from exc
+        if not isinstance(value, dict) or not isinstance(value.get("projects"), list):
+            raise RuntimeError("Project registry must contain a projects list")
+        return value
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(json.dumps(self.data, indent=2), encoding="utf-8")
+        self.path.write_text(json.dumps(self.data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-    def find(self, project_id: str) -> dict[str, Any] | None:
-        normalized = project_id.upper()
-        return next((p for p in self.data["projects"] if p["project_id"].upper() == normalized), None)
+    def find_by_id(self, project_id: str) -> dict[str, Any] | None:
+        target = project_id.upper()
+        return next((p for p in self.data["projects"] if str(p.get("project_id", "")).upper() == target), None)
+
+    def find_by_name(self, text: str) -> dict[str, Any] | None:
+        normalized = re.sub(r"\s+", " ", text.casefold()).strip()
+        for project in self.data["projects"]:
+            name = re.sub(r"\s+", " ", str(project.get("name", "")).casefold()).strip()
+            if name and name in normalized:
+                return project
+        return None
 
     def next_id(self) -> str:
         year = datetime.now(timezone.utc).year
-        nums = []
+        used = []
         for project in self.data["projects"]:
             match = re.fullmatch(r"GME-(\d{4})-(\d{4})", str(project.get("project_id", "")), re.I)
             if match and int(match.group(1)) == year:
-                nums.append(int(match.group(2)))
-        return f"GME-{year}-{max(nums, default=0) + 1:04d}"
+                used.append(int(match.group(2)))
+        return f"GME-{year}-{max(used, default=0) + 1:04d}"
 
     def add(self, record: ProjectRecord) -> None:
         self.data["projects"].append(asdict(record))
@@ -65,45 +81,46 @@ class ProjectRegistry:
 
 
 def extract_project_id(text: str) -> str | None:
-    match = PROJECT_ID_PATTERN.search(text)
+    match = ID_PATTERN.search(text)
     return match.group(0).upper() if match else None
 
 
-def slugify(name: str) -> str:
-    value = re.sub(r"[^a-zA-Z0-9_-]+", "-", name.strip()).strip("-").lower()
-    return value or "game-project"
-
-
-def create_project_scaffold(root: Path, record: ProjectRecord, bible_source: str | None = None) -> Path:
-    project_root = root / "projects" / record.project_id
-    for directory in ["godot", "tests", "backend", "assets", "compliance", "store", "builds", "docs", "logs", "state", "tools"]:
-        (project_root / directory).mkdir(parents=True, exist_ok=True)
-    manifest = {**asdict(record), "slug": slugify(record.name), "schema_version": 1, "bible_source": bible_source}
-    (project_root / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    (project_root / "README.md").write_text(
-        f"# {record.name}\n\nProject ID: `{record.project_id}`\n\nThis directory is managed by The Game Factory.\n",
-        encoding="utf-8",
-    )
-    return project_root
+def scaffold_project(project: dict[str, Any]) -> Path:
+    root = ROOT / "projects" / project["project_id"]
+    for name in ("godot", "tests", "backend", "assets", "compliance", "store", "builds", "docs", "logs", "state", "tools"):
+        (root / name).mkdir(parents=True, exist_ok=True)
+    (root / "manifest.json").write_text(json.dumps(project, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return root
 
 
 def resolve_project(instruction: str, registry: ProjectRegistry) -> tuple[dict[str, Any], bool]:
     project_id = extract_project_id(instruction)
     if project_id:
-        existing = registry.find(project_id)
+        existing = registry.find_by_id(project_id)
         if existing:
             return existing, False
-        raise ValueError(f"Project ID {project_id} was supplied but is not registered.")
+        raise ValueError(f"Unknown project ID: {project_id}")
+
+    existing_by_name = registry.find_by_name(instruction)
+    if existing_by_name:
+        return existing_by_name, False
+
     now = datetime.now(timezone.utc).isoformat()
-    record = ProjectRecord(project_id=registry.next_id(), name="Unspecified Game", created_at=now, updated_at=now)
+    record = ProjectRecord(
+        project_id=registry.next_id(),
+        name="Unspecified Game",
+        created_at=now,
+        updated_at=now,
+    )
     return asdict(record), True
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="The Game Factory orchestrator")
-    parser.add_argument("--instruction", required=True)
+    parser = argparse.ArgumentParser(description="The Game Factory")
+    parser.add_argument("--instruction", required=True, help="New game request or update instruction")
     parser.add_argument("--apply", action="store_true", help="Persist a new project scaffold")
     args = parser.parse_args()
+
     instruction = args.instruction.strip()
     if not instruction:
         print("Instruction cannot be empty", file=sys.stderr)
@@ -111,15 +128,28 @@ def main() -> int:
 
     registry = ProjectRegistry(REGISTRY)
     project, created = resolve_project(instruction, registry)
-    if created and args.apply:
-        registry.add(ProjectRecord(**project))
-        scaffold = create_project_scaffold(ROOT, ProjectRecord(**project))
-        result = {"action": "create_project", "project_id": project["project_id"], "project_path": str(scaffold)}
-    elif created:
-        result = {"action": "create_project_dry_run", "project_id": project["project_id"], "apply_required": True}
+
+    if created:
+        if args.apply:
+            registry.add(ProjectRecord(**project))
+            project_root = scaffold_project(project)
+            action = "create_project"
+        else:
+            project_root = ROOT / "projects" / project["project_id"]
+            action = "create_project_dry_run"
     else:
-        result = {"action": "update_project", "project_id": project["project_id"], "instruction": instruction}
-    print(json.dumps(result, indent=2))
+        project_root = ROOT / "projects" / project["project_id"]
+        action = "update_project"
+
+    print(json.dumps({
+        "action": action,
+        "project_id": project["project_id"],
+        "project_root": str(project_root),
+        "engine": project.get("engine", "Godot"),
+        "engine_channel": project.get("engine_channel", "stable"),
+        "instruction": instruction,
+        "apply": bool(args.apply),
+    }, indent=2, ensure_ascii=False))
     return 0
 
 
