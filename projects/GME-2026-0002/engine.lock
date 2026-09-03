@@ -1,0 +1,9 @@
+engine: Godot
+version: 4.7.2
+channel: stable
+migration_policy:
+  auto_migrate_production: false
+  require_backup: true
+  require_build: true
+  require_gameplay_tests: true
+  require_rollback_point: true
