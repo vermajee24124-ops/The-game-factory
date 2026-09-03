@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "project_id": "GME-2026-0002",
+  "data_collected": [],
+  "local_data": [
+    {
+      "name": "best_score",
+      "location": "device application data",
+      "purpose": "restore local progress"
+    },
+    {
+      "name": "round_number",
+      "location": "device application data",
+      "purpose": "restore local progress"
+    }
+  ],
+  "network_transmission": false,
+  "third_party_sdks": []
+}
