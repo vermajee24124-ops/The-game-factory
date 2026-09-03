@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "project_id": "GME-2026-0002",
+  "name": "Pocket Board 3D",
+  "short_description": "A polished offline 3D carrom-style board game with smooth touch controls.",
+  "long_description": "Pocket Board 3D is an original offline tabletop game with a tactile 3D board, local play, simple controls, and persistent local progress. No account or internet connection is required for the base game.",
+  "features": [
+    "3D tabletop presentation",
+    "Touch and mouse aiming",
+    "Local pass-and-play foundation",
+    "Offline progress saving",
+    "No account required",
+    "No network connection required"
+  ],
+  "artwork": {
+    "icon": "icon.svg",
+    "screenshots": "screenshots/",
+    "promo_video": "promo_video/"
+  },
+  "note": "Listing artwork must be original and must not copy another app's branding or proprietary assets."
+}
