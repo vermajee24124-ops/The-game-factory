@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from factory.bible import find_bible, read_bible, extract_project_id, extract_title
+from factory.bible import find_bible, read_bible, extract_title
 
 ROOT = Path(__file__).resolve().parent
 REGISTRY = ROOT / "project_registry" / "projects.json"
@@ -124,13 +124,24 @@ def archive_bible(source: Path, project_root: Path, version: str) -> str | None:
     archive_dir.mkdir(parents=True, exist_ok=True)
     safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", source.name)
     destination = archive_dir / f"{version}__{safe_name}"
-    if destination.exists() or source.resolve() == destination.resolve():
-        return str(destination.relative_to(ROOT))
-    shutil.copy2(source, destination)
+    if not destination.exists():
+        shutil.copy2(source, destination)
     return str(destination.relative_to(ROOT))
 
 
-def update_state(project_root: Path, *, instruction: str, bible_path: Path | None, version: str, action: str) -> None:
+def consume_bible(source: Path, project_root: Path) -> bool:
+    """Remove a processed inbox Bible after it has been archived."""
+    try:
+        source.relative_to(ROOT / "game_bible" / "inbox")
+    except ValueError:
+        return False
+    if not source.exists():
+        return False
+    source.unlink()
+    return True
+
+
+def update_state(project_root: Path, *, instruction: str, bible_path: Path | None, version: str, action: str, archived_bible: str | None) -> None:
     state_dir = project_root / "state" / "requests"
     state_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -141,6 +152,7 @@ def update_state(project_root: Path, *, instruction: str, bible_path: Path | Non
         "recorded_at": datetime.now(timezone.utc).isoformat(),
         "instruction": instruction,
         "bible": str(bible_path.relative_to(ROOT)) if bible_path and bible_path.is_relative_to(ROOT) else (str(bible_path) if bible_path else None),
+        "archived_bible": archived_bible,
     }
     (state_dir / f"{stamp}.json").write_text(json.dumps(state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -180,9 +192,11 @@ def apply_project(project: dict[str, Any], *, created: bool, bible_path: Path | 
         action = "update_project"
 
     archived = archive_bible(bible_path, root, version) if bible_path else None
-    update_state(root, instruction=instruction, bible_path=bible_path, version=version, action=action)
+    consumed = consume_bible(bible_path, root) if bible_path else False
+    update_state(root, instruction=instruction, bible_path=bible_path, version=version, action=action, archived_bible=archived)
     result = dict(project)
     result["processed_bible_archive"] = archived
+    result["consumed_inbox_bible"] = consumed
     return result
 
 
