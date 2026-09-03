@@ -1,0 +1,43 @@
+schema_version: 1
+project_id: GME-2026-0002
+title: "Pocket Board 3D"
+genre: "3D Offline Carrom-Style Board Game"
+platforms: [android, ios, windows, macos, linux]
+connectivity: offline
+accounts_enabled: false
+backend_enabled: false
+ads_enabled: false
+purchases_enabled: false
+art_style: "original polished 3D tabletop"
+reference: "visual inspiration from a generic digital carrom board listing; no copied branding, artwork, text, or assets"
+
+modes:
+  - id: solo_practice
+    players: 1
+    ai: false
+  - id: pass_and_play
+    players: 2
+    local_only: true
+
+core:
+  board_size: 12
+  coin_count: 19
+  pocket_count: 4
+  local_save: true
+  no_real_money: true
+  no_wagering: true
+
+controls:
+  mouse: "drag from striker toward target, release to shoot"
+  touch: "drag from striker toward target, release to shoot"
+  keyboard:
+    reset: R
+    new_round: N
+
+release:
+  network_permission: false
+  database: false
+  third_party_runtime_services: false
+  release_requires_tests: true
+  release_requires_security_scan: true
+  release_requires_compliance_audit: true
