@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "project_id": "GME-2026-0002",
+  "runtime": "offline",
+  "network_permission": false,
+  "database": false,
+  "accounts": false,
+  "profiles": {
+    "android": {"artifact": "APK/AAB", "signing": "required for store release"},
+    "windows": {"artifact": "desktop build", "signing": "optional"},
+    "macos": {"artifact": "app bundle", "signing": "required for distribution where applicable"},
+    "linux": {"artifact": "desktop build", "signing": "optional"},
+    "ios": {"artifact": "Xcode project/archive", "signing": "required"}
+  },
+  "release_gate": [
+    "godot_headless_validation",
+    "smoke_test",
+    "security_scan",
+    "asset_license_check",
+    "privacy_data_audit",
+    "store_metadata_audit"
+  ]
+}
