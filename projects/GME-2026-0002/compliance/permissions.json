@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "project_id": "GME-2026-0002",
+  "runtime_permissions": [],
+  "network_access": false,
+  "notes": "Pocket Board 3D is designed to run fully offline and does not request runtime device permissions in the base build. Platform packaging must be re-audited if future plugins are added."
+}
