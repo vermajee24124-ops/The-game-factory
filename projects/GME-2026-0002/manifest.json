@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "project_id": "GME-2026-0002",
+  "name": "Pocket Board 3D",
+  "version": "0.1.0",
+  "engine": "Godot",
+  "engine_version": "4.7.2",
+  "channel": "stable",
+  "connectivity": "offline",
+  "backend_enabled": false,
+  "database_enabled": false,
+  "ads_enabled": false,
+  "purchases_enabled": false,
+  "target_platforms": ["android", "ios", "windows", "macos", "linux"],
+  "source_of_truth": "git",
+  "release_gate": {
+    "build": true,
+    "tests": true,
+    "security": true,
+    "compliance": true
+  }
+}
