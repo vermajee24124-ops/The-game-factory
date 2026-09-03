@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
@@ -18,11 +19,15 @@ class EngineRelease:
 
 
 def fetch_releases(timeout: int = 15) -> list[EngineRelease]:
+    parsed = urllib.parse.urlparse(GODOT_RELEASES_API)
+    if parsed.scheme != "https" or parsed.netloc != "api.github.com":
+        raise RuntimeError("Godot release endpoint must be HTTPS api.github.com")
     request = urllib.request.Request(
         GODOT_RELEASES_API,
         headers={"Accept": "application/vnd.github+json", "User-Agent": "The-Game-Factory"},
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
+    # The URL is a constant HTTPS endpoint with an explicit host allowlist.
+    with urllib.request.urlopen(request, timeout=timeout) as response:  # nosec B310
         data: list[dict[str, Any]] = json.load(response)
     releases: list[EngineRelease] = []
     for item in data:
