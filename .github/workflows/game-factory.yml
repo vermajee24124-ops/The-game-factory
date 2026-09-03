@@ -56,11 +56,18 @@ jobs:
       - name: Validate repository
         run: python -m factory.validate
 
-      - name: Inspect latest Game Bible
-        run: python -m factory.cli bible-plan
-
       - name: Check current stable Godot release
         run: python -m factory.cli engine-check
+
+      - name: Inspect Game Bible when present
+        shell: bash
+        run: |
+          bible_count=$(find game_bible/inbox -maxdepth 1 -type f \( -name '*.docx' -o -name '*.md' -o -name '*.txt' \) | wc -l)
+          if [ "$bible_count" -gt 0 ]; then
+            python -m factory.cli bible-plan
+          else
+            echo "No active Game Bible in inbox; repository validation continues."
+          fi
 
   security:
     runs-on: ubuntu-latest
@@ -81,8 +88,54 @@ jobs:
       - name: Static security scan
         run: bandit -r factory main.py -ll
 
-  build:
+  godot-qa:
     needs: [validate, security]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install system tools
+        run: sudo apt-get update && sudo apt-get install -y unzip curl
+      - name: Resolve pinned engine
+        id: engine
+        shell: bash
+        run: |
+          version=$(awk '$1 == "version:" {print $2; exit}' projects/GME-2026-0002/engine.lock)
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Download pinned Godot editor
+        env:
+          GODOT_VERSION: ${{ steps.engine.outputs.version }}
+        run: |
+          curl -L --fail --retry 3 \
+            -o /tmp/godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          mkdir -p /tmp/godot
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          chmod +x "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+      - name: Headless project import validation
+        env:
+          GODOT_VERSION: ${{ steps.engine.outputs.version }}
+        run: |
+          "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" \
+            --headless \
+            --path projects/GME-2026-0002/godot \
+            --editor \
+            --quit
+      - name: Run game smoke test
+        env:
+          GODOT_VERSION: ${{ steps.engine.outputs.version }}
+        run: |
+          "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" \
+            --headless \
+            --path projects/GME-2026-0002/godot \
+            --script res://tests/smoke_test.gd
+
+  build:
+    needs: [validate, security, godot-qa]
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -126,15 +179,9 @@ jobs:
           if [ -n "$FACTORY_INSTRUCTION" ]; then
             python main.py --instruction "$FACTORY_INSTRUCTION" --apply
           else
-            python main.py --bible "$(python - <<'PY'
-from factory.bible import find_bible
-from pathlib import Path
-p = find_bible(Path('.'))
-if p is None:
-    raise SystemExit('No Game Bible found in game_bible/inbox')
-print(p)
-PY
-)" --apply
+            bible=$(find game_bible/inbox -maxdepth 1 -type f \( -name '*.docx' -o -name '*.md' -o -name '*.txt' \) | sort | tail -n 1)
+            test -n "$bible"
+            python main.py --bible "$bible" --apply
           fi
 
       - name: Evaluate release compliance
