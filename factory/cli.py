@@ -1,83 +1,89 @@
 from __future__ import annotations
 
+import argparse
 import json
-import sys
-from dataclasses import asdict
 from pathlib import Path
 
-from .bible import find_bible, read_bible, extract_project_id, extract_title
-from .compliance import ComplianceContext, check, summarize
+from .bible import find_bible, summarize
+from .compliance import check_project
+from .config import available_providers
 from .engine import latest_stable
-from .pipeline import plan as build_plan
-from .router import available
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def analyze(instruction: str) -> int:
     providers = [
-        {"name": p.name, "priority": p.priority, "capabilities": sorted(p.capabilities)}
-        for p in available()
+        {"name": p.name, "priority": p.priority, "capabilities": list(p.capabilities)}
+        for p in available_providers()
     ]
     result = {
         "instruction_received": bool(instruction.strip()),
-        "provider_policy": "Prefer the highest-quality eligible route and fail over on configured provider errors or exhaustion.",
+        "provider_policy": "prefer the highest-ranked eligible provider and fail over on configured transient/provider errors",
         "available_providers": providers,
-        "project_policy": "Explicit project ID means update; otherwise inspect the Game Bible and registry before creating a new project.",
-        "security_policy": "Never print secret values; use runtime environment only.",
+        "project_policy": "explicit project ID means update; otherwise resolve by title or create a new project",
+        "security_policy": "never print secret values; use runtime/CI secret stores only",
     }
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
 
 
-def bible_plan() -> int:
-    plan = build_plan()
-    print(json.dumps(plan, indent=2, ensure_ascii=False))
+def bible_plan(path_text: str | None = None) -> int:
+    path = Path(path_text) if path_text else find_bible(ROOT)
+    if path is None or not path.exists():
+        print(json.dumps({"bible_found": False, "message": "No Game Bible found in game_bible/inbox"}, indent=2))
+        return 0
+    result = summarize(path)
+    result["bible_found"] = True
+    result["policy"] = "preserve source Bible, resolve project ID, archive the processed Bible, then build/update the project"
+    print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
 
 
 def engine_check() -> int:
     release = latest_stable()
-    print(json.dumps(asdict(release), indent=2, ensure_ascii=False))
+    print(json.dumps({
+        "name": "Godot",
+        "latest_stable": release.version,
+        "tag": release.tag,
+        "published_at": release.published_at,
+        "policy": "latest stable compatible version only; no automatic production migration across major versions",
+    }, indent=2, ensure_ascii=False))
     return 0
 
 
-def compliance_check() -> int:
-    bible = find_bible(ROOT)
-    text = read_bible(bible) if bible else ""
-    # This project is currently offline-first. Ads and purchases remain disabled
-    # until a later project revision explicitly enables them and passes the
-    # platform-specific review gates.
-    context = ComplianceContext(
-        target_audience_includes_children=bool("kids" in text.lower() or "children" in text.lower()),
-        ads_enabled=False,
-        purchases_enabled=False,
-        account_creation_enabled=False,
-        privacy_policy_present=(ROOT / "projects").exists(),
-        data_inventory_present=(ROOT / "projects").exists(),
-        store_metadata_present=(ROOT / "projects").exists(),
-        security_scan_passed=True,
-        tests_passed=True,
-    )
-    report = check(context)
-    print(summarize(report))
-    return 0 if report.releasable else 1
+def compliance_check(project_id: str | None = None) -> int:
+    report = check_project(ROOT, project_id)
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+    return 0 if report["status"] in {"pass", "not_applicable"} else 1
 
 
 def main() -> int:
-    if len(sys.argv) < 2:
-        print("Usage: python -m factory.cli <analyze|bible-plan|engine-check|compliance-check> [instruction]", file=sys.stderr)
-        return 2
-    command = sys.argv[1]
-    if command == "analyze":
-        return analyze(" ".join(sys.argv[2:]))
-    if command == "bible-plan":
-        return bible_plan()
-    if command == "engine-check":
+    parser = argparse.ArgumentParser(description="The Game Factory utility CLI")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    analyze_parser = sub.add_parser("analyze", help="Analyze a request")
+    analyze_parser.add_argument("instruction", nargs="+", help="Instruction text")
+
+    bible_parser = sub.add_parser("bible-plan", help="Inspect the newest Game Bible")
+    bible_parser.add_argument("path", nargs="?", help="Optional Bible path")
+
+    sub.add_parser("engine-check", help="Check the latest stable Godot release")
+
+    compliance_parser = sub.add_parser("compliance-check", help="Run the local project compliance audit")
+    compliance_parser.add_argument("--project-id", default=None)
+
+    args = parser.parse_args()
+
+    if args.command == "analyze":
+        return analyze(" ".join(args.instruction))
+    if args.command == "bible-plan":
+        return bible_plan(args.path)
+    if args.command == "engine-check":
         return engine_check()
-    if command == "compliance-check":
-        return compliance_check()
-    print(f"Unknown command: {command}", file=sys.stderr)
+    if args.command == "compliance-check":
+        return compliance_check(args.project_id)
+    parser.error(f"Unknown command: {args.command}")
     return 2
 
 
