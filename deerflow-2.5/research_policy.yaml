@@ -1,0 +1,68 @@
+version: 1
+mission:
+  default_profile: deep_game_research
+  target_minutes: 45
+  hard_limit_minutes: 60
+  allow_early_finish: true
+  completion_requires_objectives: true
+  completion_requires_quality_gate: true
+  min_independent_sources_for_high_impact_claim: 2
+  max_parallel_workers: 8
+  checkpoint_interval_minutes: 10
+  resume_from_checkpoint: true
+
+profiles:
+  deep_game_research:
+    objectives:
+      - game_concept_and_core_loop
+      - genre_and_market_landscape
+      - comparable_games_and_design_patterns
+      - player_mechanics_and_controls
+      - progression_and_economy
+      - level_world_and_content_structure
+      - art_direction_and_asset_requirements
+      - audio_and_feedback_requirements
+      - engine_and_technical_architecture
+      - performance_and_scalability
+      - backend_networking_and_services
+      - security_and_abuse_risks
+      - platform_and_store_requirements
+      - localization_and_accessibility
+      - monetization_and_live_ops_options
+      - implementation_risks_and_unknowns
+      - final_recommendations_and_tradeoffs
+    source_policy:
+      prefer_primary: true
+      prefer_official_docs: true
+      allow_secondary_sources: true
+      mark_unverified_claims: true
+      retain_source_url: true
+    workflow:
+      - decompose
+      - parallel_research
+      - source_read
+      - evidence_capture
+      - contradiction_check
+      - reflection
+      - expand_missing_questions
+      - synthesize
+      - quality_gate
+      - produce_game_research_pack
+      - produce_atomic_task_dag
+
+outputs:
+  research_pack: research/final/game-research-pack.md
+  sources: research/final/sources.json
+  findings: research/final/findings.json
+  contradictions: research/final/contradictions.json
+  decisions: research/final/decisions.json
+  task_dag: tasks/atomic-task-dag.json
+  checkpoint_dir: research/checkpoints
+
+quality_gate:
+  require_all_objectives_answered: true
+  allow_unknowns_with_reason: true
+  require_source_traceability: true
+  require_risk_section: true
+  require_tradeoff_section: true
+  require_actionable_next_steps: true
