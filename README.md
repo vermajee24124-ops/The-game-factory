@@ -2,56 +2,65 @@
 
 AI-assisted game development pipeline centered on a persistent, versioned project registry.
 
-## What this repository does
+## DeerFlow 2.5
 
-- Accepts a game request or an update instruction.
-- Detects a supplied `GME-YYYY-NNNN` project ID and updates that project instead of creating a duplicate.
-- Creates a persistent project ID for new games.
+`deerflow-2.5/` is the Research + Understanding + Planning evolution of this Game Factory. It is designed to keep DeerFlow as the research director while leaving the downstream execution stack unchanged:
+
+`Game Bible -> DeerFlow 2.5 -> Deep Research -> Verified Findings -> Game Research Pack -> Atomic Task DAG -> Ruflo -> OpenSandbox -> DeepSeek Harness -> Godot -> QA`
+
+The DeerFlow 2.5 work adds:
+
+- adaptive long-horizon research missions (30–45 minute target, 60 minute hard limit by default)
+- objective-based completion and quality gates
+- parallel research branches
+- evidence/provenance records and contradiction handling
+- reflection and dynamic re-planning
+- durable checkpoints and resumable research
+- dynamic MCP discovery/deferred tool promotion
+- explicit tool permission boundaries
+- an open-source-first component strategy
+- reproducible upstream pinning and release/licensing checks
+
+The public design and research notes are under `deerflow-2.5/docs/`. The most important documents are `PUBLIC_REPORT.md`, `docs/01_SCOPE_AND_ARCHITECTURE.md`, `docs/03_MCP_UNIVERSAL_CONNECTOR.md`, `docs/04_DEEP_RESEARCH_MISSION.md`, and `docs/06_UPSTREAM_FORK_AND_RELEASE.md`.
+
+## Important distribution note
+
+DeerFlow upstream is MIT-licensed and permits modification and redistribution when the required copyright/license notice is retained. This branch currently contains the DeerFlow 2.5 integration and research layer; it is not yet a byte-for-byte vendored copy of the full upstream DeerFlow source tree. The public release procedure therefore requires a final upstream sync/import and a clean dependency/license audit before calling the repository a complete independent DeerFlow 2.5 fork.
+
+## Current Game Factory responsibilities
+
+- Accepts a game request or update instruction.
+- Resolves a persistent project ID and avoids accidental duplicates.
 - Keeps source, tests, assets, compliance records, store assets, builds and state separated.
-- Keeps credentials out of source control. Secrets are supplied at runtime through GitHub Actions or the deployment environment.
-- Uses provider priority and capability metadata so the orchestration layer can prefer an available provider and fall back when appropriate.
-- Runs repository validation and Python dependency/security checks in CI.
+- Keeps credentials out of source control.
+- Uses capability metadata and fallback-aware orchestration.
+- Runs validation and dependency/security checks in CI.
 
 ## Repository layout
 
 ```text
 .
-├── .github/workflows/game-factory.yml   # CI/orchestration entry workflow
-├── config/.env.example                  # secret names only
-├── factory/                             # orchestration package
-│   ├── cli.py
-│   ├── config.py
-│   └── validate.py
-├── game_bible/                          # game specifications/templates
-├── project_registry/                    # persistent project metadata
-├── projects/                            # generated project workspaces
-├── main.py                              # entrypoint
+├── .github/workflows/game-factory.yml
+├── config/.env.example
+├── deerflow-2.5/
+│   ├── PUBLIC_REPORT.md
+│   ├── LICENSES.md
+│   ├── UPSTREAM.md
+│   ├── mcp_registry.example.json
+│   ├── research_director.py
+│   ├── research_policy.yaml
+│   └── docs/
+├── factory/
+├── game_bible/
+├── project_registry/
+├── projects/
+├── main.py
 └── requirements.txt
 ```
 
-## Project lifecycle
-
-1. Analyze the request.
-2. Resolve an existing project ID or allocate a new ID.
-3. Load the game bible and current project state.
-4. Research current engine/tool/store requirements before release decisions.
-5. Plan changes.
-6. Build and test.
-7. Run security/compliance checks.
-8. Generate release artifacts and documentation.
-9. Record the version and immutable commit history.
-
-## Versioning strategy
-
-Never overwrite the only copy of a released project. Each release is tied to a Git commit/tag and a project version. Updates should be made from the latest compatible source and tested before release. If an engine upgrade is not safely compatible, the pipeline must retain the existing engine version and create an upgrade branch rather than silently migrating the project.
-
-## Storage strategy
-
-Git is for source/configuration and small text metadata, not multi-gigabyte game builds. Large assets/builds should use an object-storage or release-artifact backend selected by the deployment configuration. Generated projects should store references/checksums rather than embedding secrets or unnecessarily duplicating large binaries.
-
 ## Secrets
 
-Do not put real API keys, passwords, OAuth refresh tokens, service-account JSON, private certificates, signing keys, or payment credentials in this repository. Add them as GitHub Actions secrets or the secret manager of the actual hosting environment.
+Never commit API keys, OAuth refresh tokens, private certificates, service-account files, signing keys, payment credentials, or browser cookies. Use runtime secret injection from the deployment environment or GitHub Actions secrets.
 
 ## First run
 
@@ -61,4 +70,6 @@ python -m factory.validate
 python -m factory.cli analyze "Build and test the current project"
 ```
 
-The current implementation is the secure orchestration foundation. Provider-specific API calls, Godot builds, Blender generation, store packaging, crash reporting, and support automation should be added as isolated adapters rather than hard-coded into the entrypoint.
+## License
+
+See the repository license and `deerflow-2.5/LICENSES.md`. Third-party components keep their own licenses and notices. Hosted APIs are optional adapters and are not represented as unlimited or universally free.
