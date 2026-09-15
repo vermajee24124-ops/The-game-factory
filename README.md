@@ -12,12 +12,23 @@ AI-assisted game development pipeline centered on a persistent, versioned projec
 - Uses provider priority and capability metadata so the orchestration layer can prefer an available provider and fall back when appropriate.
 - Runs repository validation and Python dependency/security checks in CI.
 
+## DeerFlow 2.5 research layer
+
+The `deerflow-2.5/` branch/directory defines the Research + Understanding + Planning upgrade used by this Game Factory. It keeps the existing downstream pipeline unchanged:
+
+`Game Bible -> DeerFlow 2.5 -> Research Pack -> Atomic Task DAG -> Ruflo -> OpenSandbox -> DeepSeek Harness -> Godot -> QA`
+
+The DeerFlow 2.5 overlay adds adaptive deep-game research missions, parallel research branches, evidence/source tracking, contradiction handling, reflection/re-planning, resumable checkpoints, dynamic MCP discovery and an open-source-first integration policy.
+
+See `deerflow-2.5/PUBLIC_REPORT.md` for the complete design and `deerflow-2.5/research_policy.yaml` for the default 45-minute target / 60-minute hard-limit research policy.
+
 ## Repository layout
 
 ```text
 .
 ├── .github/workflows/game-factory.yml   # CI/orchestration entry workflow
 ├── config/.env.example                  # secret names only
+├── deerflow-2.5/                        # research/planning upgrade overlay
 ├── factory/                             # orchestration package
 │   ├── cli.py
 │   ├── config.py
@@ -34,7 +45,7 @@ AI-assisted game development pipeline centered on a persistent, versioned projec
 1. Analyze the request.
 2. Resolve an existing project ID or allocate a new ID.
 3. Load the game bible and current project state.
-4. Research current engine/tool/store requirements before release decisions.
+4. Run deep research and validate current engine/tool/store requirements before release decisions.
 5. Plan changes.
 6. Build and test.
 7. Run security/compliance checks.
