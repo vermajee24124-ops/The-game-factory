@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "policy": {
+    "open_source_defaults_only": true,
+    "load_on_demand": true,
+    "deny_unknown_tools_by_default": true,
+    "require_explicit_permission_for_writes": true
+  },
+  "servers": [
+    {
+      "id": "github",
+      "kind": "remote_or_stdio",
+      "purpose": "Repository, code, issues, pull requests and project context",
+      "open_source": true,
+      "license": "MIT",
+      "provider": "GitHub official MCP server",
+      "env": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+      "enabled": false,
+      "toolsets": ["context", "repos", "issues", "pull_requests", "actions", "code_security"]
+    },
+    {
+      "id": "playwright",
+      "kind": "stdio",
+      "purpose": "Deterministic browser automation and page inspection",
+      "open_source": true,
+      "license": "Apache-2.0",
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"],
+      "enabled": true
+    },
+    {
+      "id": "filesystem",
+      "kind": "stdio",
+      "purpose": "Controlled project-file operations",
+      "open_source": true,
+      "license": "MIT",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "${DEER_FLOW_PROJECT_ROOT}"],
+      "enabled": true
+    }
+  ],
+  "optional_research_backends": [
+    {
+      "id": "searxng",
+      "purpose": "Self-hosted metasearch",
+      "open_source": true,
+      "license": "AGPL-3.0",
+      "deployment": "separate-service",
+      "enabled": false
+    },
+    {
+      "id": "tavily",
+      "purpose": "External web search adapter",
+      "open_source": false,
+      "license": "service",
+      "deployment": "external-api",
+      "enabled": false,
+      "note": "Not bundled in the open-source default distribution. Enable only as an optional external provider."
+    }
+  ]
+}
