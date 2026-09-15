@@ -16,7 +16,7 @@ Build a DeerFlow 2.5 fork/extension focused on deep, long-horizon research and p
 4. Search the web and primary documentation.
 5. Read and extract source content rather than relying only on snippets.
 6. Use GitHub for implementation and ecosystem research.
-7. Use academic search (Consensus when configured) for scientific/technical evidence.
+7. Use academic search when configured for scientific/technical evidence.
 8. Maintain source notes, findings, decisions, and contradictions.
 9. Reflect after research rounds and add missing research questions.
 10. Cross-check important claims across independent sources.
@@ -70,7 +70,7 @@ The design intentionally prefers a small number of strong integrations over perm
 
 ### Primary web research
 
-Tavily is the primary configured web research provider when available. DeerFlow should be able to perform search, retrieval/extraction, iterative follow-up research, and source comparison.
+Tavily is the primary web research provider when available. DeerFlow should be able to perform search, retrieval/extraction, iterative follow-up research, and source comparison.
 
 ### Repository research
 
@@ -82,7 +82,7 @@ Consensus can be used for peer-reviewed academic evidence and technical literatu
 
 ### MCP compatibility
 
-DeerFlow 2.5 should preserve and strengthen DeerFlow's existing MCP architecture. MCP servers should be discoverable and loadable on demand instead of exposing every tool schema on every model call. Prefer namespace/prefix isolation and explicit permissions.
+DeerFlow 2.5 should preserve and strengthen DeerFlow's existing MCP architecture. MCP servers should be discoverable and loadable on demand instead of exposing every tool schema on every model call.
 
 The intended compatibility model is:
 
@@ -98,23 +98,9 @@ The intended compatibility model is:
 
 The model should not see every available tool all the time. The router should select tools from the current task context.
 
-Example:
-
-- competitor research -> web search + page retrieval
-- technical implementation research -> GitHub + official docs + web search
-- scientific question -> Consensus + web sources
-- cloud architecture question -> Cloudflare MCP + official docs + GitHub
-- project-specific question -> repository files + project memory
-
 ## Source quality policy
 
-Research should prioritize:
-
-1. Primary/official documentation
-2. Official repositories and release notes
-3. Peer-reviewed papers for scientific/technical claims
-4. Reputable technical sources
-5. Community sources only as supplemental evidence
+Research should prioritize primary/official documentation, official repositories/release notes, peer-reviewed papers for scientific/technical claims, reputable technical sources, and community sources only as supplemental evidence.
 
 Important claims should retain source URLs and a short evidence note. Conflicting claims should be recorded instead of silently choosing one.
 
