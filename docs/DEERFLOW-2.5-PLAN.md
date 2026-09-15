@@ -1,48 +1,43 @@
 # DeerFlow 2.5 for Game Factory
 
-> Public architecture/report for the DeerFlow 2.5 research and planning fork.
+> Public architecture/report for a DeerFlow 2.5 research/planning fork. The downstream Game Factory pipeline stays unchanged.
 
 ## Scope
 
-DeerFlow 2.5 is intended to strengthen only the **Research + Understanding + Planning** stage of the Game Factory. It does not replace or merge the downstream Ruflo, OpenSandbox, DeepSeek Harness, Godot, QA, security, cross-platform, or packaging systems.
+DeerFlow 2.5 strengthens only Research + Understanding + Planning for complex game/app projects. Ruflo, OpenSandbox, DeepSeek Harness, Godot, QA, security, cross-platform validation, and packaging remain separate downstream components.
 
 ## Deep Game Research mission
 
-For each project brief (`bible.md`), DeerFlow 2.5 should create a research mission with explicit domains, questions, evidence requirements, completion criteria, and a time budget.
+For every `bible.md`, create a research mission with explicit domains, questions, evidence requirements, completion criteria, and a time budget.
 
-Default research budget:
-
+Default budget:
 - target: 30–45 minutes
 - hard maximum: 60 minutes
 - minimum useful pass: 20 minutes
 
-The time budget is not the only stopping rule. The run should stop when the required objectives, verification checks, and synthesis criteria are satisfied, or when the hard limit is reached. Interrupted runs must be resumable.
+The timer is not the only completion rule. Finish when required objectives, evidence checks, and synthesis criteria are satisfied, or at the hard limit. Interrupted runs must be resumable.
 
-## Research domains
+## Dynamic research domains
 
-Select domains dynamically from the brief rather than running every domain every time:
+Select only domains relevant to the brief:
 
-- genre and game concept
-- similar/competitor games
-- gameplay loop and mechanics
-- controls and UX
-- progression and difficulty
-- world and level design
-- procedural generation
+- genre, concept, USP, competitors/similar games
+- gameplay loop, mechanics, controls
+- progression, difficulty, economy, retention
+- world/level design and procedural generation
 - characters, environments, props, VFX, textures
 - art direction and asset pipeline
-- audio
-- UI/UX
+- UI/UX and audio
 - Godot implementation approaches
 - performance and memory budgets
-- target platform requirements
-- networking/backend/database/authentication
+- Android/iOS/Web/Windows requirements when applicable
+- networking, backend, database, authentication
 - security and abuse risks
-- monetization/economy
+- monetization
 - localization/accessibility
 - distribution/store requirements
 - licensing/legal risks
-- technical risks and alternatives
+- technical risks, alternatives, and open questions
 
 ## Research loop
 
@@ -63,46 +58,46 @@ Brief
   -> Atomic Task DAG
 ```
 
-## Tool strategy
+## Strong tools, loaded on demand
 
-Use a small number of strong integrations and load tools on demand.
+- **Tavily:** primary web research and retrieval when configured.
+- **GitHub/MCP:** repositories, code, docs, issues, PRs, releases, implementation patterns.
+- **Consensus:** peer-reviewed technical/scientific evidence when useful.
+- **Cloudflare MCP (optional):** Cloudflare infrastructure research/operations when the project uses Cloudflare.
+- **DeerFlow built-ins:** browser, files, sandbox, skills, memory, subagents, context management.
 
-### Primary web research
+DeerFlow 2.5 should not permanently inject every tool schema into every model call. Use deferred discovery, namespaces, and task-specific routing.
 
-Tavily is the primary web research provider when configured.
+## Universal MCP compatibility
 
-### Repository research
+The fork should preserve and strengthen DeerFlow's MCP support:
 
-GitHub tooling/MCP is used for repository, code, documentation, issues, pull requests, releases, and implementation-pattern research.
-
-### Academic evidence
-
-Consensus is used selectively for peer-reviewed scientific/technical evidence when the question warrants it.
-
-### MCP
-
-DeerFlow 2.5 should remain broadly MCP-compatible and preserve DeerFlow's deferred tool discovery/loading model. Supported adapters should cover stdio and remote HTTP/streamable MCP servers where compatible. Tool schemas should not all be injected into every model call.
-
-Security requirements for MCP:
-
-- explicit per-server permissions
-- optional per-tool allow/deny rules
-- isolated namespaces/tool prefixes
-- secrets outside Git
-- validation before enabling an adapter
+- stdio MCP
+- remote HTTP/streamable MCP where compatible
+- tool-name prefixes/namespaces
+- deferred discovery/loading
+- per-server and per-tool permissions
+- credential references kept outside Git
+- adapter validation before enablement
 - graceful failure and fallback
-- audit logging for consequential actions
+- audit logging for consequential operations
 
-## Source verification
+## Evidence quality
 
-Important claims should retain source URLs and evidence notes. Prefer primary/official documentation and repositories, then peer-reviewed research, reputable technical sources, and community sources as supplemental evidence.
+Prefer, in order:
+1. Primary/official documentation and first-party repositories.
+2. Official releases/issues/implementation documentation.
+3. Peer-reviewed research for scientific/technical claims.
+4. Reputable technical sources.
+5. Community sources as supplemental evidence.
 
-Conflicts must be recorded as conflicts. The system must not silently convert uncertain information into fact.
+Important claims retain source URLs and evidence notes. Conflicting claims are recorded instead of silently merged.
 
-## Research memory
+## Persistent research memory
 
 ```text
 research/
+  missions/
   raw/
   sources/
   findings/
@@ -111,18 +106,16 @@ research/
   reports/
 ```
 
-The research state should survive interruptions and support resume/follow-up runs.
+Research state must survive interruption and support resume/follow-up runs.
 
-## Outputs
+## Required outputs
 
-Every completed mission should be able to produce:
-
-- research mission and objectives
-- research plan and branch status
+- research mission/objectives
+- research plan and branch state
 - source index
 - evidence/findings
-- confidence and verification notes
-- contradictions and unresolved questions
+- confidence/verification notes
+- contradictions/unresolved questions
 - technical recommendations
 - risk register
 - complete Game Blueprint/Game Bible
@@ -148,17 +141,13 @@ bible.md
   -> Packaging / Reports
 ```
 
-DeerFlow 2.5 ends at the planning/task boundary unless an explicit integration requests otherwise.
-
 ## Model abstraction
 
-Do not hard-code one LLM into the product. Keep a model adapter/router so local Ollama/vLLM models and compatible hosted APIs can be selected by task capability. Research, summarization/compression, and final synthesis may use separate model slots in future versions.
+Do not hard-code a single LLM. Keep a model adapter/router so local Ollama/vLLM and compatible hosted APIs can be selected by capability. Research, compression, and final synthesis may use separate model slots in future versions.
 
 ## Open-source policy
 
-Retain upstream DeerFlow license and notices as required. Every added dependency must have its license recorded. Optional provider integrations should remain optional adapters when licensing, credentials, or service terms make bundling inappropriate.
-
-Do not describe a third-party API as unlimited or free unless its current terms explicitly support that claim.
+Keep upstream DeerFlow license and notices as required. Record the license of every added dependency. Keep provider-specific integrations optional when their credentials or service terms require it. Never claim a provider is unlimited/free unless its current terms explicitly say so.
 
 ## Engineering principles
 
@@ -168,10 +157,10 @@ Do not describe a third-party API as unlimited or free unless its current terms 
 - use deferred tool loading
 - parallelize independent research
 - reflect and re-plan instead of stopping after the first useful search
-- separate raw evidence from synthesized decisions
+- separate evidence from decisions
 - make long-running research resumable
-- keep the downstream Game Factory pipeline unchanged
+- keep the downstream Game Factory unchanged
 
 ## Success criteria
 
-DeerFlow 2.5 is successful when a serious game/app brief can trigger a structured long-horizon research mission that gathers and verifies evidence, explores missing questions, synthesizes the findings, and emits an execution-ready Game Bible plus Atomic Task DAG for the existing Game Factory.
+A serious game/app brief should produce a structured long-horizon research mission that explores the relevant research space, preserves evidence, checks contradictions, identifies missing questions, synthesizes findings, and emits an execution-ready Game Bible plus Atomic Task DAG for the existing Game Factory.
