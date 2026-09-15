@@ -20,7 +20,6 @@ The timer is not the only completion rule. Finish when required objectives, evid
 ## Dynamic research domains
 
 Select only domains relevant to the brief:
-
 - genre, concept, USP, competitors/similar games
 - gameplay loop, mechanics, controls
 - progression, difficulty, economy, retention
@@ -71,7 +70,6 @@ DeerFlow 2.5 should not permanently inject every tool schema into every model ca
 ## Universal MCP compatibility
 
 The fork should preserve and strengthen DeerFlow's MCP support:
-
 - stdio MCP
 - remote HTTP/streamable MCP where compatible
 - tool-name prefixes/namespaces
