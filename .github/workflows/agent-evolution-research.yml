@@ -119,6 +119,16 @@ jobs:
       FREELLMAPI_BASE_URL: ${{ secrets.FREELLMAPI_BASE_URL }}
       FREELLMAPI_API_KEY: ${{ secrets.FREELLMAPI_API_KEY }}
       FREELLMAPI_MODEL: ${{ secrets.FREELLMAPI_MODEL }}
+      NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+      NVIDIA_MODEL: 'z-ai/glm-5.3-flash'
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_TEXT_MODEL: 'gemini-3.8-flash'
+      Z_AI_API_KEY: ${{ secrets.Z_AI_API_KEY }}
+      Z_AI_MODEL: 'glm-5.3-flash'
+      NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
+      NARA_MODEL: 'deepseek-v4-flash'
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_MODEL: 'openai/gpt-oss-20b:fastest'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
