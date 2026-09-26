@@ -17,13 +17,13 @@ permissions:
 
 jobs:
   train:
-    if: \${{ vars.SUPERAGENT_GPU_RUNNER == 'true' }}
+    if: ${{ vars.SUPERAGENT_GPU_RUNNER == 'true' }}
     runs-on: [self-hosted, gpu]
     timeout-minutes: 330
     env:
-      HF_TOKEN: \${{ secrets.HF_TOKEN }}
-      BASE_MODEL: \${{ inputs.base_model }}
-      EPOCHS: \${{ inputs.epochs }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      BASE_MODEL: ${{ inputs.base_model }}
+      EPOCHS: ${{ inputs.epochs }}
     steps:
       - uses: actions/checkout@v4
       - name: Install training stack
