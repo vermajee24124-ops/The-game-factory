@@ -3,12 +3,14 @@ import json, os, re
 from datetime import datetime, timezone
 from pathlib import Path
 from .model_client import OpenAICompatibleClient
+from .research_context import load_research_context
 
 ROOT = Path(__file__).resolve().parents[1]
 TASKS = ROOT / "ai_superagent" / "tasks.jsonl"
 OUT = ROOT / "build" / "ai_superagent"
 OUT.mkdir(parents=True, exist_ok=True)
 SYSTEM = (ROOT / "ai_superagent" / "system_prompt.md").read_text(encoding="utf-8")
+RESEARCH = load_research_context()
 MAX_TASKS = int(os.getenv("SUPERAGENT_MAX_TASKS", "10"))
 
 def parse_json(text: str) -> dict | None:
@@ -43,7 +45,7 @@ def main() -> int:
             "Do not invent Godot APIs."
         ) % (task["id"], task["prompt"])
         response = client.chat([
-            {"role":"system","content":SYSTEM},
+            {"role":"system","content":SYSTEM + ("\n\nResearch context:\n" + RESEARCH if RESEARCH else "")},
             {"role":"user","content":user_prompt}
         ], temperature=0.15, max_tokens=1600)
         parsed = parse_json(response["content"])
