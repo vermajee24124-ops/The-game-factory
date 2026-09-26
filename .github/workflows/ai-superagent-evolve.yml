@@ -89,6 +89,7 @@ jobs:
       FREELLMAPI_API_KEY: \${{ secrets.FREELLMAPI_API_KEY }}
       FREELLMAPI_MODEL: \${{ secrets.FREELLMAPI_MODEL }}
       SUPERAGENT_MAX_TASKS: '20'
+      SUPERAGENT_CANDIDATES: '2'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -140,7 +141,7 @@ jobs:
       - name: Create persistent Modal training volume
         run: modal volume create godot-superagent-training || true
       - name: Upload dataset to Modal volume
-        run: modal volume put godot-superagent-training build/ai_superagent/tool_use_trajectories.jsonl /tool_use_trajectories.jsonl -f
+        run: modal volume put godot-superagent-training build/ai_superagent/training_ready.jsonl /training_ready.jsonl -f
       - name: Launch QLoRA training on Modal GPU
         run: |
           modal run modal/train_superagent.py --base-model "\$BASE_MODEL" --max-steps 150
