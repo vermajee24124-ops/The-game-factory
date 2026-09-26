@@ -8,132 +8,187 @@ import modal
 
 app = modal.App("godot-ai-superagent-training")
 
-TRAINING_VOLUME = modal.Volume.from_name("godot-superagent-training", create_if_missing=True)
-OUTPUT_VOLUME = modal.Volume.from_name("godot-superagent-models", create_if_missing=True)
+TRAINING_VOLUME = modal.Volume.from_name(
+    "godot-superagent-training", create_if_missing=True
+)
+MODEL_VOLUME = modal.Volume.from_name(
+    "godot-superagent-models", create_if_missing=True
+)
 
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .uv_pip_install(
-        "accelerate==1.9.0",
-        "datasets==3.6.0",
-        "huggingface_hub==0.34.2",
-        "peft==0.16.0",
-        "transformers==4.54.0",
-        "trl==0.19.1",
-        "unsloth[cu128-torch270]==2025.7.8",
-        "unsloth_zoo==2025.7.10",
+        "accelerate",
+        "datasets",
+        "huggingface_hub",
+        "peft",
+        "transformers",
+        "trl",
+        "unsloth",
+        "unsloth_zoo",
     )
 )
 
 DATA_PATH = Path("/training/tool_use_trajectories.jsonl")
-OUTPUT_PATH = Path("/models/superagent_lora")
-BASE_MODEL_DEFAULT = os.getenv("SUPERAGENT_BASE_MODEL", "Qwen/Qwen3-8B")
+OUTPUT_ROOT = Path("/models/superagent_lora")
+DEFAULT_BASE_MODEL = os.getenv("SUPERAGENT_BASE_MODEL", "Qwen/Qwen3-8B-Base")
+
+
+def read_rows() -> list[dict]:
+    if not DATA_PATH.exists():
+        raise FileNotFoundError(f"Training data not found: {DATA_PATH}")
+    rows = []
+    for line in DATA_PATH.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            rows.append(json.loads(line))
+    if len(rows) < 4:
+        raise RuntimeError("Need at least four trajectory examples.")
+    return rows
+
 
 @app.function(
     image=image,
     gpu="T4",
-    timeout=5 * 60 * 60,
-    volumes={"/training": TRAINING_VOLUME, "/models": OUTPUT_VOLUME},
+    timeout=330 * 60,
+    volumes={"/training": TRAINING_VOLUME, "/models": MODEL_VOLUME},
 )
-def train(base_model: str = BASE_MODEL_DEFAULT, max_steps: int = 150, max_seq_length: int = 4096):
+def train(
+    base_model: str = DEFAULT_BASE_MODEL,
+    max_steps: int = 150,
+    max_seq_length: int = 4096,
+):
     import torch
     from datasets import Dataset
-    from transformers import TrainingArguments
-    from trl import SFTTrainer
+    from transformers import set_seed
+    from trl import SFTConfig, SFTTrainer
     from unsloth import FastLanguageModel
 
-    if not DATA_PATH.exists():
-        raise FileNotFoundError(f"Training data not found: {DATA_PATH}")
+    set_seed(42)
+    raw = read_rows()
 
-    rows = []
-    for line in DATA_PATH.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        item = json.loads(line)
-        assistant = item.get("raw") or json.dumps(item.get("response", {}), ensure_ascii=False)
-        user = f"Task ID: {item.get('task_id')}\nDifficulty: {item.get('difficulty')}\nProduce the next correct Godot agent action."
-        rows.append({
-            "text": (
-                "### System\nYou are a careful Godot 4.7.2 autonomous game engineer. "
-                "Inspect before editing, use real APIs, verify changes, and never claim success without evidence.\n"
-                f"### User\n{user}\n### Assistant\n{assistant}"
-            )
-        })
+    examples = []
+    for item in raw:
+        response = item.get("raw")
+        if not response:
+            response = json.dumps(item.get("response", {}), ensure_ascii=False)
+        examples.append(
+            {
+                "text": (
+                    "### System\n"
+                    "You are a careful Godot 4.7.2 autonomous game engineer. "
+                    "Inspect before editing, use real APIs, verify every mutation, "
+                    "and never claim success without evidence.\n"
+                    "### User\n"
+                    f"Task ID: {item.get('task_id')}\n"
+                    f"Difficulty: {item.get('difficulty')}\n"
+                    "Produce the next correct Godot agent action.\n"
+                    "### Assistant\n"
+                    f"{response}"
+                )
+            }
+        )
 
-    if len(rows) < 2:
-        raise RuntimeError("Need at least two training examples.")
-
-    dataset = Dataset.from_list(rows)
+    split = Dataset.from_list(examples).train_test_split(test_size=0.1, seed=42)
+    train_ds = split["train"]
+    eval_ds = split["test"]
 
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=base_model,
         max_seq_length=max_seq_length,
-        dtype=None,
         load_in_4bit=True,
+        dtype=None,
     )
+
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
 
     model = FastLanguageModel.get_peft_model(
         model,
         r=16,
-        target_modules=["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"],
         lora_alpha=16,
         lora_dropout=0.0,
         bias="none",
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
         use_gradient_checkpointing="unsloth",
         random_state=42,
     )
 
-    out = OUTPUT_PATH / base_model.replace("/", "--")
-    out.mkdir(parents=True, exist_ok=True)
+    model_dir = OUTPUT_ROOT / base_model.replace("/", "--")
+    model_dir.mkdir(parents=True, exist_ok=True)
 
-    args = TrainingArguments(
+    config = SFTConfig(
+        output_dir=str(model_dir),
+        dataset_text_field="text",
+        max_length=max_seq_length,
+        packing=True,
         per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
         gradient_accumulation_steps=8,
         learning_rate=2e-4,
         max_steps=max_steps,
         warmup_ratio=0.05,
         logging_steps=1,
-        save_steps=50,
+        eval_strategy="steps",
+        eval_steps=25,
         save_strategy="steps",
+        save_steps=25,
+        save_total_limit=3,
+        gradient_checkpointing=True,
         fp16=not torch.cuda.is_bf16_supported(),
         bf16=torch.cuda.is_bf16_supported(),
         optim="adamw_8bit",
-        output_dir=str(out),
-        report_to="none",
+        report_to=[],
         seed=42,
     )
 
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
-        train_dataset=dataset,
-        dataset_text_field="text",
-        max_seq_length=max_seq_length,
-        packing=True,
-        args=args,
+        args=config,
+        train_dataset=train_ds,
+        eval_dataset=eval_ds,
+        processing_class=tokenizer,
     )
 
-    checkpoints = sorted(out.glob("checkpoint-*"))
+    checkpoints = sorted(model_dir.glob("checkpoint-*"))
     resume = str(checkpoints[-1]) if checkpoints else None
     trainer.train(resume_from_checkpoint=resume)
+    metrics = trainer.evaluate()
 
-    final = out / "final_adapter"
-    model.save_pretrained(final)
-    tokenizer.save_pretrained(final)
-    OUTPUT_VOLUME.commit()
+    adapter_dir = model_dir / "final_adapter"
+    model.save_pretrained(adapter_dir)
+    tokenizer.save_pretrained(adapter_dir)
+    MODEL_VOLUME.commit()
 
-    return {
+    result = {
         "status": "completed",
         "base_model": base_model,
-        "examples": len(rows),
+        "total_examples": len(examples),
+        "train_examples": len(train_ds),
+        "eval_examples": len(eval_ds),
         "max_steps": max_steps,
-        "output": str(final),
+        "eval_metrics": metrics,
+        "adapter": str(adapter_dir),
     }
+    (model_dir / "training_result.json").write_text(
+        json.dumps(result, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    MODEL_VOLUME.commit()
+    return result
+
 
 @app.local_entrypoint()
 def main(
-    base_model: str = BASE_MODEL_DEFAULT,
+    base_model: str = DEFAULT_BASE_MODEL,
     max_steps: int = 150,
 ):
     result = train.remote(base_model=base_model, max_steps=max_steps)
-    print(json.dumps(result, indent=2))
+    print(json.dumps(result, indent=2, ensure_ascii=False))
