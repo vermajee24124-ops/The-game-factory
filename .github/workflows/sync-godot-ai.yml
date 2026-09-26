@@ -1,0 +1,27 @@
+name: Sync Godot AI Upstream
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 3 * * 1'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync pinned upstream
+        run: |
+          chmod +x scripts/sync_godot_ai.sh
+          ./scripts/sync_godot_ai.sh v4.2.1
+      - name: Commit upstream snapshot
+        run: |
+          git config user.name "SuperAgent-Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vendor/godot-ai
+          git diff --cached --quiet || git commit -m "upstream: sync Godot AI v4.2.1"
+          git push
