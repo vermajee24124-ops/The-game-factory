@@ -1,0 +1,63 @@
+name: AI SuperAgent Evolution
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'ai_superagent/**'
+      - 'addons/godot_ai_superagent/**'
+      - 'knowledge/**'
+      - '.github/workflows/ai-superagent-evolve.yml'
+  schedule:
+    - cron: '23 */6 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ai-superagent-evolution
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build knowledge manifest
+        run: python -m ai_superagent.build_manifest
+      - name: Validate Python
+        run: python -m compileall -q ai_superagent
+
+  evolve:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      FREELLMAPI_BASE_URL: \${{ secrets.FREELLMAPI_BASE_URL }}
+      FREELLMAPI_API_KEY: \${{ secrets.FREELLMAPI_API_KEY }}
+      FREELLMAPI_MODEL: \${{ secrets.FREELLMAPI_MODEL }}
+      SUPERAGENT_MAX_TASKS: '10'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate and evaluate tool-use trajectories
+        run: python -m ai_superagent.evolve
+      - name: Upload evolution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: superagent-evolution
+          path: build/ai_superagent/
+      - name: Persist regression report
+        run: |
+          git config user.name "SuperAgent-Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add build/ai_superagent
+          git diff --cached --quiet || git commit -m "ai-superagent: update evolution report"
+          git push
