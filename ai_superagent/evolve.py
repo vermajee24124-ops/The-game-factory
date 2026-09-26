@@ -1,69 +1,83 @@
 from __future__ import annotations
-import json, os, re
+import json, os
 from datetime import datetime, timezone
 from pathlib import Path
 from .model_client import OpenAICompatibleClient
 from .research_context import load_research_context
 
-ROOT = Path(__file__).resolve().parents[1]
-TASKS = ROOT / "ai_superagent" / "tasks.jsonl"
-OUT = ROOT / "build" / "ai_superagent"
+ROOT=Path(__file__).resolve().parents[1]
+TASKS=ROOT/'ai_superagent'/'tasks.jsonl'
+OUT=ROOT/'build'/'ai_superagent'
 OUT.mkdir(parents=True, exist_ok=True)
-SYSTEM = (ROOT / "ai_superagent" / "system_prompt.md").read_text(encoding="utf-8")
-RESEARCH = load_research_context()
-MAX_TASKS = int(os.getenv("SUPERAGENT_MAX_TASKS", "10"))
+SYSTEM=(ROOT/'ai_superagent'/'system_prompt.md').read_text(encoding='utf-8')
+RESEARCH=load_research_context()
+MAX_TASKS=int(os.getenv('SUPERAGENT_MAX_TASKS','20'))
+CANDIDATES=int(os.getenv('SUPERAGENT_CANDIDATES','2'))
+TOOLS={'project.summary','scene.tree','script.current','editor.play','editor.stop','scene.add_node','scene.set_property','file.read_text','file.write_text'}
 
-def parse_json(text: str) -> dict | None:
-    text = text.strip()
+def parse_json(text):
+    text=text.strip()
+    if text.startswith('```'):
+        text=text.replace('```json','').replace('```','').strip()
     try:
-        value = json.loads(text)
-        return value if isinstance(value, dict) else None
+        value=json.loads(text)
+        return value if isinstance(value,dict) else None
     except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", text, re.S)
-        if not match:
-            return None
-        try:
-            value = json.loads(match.group(0))
-            return value if isinstance(value, dict) else None
-        except json.JSONDecodeError:
-            return None
+        return None
 
-def main() -> int:
-    client = OpenAICompatibleClient()
+def valid(value):
+    if not isinstance(value,dict) or value.get('action') not in {'tool_call','final'}:
+        return False
+    if value.get('action')=='tool_call':
+        return value.get('tool') in TOOLS
+    return bool(str(value.get('result','')).strip()) and isinstance(value.get('evidence',[]),list)
+
+def judge(client, task, candidate):
+    messages=[
+        {'role':'system','content':'Strict Godot 4.7.2 dataset evaluator. Reject invented APIs, unrelated actions, unsafe actions, and unsupported claims. Return JSON with keep true or false and a short reason.'},
+        {'role':'user','content':'Task: '+task['prompt']+'\nCandidate: '+json.dumps(candidate,ensure_ascii=False)}
+    ]
+    out=parse_json(client.chat(messages,temperature=0.0,max_tokens=400)['content'])
+    return bool(out and out.get('keep') is True), (out or {'keep':False,'reason':'invalid judge output'})
+
+def main():
+    client=OpenAICompatibleClient()
     if not client.enabled():
-        report = {"status":"skipped","reason":"FREELLMAPI credentials not configured",
-                  "timestamp":datetime.now(timezone.utc).isoformat()}
-        (OUT / "latest_evolution.json").write_text(json.dumps(report, indent=2)+"\n", encoding="utf-8")
-        print(json.dumps(report, indent=2))
+        report={'status':'skipped','reason':'FREELLMAPI credentials not configured','timestamp':datetime.now(timezone.utc).isoformat()}
+        (OUT/'latest_evolution.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
+        print(json.dumps(report,indent=2))
         return 0
-    tasks = [json.loads(x) for x in TASKS.read_text(encoding="utf-8").splitlines() if x.strip()][:MAX_TASKS]
-    rows = []
+    tasks=[json.loads(x) for x in TASKS.read_text(encoding='utf-8').splitlines() if x.strip()][:MAX_TASKS]
+    rows=[]
+    accepted=[]
     for task in tasks:
-        user_prompt = (
-            "Task ID: %s\nGoal: %s\n"
-            "Return exactly one JSON object using action=tool_call or action=final. "
-            "Do not invent Godot APIs."
-        ) % (task["id"], task["prompt"])
-        response = client.chat([
-            {"role":"system","content":SYSTEM + ("\n\nResearch context:\n" + RESEARCH if RESEARCH else "")},
-            {"role":"user","content":user_prompt}
-        ], temperature=0.15, max_tokens=1600)
-        parsed = parse_json(response["content"])
-        rows.append({
-            "task_id":task["id"], "difficulty":task["difficulty"],
-            "response":parsed, "raw":response["content"][:8000],
-            "valid_schema":isinstance(parsed, dict) and parsed.get("action") in {"tool_call","final"},
-            "model":response.get("model"), "usage":response.get("usage", {})
-        })
-    score = sum(1 for r in rows if r["valid_schema"]) / max(1, len(rows))
-    report = {"status":"completed","timestamp":datetime.now(timezone.utc).isoformat(),
-              "tasks":len(rows),"strict_json_rate":score}
-    (OUT / "latest_evolution.json").write_text(json.dumps(report, indent=2)+"\n", encoding="utf-8")
-    with (OUT / "tool_use_trajectories.jsonl").open("w", encoding="utf-8") as fh:
-        for row in rows:
-            fh.write(json.dumps(row, ensure_ascii=False)+"\n")
-    print(json.dumps(report, indent=2))
+        for attempt in range(CANDIDATES):
+            messages=[
+                {'role':'system','content':SYSTEM + ('\n\nResearch context:\n'+RESEARCH if RESEARCH else '')},
+                {'role':'user','content':'Task ID: '+task['id']+'\nDifficulty: '+task['difficulty']+'\nGoal: '+task['prompt']+'\nReturn exactly one JSON object using action=tool_call or action=final. Do not invent Godot APIs.'}
+            ]
+            response=client.chat(messages,temperature=0.15,max_tokens=1600)
+            parsed=parse_json(response['content'])
+            row={'task_id':task['id'],'difficulty':task['difficulty'],'attempt':attempt+1,'response':parsed,'schema_valid':valid(parsed),'raw':response['content'][:8000],'model':response.get('model')}
+            if row['schema_valid']:
+                keep,reason=judge(client,task,parsed)
+                row['judge']=reason
+                row['accepted']=keep
+                if keep:
+                    accepted.append({'task_id':task['id'],'difficulty':task['difficulty'],'prompt':task['prompt'],'response':parsed,'model':response.get('model'),'research_used':bool(RESEARCH)})
+            else:
+                row['judge']={'keep':False,'reason':'invalid tool/action schema'}
+                row['accepted']=False
+            rows.append(row)
+    schema_ok=sum(1 for x in rows if x['schema_valid'])
+    report={'status':'completed','timestamp':datetime.now(timezone.utc).isoformat(),'tasks':len(tasks),'candidates':len(rows),'schema_valid_rate':schema_ok/max(1,len(rows)),'accepted_training_examples':len(accepted),'acceptance_rate':len(accepted)/max(1,len(rows)),'research_context_used':bool(RESEARCH)}
+    (OUT/'latest_evolution.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+    with (OUT/'tool_use_trajectories.jsonl').open('w',encoding='utf-8') as fh:
+        for row in rows: fh.write(json.dumps(row,ensure_ascii=False)+'\n')
+    with (OUT/'training_ready.jsonl').open('w',encoding='utf-8') as fh:
+        for row in accepted: fh.write(json.dumps(row,ensure_ascii=False)+'\n')
+    print(json.dumps(report,indent=2,ensure_ascii=False))
     return 0
 
-if __name__ == "__main__":
+if __name__=='__main__':
     raise SystemExit(main())
