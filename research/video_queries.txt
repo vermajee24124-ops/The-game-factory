@@ -1,0 +1,5 @@
+Godot 4.7 3D rendering Forward+ Mobile optimization
+Godot 4.7 scene building editor workflow 3D
+Godot 4.7 animation tree character controller
+Godot 4.7 shaders particles materials
+Godot 4 mobile performance optimization
