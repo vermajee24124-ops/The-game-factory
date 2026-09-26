@@ -20,3 +20,8 @@ The CPU workflow prepares data, generates tool-use trajectories, evaluates schem
 
 Godot:
 Keep addons/godot_ai_superagent inside a Godot 4.7.2 project and enable the plugin.
+
+
+## Evolution kickoff
+
+Evolution pipeline enabled on 2026-09-26. The model selector remains `auto` when FREELLMAPI_MODEL is empty, allowing the gateway to choose its configured automatic route.
