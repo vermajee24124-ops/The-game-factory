@@ -1,0 +1,139 @@
+name: Godot Agent Evolution Research
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'knowledge/**'
+      - 'research/**'
+      - 'agent_evolution/**'
+      - 'upstream/**'
+      - '.github/workflows/agent-evolution-research.yml'
+  schedule:
+    - cron: '17 */6 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: godot-agent-evolution
+  cancel-in-progress: false
+
+jobs:
+  curriculum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build A-Z curriculum
+        run: |
+          python agent_evolution/build_curriculum.py
+      - name: Inspect upstream Godot AI tools
+        run: |
+          rm -rf /tmp/godot-ai
+          git clone --depth 1 --branch v4.2.1 https://github.com/hi-godot/godot-ai.git /tmp/godot-ai
+          mkdir -p build/upstream
+          cp /tmp/godot-ai/docs/TOOLS.md build/upstream/TOOLS.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: curriculum-and-upstream
+          path: |
+            build/agent_evolution/
+            build/upstream/
+
+  discover:
+    needs: curriculum
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Agent Reach and video tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install 'https://github.com/Panniantong/agent-reach/archive/main.zip'
+          python -m pip install yt-dlp
+      - name: Generate video query bank
+        run: python research/generate_video_queries.py
+      - name: Agent Reach health check
+        run: |
+          agent-reach install --env=auto || true
+          agent-reach doctor --json > build_agent_reach_doctor.json || true
+      - name: Discover public videos
+        env:
+          SHARD: ${{ matrix.shard }}
+          SHARDS: '16'
+          MAX_QUERIES_PER_SHARD: '120'
+          RESULTS_PER_QUERY: '3'
+        run: python research/harvest_shard.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: video-discovery-${{ matrix.shard }}
+          path: |
+            build/agent_research/shard-${{ matrix.shard }}.jsonl
+            build_agent_reach_doctor.json
+
+  visual:
+    needs: discover
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: video-discovery-*
+          merge-multiple: true
+          path: build/agent_research
+      - name: Select high-value visual queue
+        run: python research/select_visual.py
+      - name: Analyze video and audio with Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_VIDEO_MODEL: gemini-3.8-flash
+        run: python research/gemini_batch.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gemini-visual-research
+          path: |
+            build/agent_research/visual_queue.jsonl
+            build/agent_research/gemini_visual_notes.jsonl
+
+  evolve:
+    needs: visual
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      FREELLMAPI_BASE_URL: ${{ secrets.FREELLMAPI_BASE_URL }}
+      FREELLMAPI_API_KEY: ${{ secrets.FREELLMAPI_API_KEY }}
+      FREELLMAPI_MODEL: ${{ secrets.FREELLMAPI_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: gemini-visual-research
+          path: build/agent_research
+      - name: Convert research to durable agent skills
+        run: python agent_evolution/synthesize_batch.py
+      - name: Persist learned skill batch
+        run: |
+          git config user.name 'SuperAgent-Bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add agent_evolution/learned
+          git diff --cached --quiet || git commit -m 'agent-evolution: add verified research skills'
+          git push
