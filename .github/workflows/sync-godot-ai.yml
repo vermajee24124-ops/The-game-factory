@@ -2,6 +2,12 @@ name: Sync Godot AI Upstream
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/sync_godot_ai.sh'
+      - 'upstream/GODOT_AI_BASE.md'
+      - '.github/workflows/sync-godot-ai.yml'
   schedule:
     - cron: '41 3 * * 1'
 
