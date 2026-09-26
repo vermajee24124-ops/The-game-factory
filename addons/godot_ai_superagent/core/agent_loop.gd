@@ -7,14 +7,16 @@ const MAX_STEPS := 24
 var registry: RefCounted
 var model: RefCounted
 var memory: RefCounted
+var skills: RefCounted
 var step_count := 0
 var active := false
 var goal := ""
 
-func _init(tool_registry: RefCounted, model_client: RefCounted, memory_store: RefCounted) -> void:
+func _init(tool_registry: RefCounted, model_client: RefCounted, memory_store: RefCounted, skill_store: RefCounted = null) -> void:
     registry = tool_registry
     model = model_client
     memory = memory_store
+    skills = skill_store
     model.completed.connect(_on_model_completed)
     model.failed.connect(_on_model_failed)
 
@@ -27,7 +29,7 @@ func start(user_goal: String) -> void:
         return
     step_count = 0
     active = true
-    event.emit("start", {"goal":goal})
+    event.emit("start", {"goal": goal})
     memory.append_event("agent_runs", {"kind":"start", "goal":goal})
     _ask()
 
@@ -40,10 +42,14 @@ func _ask() -> void:
         active = false
         event.emit("complete", {"reason":"step_limit"})
         return
+
     var tools_text := JSON.stringify(registry.list_tools())
-    var prompt := "Goal: %s\nAvailable tools: %s\nStep: %d/%d\nReturn one JSON object with action=tool_call or action=final." % [goal, tools_text, step_count + 1, MAX_STEPS]
+    var relevant_skills: Array = skills.relevant(goal, 8) if skills != null else []
+    var skill_text := JSON.stringify(relevant_skills)
+    var prompt := "Goal: %s\nAvailable tools: %s\nRelevant learned skills: %s\nStep: %d/%d\nReturn one JSON object with action=tool_call or action=final." % [goal, tools_text, skill_text, step_count + 1, MAX_STEPS]
+
     model.request_json([
-        {"role":"system","content":"You are a careful Godot 4.7.2 autonomous game engineer. Use only supplied tools. Do not invent APIs."},
+        {"role":"system","content":"You are a careful Godot 4.7.2 autonomous game engineer. Use only supplied tools and learned skills. Never invent APIs. Verify meaningful changes."},
         {"role":"user","content":prompt}
     ])
 
@@ -51,11 +57,13 @@ func _on_model_completed(result: Dictionary) -> void:
     if not active:
         return
     step_count += 1
+
     var parsed = JSON.parse_string(str(result.get("content", "")))
     if not (parsed is Dictionary):
         memory.append_event("test_history", {"kind":"invalid_model_json", "step":step_count})
         _ask()
         return
+
     var action := str(parsed.get("action", ""))
     if action == "tool_call":
         var tool := str(parsed.get("tool", ""))
