@@ -1,64 +1,49 @@
 # The Game Factory
 
-AI-assisted game development pipeline centered on a persistent, versioned project registry.
+AI-assisted game-development pipeline centered on a persistent, versioned project registry.
 
-## What this repository does
+## Godot AI SuperAgent
 
-- Accepts a game request or an update instruction.
-- Detects a supplied `GME-YYYY-NNNN` project ID and updates that project instead of creating a duplicate.
-- Creates a persistent project ID for new games.
-- Keeps source, tests, assets, compliance records, store assets, builds and state separated.
-- Keeps credentials out of source control. Secrets are supplied at runtime through GitHub Actions or the deployment environment.
-- Uses provider priority and capability metadata so the orchestration layer can prefer an available provider and fall back when appropriate.
-- Runs repository validation and Python dependency/security checks in CI.
+This branch adds a Godot 4.7.2-first autonomous agent under `addons/godot_ai_superagent` and `ai_superagent`.
 
-## Repository layout
+Core loop:
 
-```text
-.
-├── .github/workflows/game-factory.yml   # CI/orchestration entry workflow
-├── config/.env.example                  # secret names only
-├── factory/                             # orchestration package
-│   ├── cli.py
-│   ├── config.py
-│   └── validate.py
-├── game_bible/                          # game specifications/templates
-├── project_registry/                    # persistent project metadata
-├── projects/                            # generated project workspaces
-├── main.py                              # entrypoint
-└── requirements.txt
-```
+inspect -> plan -> act -> observe -> verify -> repair -> retest -> remember
 
-## Project lifecycle
+The editor plugin has:
+- live dock UI
+- model endpoint adapter
+- project and scene inspection
+- bounded scene mutations
+- file read/write tools
+- runtime start/stop
+- permission gating
+- persistent memory
+- strict JSON tool protocol
 
-1. Analyze the request.
-2. Resolve an existing project ID or allocate a new ID.
-3. Load the game bible and current project state.
-4. Research current engine/tool/store requirements before release decisions.
-5. Plan changes.
-6. Build and test.
-7. Run security/compliance checks.
-8. Generate release artifacts and documentation.
-9. Record the version and immutable commit history.
+## Evolution pipeline
 
-## Versioning strategy
+The GitHub CPU workflow prepares the knowledge manifest, calls the configured OpenAI-compatible gateway, generates tool-use trajectories, measures protocol compliance, and stores a non-secret regression report.
 
-Never overwrite the only copy of a released project. Each release is tied to a Git commit/tag and a project version. Updates should be made from the latest compatible source and tested before release. If an engine upgrade is not safely compatible, the pipeline must retain the existing engine version and create an upgrade branch rather than silently migrating the project.
+This is deliberately not described as frontier-model weight training on CPU. The generated trajectories are training-ready input for a later GPU SFT/LoRA stage.
 
-## Storage strategy
+## FreeLLMAPI
 
-Git is for source/configuration and small text metadata, not multi-gigabyte game builds. Large assets/builds should use an object-storage or release-artifact backend selected by the deployment configuration. Generated projects should store references/checksums rather than embedding secrets or unnecessarily duplicating large binaries.
+The supplied FreeLLMAPI project can be used as the OpenAI-compatible gateway.
 
-## Secrets
+Configure GitHub Actions secrets:
+- FREELLMAPI_BASE_URL
+- FREELLMAPI_API_KEY
+- FREELLMAPI_MODEL
 
-Do not put real API keys, passwords, OAuth refresh tokens, service-account JSON, private certificates, signing keys, or payment credentials in this repository. Add them as GitHub Actions secrets or the secret manager of the actual hosting environment.
+Never commit real credentials.
 
-## First run
+## Knowledge base
 
-```bash
-python main.py --instruction "Create a new game from the game bible"
-python -m factory.validate
-python -m factory.cli analyze "Build and test the current project"
-```
+Keep the supplied Godot-4.7.2 knowledge file under `knowledge/Godot-4.7.2-Exhaustive-Knowledge-Base.md`. The indexer records its hash, line count and headings.
 
-The current implementation is the secure orchestration foundation. Provider-specific API calls, Godot builds, Blender generation, store packaging, crash reporting, and support automation should be added as isolated adapters rather than hard-coded into the entrypoint.
+## Current scope
+
+The foundation is ready for the next expansion: runtime screenshots, input simulation, profiler/log ingestion, visual regression, broader Godot tool coverage, asset-generation adapters, and a real GPU trainer.
+
+See `docs/AI_SUPERAGENT_ARCHITECTURE.md`.
