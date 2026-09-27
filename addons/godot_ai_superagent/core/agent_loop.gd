@@ -12,6 +12,8 @@ var api_knowledge: RefCounted
 var step_count := 0
 var active := false
 var goal := ""
+var json_repair_attempts := 0
+const MAX_JSON_REPAIR_ATTEMPTS := 2
 
 func _init(tool_registry: RefCounted, model_client: RefCounted, memory_store: RefCounted, skill_store: RefCounted = null) -> void:
     registry = tool_registry
@@ -31,6 +33,7 @@ func start(user_goal: String) -> void:
     if goal.is_empty():
         return
     step_count = 0
+    json_repair_attempts = 0
     active = true
     event.emit("start", {"goal": goal})
     memory.append_event("agent_runs", {"kind":"start", "goal":goal})
@@ -73,11 +76,21 @@ func _on_model_completed(result: Dictionary) -> void:
         return
     step_count += 1
 
-    var parsed = JSON.parse_string(str(result.get("content", "")))
+    var raw := str(result.get("content", "")).strip_edges()
+    var parsed = _parse_action_json(raw)
     if not (parsed is Dictionary):
-        memory.append_event("test_history", {"kind":"invalid_model_json", "step":step_count})
-        _ask()
+        json_repair_attempts += 1
+        memory.append_event("test_history", {"kind":"invalid_model_json", "step":step_count, "attempt":json_repair_attempts})
+        if json_repair_attempts <= MAX_JSON_REPAIR_ATTEMPTS:
+            model.request_json([
+                {"role":"system","content":"Return ONLY valid JSON. No markdown, no explanation."},
+                {"role":"user","content":"Repair this agent action into exactly one JSON object with action=tool_call or action=final. Invalid output:\n" + raw.left(4000)}
+            ], 900)
+        else:
+            json_repair_attempts = 0
+            _ask()
         return
+    json_repair_attempts = 0
 
     var action := str(parsed.get("action", ""))
     if action == "tool_call":
@@ -97,6 +110,26 @@ func _on_model_completed(result: Dictionary) -> void:
     else:
         memory.append_event("test_history", {"kind":"unknown_action", "step":step_count})
         _ask()
+
+func _parse_action_json(raw: String):
+    var parsed = JSON.parse_string(raw)
+    if parsed is Dictionary:
+        return parsed
+
+    var cleaned := raw
+    if cleaned.begins_with("```"):
+        cleaned = cleaned.replace("```json", "").replace("```", "").strip_edges()
+        parsed = JSON.parse_string(cleaned)
+        if parsed is Dictionary:
+            return parsed
+
+    var start := raw.find("{")
+    var end := raw.rfind("}")
+    if start >= 0 and end > start:
+        parsed = JSON.parse_string(raw.substr(start, end - start + 1))
+        if parsed is Dictionary:
+            return parsed
+    return null
 
 func _on_model_failed(error_text: String) -> void:
     active = false
