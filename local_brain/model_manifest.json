@@ -1,13 +1,12 @@
 {
-  "name": "functiongemma-270m-local",
-  "purpose": "Tiny local CPU action model for high-frequency micro-tasks, intent routing, tool selection, compact function calls and repetitive Godot editor operations.",
-  "base_model": "google/functiongemma-270m-it",
-  "quantized_model": "functiongemma-270m-it.Q4_K_M.gguf",
-  "quantized_size_mb": 253,
+  "name": "smollm2-360m-godot-micro-brain",
+  "purpose": "Tiny local CPU micro-brain for high-frequency Godot micro-actions: intent classification, tool selection, compact action JSON, file/scene organization and escalation decisions.",
+  "base_model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+  "quantization_target": "GGUF Q4_K_M",
+  "runtime_size_target_mb": 300,
   "runtime": "llama.cpp",
-  "local_base_url": "http://127.0.0.1:8080/v1",
-  "local_model_env": "LOCAL_LLM_MODEL",
-  "training": "SFT fine-tuning on verified Godot micro-task/function-call data distilled from research and agent trajectories.",
-  "vision_policy": "The local model is text/function-call only. Images and video are interpreted by a multimodal stage, then converted to structured intent for the local model.",
-  "source": "https://huggingface.co/google/functiongemma-270m-it"
+  "training_strategy": "LoRA/SFT on verified Godot tool-use micro-tasks and distilled research evidence. No pretraining or full-weight training.",
+  "vision_policy": "Vision/video are handled by a multimodal provider. The micro-brain receives structured intent and selects the next small Godot action.",
+  "source": "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct",
+  "license": "Apache-2.0"
 }
