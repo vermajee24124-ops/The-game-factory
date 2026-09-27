@@ -1,1 +1,1 @@
-final-training-cycle-2026-09-27-v5
+final-training-cycle-2026-09-27-v6
