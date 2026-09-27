@@ -70,10 +70,16 @@ jobs:
           python - <<'PY'
           import subprocess
           subprocess.run(['modal','volume','create','game-factory-smollm2'],check=False)
-          subprocess.run(['modal','volume','put','-f','game-factory-smollm2','training/data/train.jsonl','/workspace/train.jsonl'],check=True)
-          subprocess.run(['modal','volume','put','-f','game-factory-smollm2','training/data/eval.jsonl','/workspace/eval.jsonl'],check=True)
+          subprocess.run(['modal','volume','put','-e','main','-f','game-factory-smollm2','training/data/train.jsonl','/train.jsonl'],check=True)
+          subprocess.run(['modal','volume','put','-e','main','-f','game-factory-smollm2','training/data/eval.jsonl','/eval.jsonl'],check=True)
           PY
+      - name: Verify dataset is visible at mounted volume root
+        shell: bash
+        run: |
+          set -euo pipefail
+          modal volume ls -e main game-factory-smollm2 /train.jsonl --json
+          modal volume ls -e main game-factory-smollm2 /eval.jsonl --json
       - name: Launch Modal fine-tuning
-        run: modal run modal/train_functiongemma.py::train
+        run: modal run -e main modal/train_functiongemma.py::train
       - name: Verify Modal training output
-        run: modal volume ls game-factory-smollm2 /workspace/smollm2-godot-microbrain --json
+        run: modal volume ls -e main game-factory-smollm2 /smollm2-godot-microbrain --json
