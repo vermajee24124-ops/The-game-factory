@@ -49,10 +49,22 @@ func _ask() -> void:
     var tools_text := JSON.stringify(registry.list_tools())
     var relevant_skills: Array = skills.relevant(goal, 8) if skills != null else []
     var skill_text := JSON.stringify(relevant_skills)
-    var prompt := "Goal: %s\nAvailable tools: %s\nRelevant learned skills: %s\nStep: %d/%d\nReturn one JSON object with action=tool_call or action=final." % [goal, tools_text, skill_text, step_count + 1, MAX_STEPS]
+    var relevant_api: Array = api_knowledge.relevant(goal, 12)
+    var api_text := JSON.stringify(relevant_api)
+
+    var prompt := (
+        "Goal: %s\n"
+        + "Available executable tools: %s\n"
+        + "Relevant learned skills: %s\n"
+        + "Relevant Godot 4.7.2 API knowledge: %s\n"
+        + "Step: %d/%d\n"
+        + "Return exactly one JSON object with action=tool_call or action=final. "
+        + "Use live API knowledge before guessing a class, method, property or signal. "
+        + "After meaningful writes, use a read/verification tool and save the scene when appropriate."
+    ) % [goal, tools_text, skill_text, api_text, step_count + 1, MAX_STEPS]
 
     model.request_json([
-        {"role":"system","content":"You are a careful Godot 4.7.2 autonomous game engineer. Use only supplied tools and learned skills. Never invent APIs. Verify meaningful changes."},
+        {"role":"system","content":"You are a careful Godot 4.7.2 autonomous game engineer. Use only supplied executable tools, learned skills, and API evidence. Never invent APIs. Verify meaningful changes."},
         {"role":"user","content":prompt}
     ])
 
