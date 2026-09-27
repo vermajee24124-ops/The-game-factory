@@ -13,7 +13,7 @@ SYSTEM=(ROOT/'ai_superagent'/'system_prompt.md').read_text(encoding='utf-8')
 RESEARCH=load_research_context()
 MAX_TASKS=int(os.getenv('SUPERAGENT_MAX_TASKS','20'))
 CANDIDATES=int(os.getenv('SUPERAGENT_CANDIDATES','2'))
-TOOLS={'project.summary','scene.tree','script.current','editor.play','editor.stop','scene.add_node','scene.set_property','file.read_text','file.write_text'}
+TOOLS={'project.summary','scene.tree','script.current','editor.play','editor.stop','scene.add_node','scene.set_property','file.read_text','file.write_text','asset.create_3d_character','asset.import_glb'}
 
 def parse_json(text):
     text=text.strip()
