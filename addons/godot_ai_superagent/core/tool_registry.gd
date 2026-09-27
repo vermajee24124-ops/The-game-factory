@@ -35,7 +35,10 @@ func execute(name: String, args: Dictionary = {}) -> Dictionary:
     if not permissions.request(name, str(spec["mode"])):
         return {"ok":false, "error":"Permission denied: %s" % name}
     var callback: Callable = spec["callback"]
-    return {"ok":true, "tool":name, "output":callback.call(args)}
+    var output = callback.call(args)
+    if output is Dictionary and output.has("ok") and not bool(output.get("ok")):
+        return output
+    return {"ok":true, "tool":name, "output":output}
 
 func _register_tools() -> void:
     register_tool("project.summary", "Inspect edited scene and basic editor state.", "safe", Callable(self, "_project_summary"))
@@ -158,8 +161,15 @@ func _set_property(args: Dictionary) -> Dictionary:
     var prop := str(args.get("property", ""))
     if prop.is_empty():
         return {"ok":false, "error":"Property required."}
+    var known := false
+    for entry in node.get_property_list():
+        if str(entry.get("name", "")) == prop:
+            known = true
+            break
+    if not known:
+        return {"ok":false, "error":"Unknown property: %s" % prop}
     node.set(prop, args.get("value"))
-    return {"ok":true, "node_path":str(node.get_path()), "property":prop}
+    return {"ok":true, "node_path":str(node.get_path()), "property":prop, "value":node.get(prop)}
 
 func _read_text(args: Dictionary) -> Dictionary:
     var path := str(args.get("path", ""))
