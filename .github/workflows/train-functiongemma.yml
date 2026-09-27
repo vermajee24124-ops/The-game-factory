@@ -6,7 +6,7 @@ on:
       target_examples:
         description: 'Maximum distilled micro-task examples'
         required: false
-        default: '12000'
+        default: '4000'
   push:
     branches: [main]
     paths:
@@ -52,7 +52,7 @@ jobs:
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       FUNCTIONGEMMA_BASE_MODEL: google/functiongemma-270m-it
-      FUNCTIONGEMMA_EPOCHS: '3'
+      FUNCTIONGEMMA_EPOCHS: '1'
       FUNCTIONGEMMA_LR: '0.00005'
     steps:
       - uses: actions/checkout@v4
