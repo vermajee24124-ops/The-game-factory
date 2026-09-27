@@ -22,18 +22,20 @@ volume = modal.Volume.from_name('game-factory-functiongemma', create_if_missing=
 hf_secret = modal.Secret.from_local_environ(['HF_TOKEN'])
 app = modal.App(APP_NAME)
 
-@app.function(image=image, gpu='T4', timeout=60*60*4, volumes={'/workspace': volume}, secrets=[hf_secret])
+@app.function(image=image, cpu=8, memory=16384, timeout=60*60*4, volumes={'/workspace': volume}, secrets=[hf_secret], env={'OMP_NUM_THREADS':'8','MKL_NUM_THREADS':'8','TOKENIZERS_PARALLELISM':'false'})
 def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
     import json
     import os
     from datasets import load_dataset
-    from transformers import AutoModelForCausalLM, AutoProcessor
+    from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import LoraConfig
     from trl import SFTConfig, SFTTrainer
 
     if train_path:
         volume.reload()
-    processor = AutoProcessor.from_pretrained(MODEL_ID)
+    processor = AutoTokenizer.from_pretrained(MODEL_ID)
+    if processor.pad_token is None:
+        processor.pad_token = processor.eos_token
     model = AutoModelForCausalLM.from_pretrained(MODEL_ID, dtype='auto', attn_implementation='eager')
 
     files = {'train': train_path or TRAIN_FILE, 'test': eval_path or EVAL_FILE}
@@ -41,14 +43,14 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
 
     args = SFTConfig(
         output_dir=OUTPUT_DIR,
-        max_length=768,
+        max_length=512,
         packing=True,
-        num_train_epochs=float(os.getenv('FUNCTIONGEMMA_EPOCHS','2')),
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=4,
-        gradient_accumulation_steps=2,
+        num_train_epochs=float(os.getenv('FUNCTIONGEMMA_EPOCHS','1')),
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=8,
+        gradient_accumulation_steps=1,
         learning_rate=float(os.getenv('FUNCTIONGEMMA_LR','0.0001')),
-        logging_steps=20,
+        logging_steps=10,
         eval_strategy='epoch',
         save_strategy='epoch',
         save_total_limit=2,
