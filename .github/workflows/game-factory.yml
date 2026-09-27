@@ -56,6 +56,9 @@ jobs:
       - name: Validate repository
         run: python -m factory.validate
 
+      - name: Verify Godot 4.7.2 knowledge contract
+        run: python scripts/verify_godot_knowledge.py
+
       - name: Check current stable Godot release
         run: python -m factory.cli engine-check
 
