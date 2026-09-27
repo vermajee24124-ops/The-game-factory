@@ -7,7 +7,8 @@ on:
     paths:
       - 'knowledge/**'
       - 'research/**'
-      - 'agent_evolution/**'
+      - 'agent_evolution/*.py'
+      - 'agent_evolution/capabilities/**'
       - 'upstream/**'
       - '.github/workflows/agent-evolution-research.yml'
   schedule:
@@ -17,7 +18,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: godot-agent-evolution
+  group: game-factory-learning
   cancel-in-progress: false
 
 jobs:
@@ -145,5 +146,11 @@ jobs:
           git config user.name 'SuperAgent-Bot'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add agent_evolution/learned
-          git diff --cached --quiet || git commit -m 'agent-evolution: add verified research skills'
-          git push
+          if git diff --cached --quiet; then
+            echo 'No learned skill changes.'
+            exit 0
+          fi
+          git commit -m 'agent-evolution: add verified research skills'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
