@@ -1,13 +1,13 @@
 {
-  "name": "local-micro-brain",
-  "purpose": "Fast local CPU helper for routing, tool selection, schema formatting, short summaries and repetitive Godot micro-tasks. Complex coding, multimodal reasoning and 3D reconstruction remain on external providers.",
-  "model": "HuggingFaceTB/SmolLM2-360M-Instruct-GGUF",
-  "quantization": "Q4_K_M",
-  "file_size_mb": 271,
-  "license": "Apache-2.0",
+  "name": "functiongemma-270m-local",
+  "purpose": "Tiny local CPU action model for high-frequency micro-tasks, intent routing, tool selection, compact function calls and repetitive Godot editor operations.",
+  "base_model": "google/functiongemma-270m-it",
+  "quantized_model": "functiongemma-270m-it.Q4_K_M.gguf",
+  "quantized_size_mb": 253,
   "runtime": "llama.cpp",
-  "endpoint_env": "LOCAL_LLM_BASE_URL",
-  "model_env": "LOCAL_LLM_MODEL",
-  "policy": "Do not use the local model as the sole authority for production game decisions. Verify all write actions in Godot.",
-  "source": "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF"
+  "local_base_url": "http://127.0.0.1:8080/v1",
+  "local_model_env": "LOCAL_LLM_MODEL",
+  "training": "SFT fine-tuning on verified Godot micro-task/function-call data distilled from research and agent trajectories.",
+  "vision_policy": "The local model is text/function-call only. Images and video are interpreted by a multimodal stage, then converted to structured intent for the local model.",
+  "source": "https://huggingface.co/google/functiongemma-270m-it"
 }
