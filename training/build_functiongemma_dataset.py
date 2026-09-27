@@ -13,6 +13,9 @@ OUT.mkdir(parents=True, exist_ok=True)
 TOOLS = [
   {'type':'function','function':{'name':'project.summary','description':'Inspect current Godot project/editor state.','parameters':{'type':'object','properties':{},'additionalProperties':False}}},
   {'type':'function','function':{'name':'scene.tree','description':'Read the current edited Godot scene tree.','parameters':{'type':'object','properties':{},'additionalProperties':False}}},
+  {'type':'function','function':{'name':'scene.node_info','description':'Read one node class, path and selected properties.','parameters':{'type':'object','properties':{'node_path':{'type':'string'}},'required':['node_path'],'additionalProperties':False}}},
+  {'type':'function','function':{'name':'scene.verify_property','description':'Read back one node property after a change.','parameters':{'type':'object','properties':{'node_path':{'type':'string'},'property':{'type':'string'}},'required':['node_path','property'],'additionalProperties':False}}},
+  {'type':'function','function':{'name':'scene.save','description':'Save the currently edited scene to disk.','parameters':{'type':'object','properties':{},'additionalProperties':False}}},
   {'type':'function','function':{'name':'script.current','description':'Read the currently selected script path.','parameters':{'type':'object','properties':{},'additionalProperties':False}}},
   {'type':'function','function':{'name':'editor.play','description':'Run the main Godot scene.','parameters':{'type':'object','properties':{},'additionalProperties':False}}},
   {'type':'function','function':{'name':'editor.stop','description':'Stop the running Godot game.','parameters':{'type':'object','properties':{},'additionalProperties':False}}},
@@ -102,6 +105,9 @@ def main():
         random.seed(seed + stable_seed(seed_text))
         recipes = [
           ('inspect the scene tree before changing anything','scene.tree',{}),
+          ('inspect the root node before making a change','scene.node_info',{'node_path':'.'}),
+          ('read back a property after a scene change','scene.verify_property',{'node_path':'Camera3D','property':'position'}),
+          ('save the edited scene after a meaningful change','scene.save',{}),
           ('inspect the current project state','project.summary',{}),
           ('create a simple 3D character named Runner','asset.create_3d_character',{'name':'Runner','save_path':'res://assets/generated/Runner.tscn'}),
           ('create a simple enemy character named Enemy','asset.create_3d_character',{'name':'Enemy'}),
@@ -129,6 +135,9 @@ def main():
           ('create a coin pickup','scene.add_node',{'parent_path':'.','node_type':'MeshInstance3D','name':f'Coin{idx}'}),
           ('create a 3D player body','scene.add_node',{'parent_path':'.','node_type':'CharacterBody3D','name':f'Player{idx}'}),
           ('inspect the scene before making a file change','scene.tree',{}),
+          ('inspect a player node before editing it','scene.node_info',{'node_path':'Player'}),
+          ('verify a node property after editing it','scene.verify_property',{'node_path':'Player','property':'position'}),
+          ('save the scene after a completed edit','scene.save',{}),
           ('check whether the main scene is ready to run','project.summary',{}),
           ('run the game once for a smoke test','editor.play',{}),
           ('stop the game after the smoke test','editor.stop',{}),
@@ -162,6 +171,7 @@ def main():
             'seed':seed,
             'task_style':'runtime_action_json',
             'tool_count':len(TOOLS),
+            'runtime_contract':'action_json_v1',
             'includes_escalation_examples':True,
         }, indent=2),
         encoding='utf-8',
