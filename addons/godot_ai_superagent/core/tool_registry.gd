@@ -4,10 +4,12 @@ extends RefCounted
 var editor: EditorInterface
 var permissions: RefCounted
 var tools: Dictionary = {}
+var asset_factory: RefCounted
 
 func _init(editor_interface: EditorInterface, permission_gate: RefCounted) -> void:
     editor = editor_interface
     permissions = permission_gate
+    asset_factory = preload("res://addons/godot_ai_superagent/core/asset_factory.gd").new(editor_interface)
     _register_tools()
 
 func register_tool(name: String, description: String, mode: String, callback: Callable) -> void:
@@ -40,6 +42,8 @@ func _register_tools() -> void:
     register_tool("scene.set_property", "Set a property on a node in the edited scene.", "write", Callable(self, "_set_property"))
     register_tool("file.read_text", "Read a UTF-8 text file under res://.", "safe", Callable(self, "_read_text"))
     register_tool("file.write_text", "Write a UTF-8 text file under res://.", "write", Callable(self, "_write_text"))
+    register_tool("asset.create_3d_character", "Create a stylized 3D character directly inside the edited Godot scene using native 3D primitives.", "write", Callable(self, "_create_3d_character"))
+    register_tool("asset.import_glb", "Import a generated GLB into res:// and trigger Godot resource scanning.", "write", Callable(self, "_import_glb"))
 
 func _project_summary(_args: Dictionary) -> Dictionary:
     var root := editor.get_edited_scene_root()
@@ -125,3 +129,10 @@ func _write_text(args: Dictionary) -> Dictionary:
     file.store_string(str(args.get("content", "")))
     file.close()
     return {"ok":true, "path":path}
+
+
+func _create_3d_character(args: Dictionary) -> Dictionary:
+    return asset_factory.create_3d_character(args)
+
+func _import_glb(args: Dictionary) -> Dictionary:
+    return asset_factory.import_glb(args)
