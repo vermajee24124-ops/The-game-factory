@@ -7,13 +7,6 @@ on:
         description: 'Maximum distilled micro-task examples'
         required: false
         default: '4000'
-  push:
-    branches: [main]
-    paths:
-      - 'training/**'
-      - 'local_brain/**'
-      - 'agent_evolution/learned/**'
-      - '.github/workflows/train-functiongemma.yml'
 
 permissions:
   contents: read
@@ -51,9 +44,9 @@ jobs:
       MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      FUNCTIONGEMMA_BASE_MODEL: google/functiongemma-270m-it
-      FUNCTIONGEMMA_EPOCHS: '1'
-      FUNCTIONGEMMA_LR: '0.00005'
+      MICROBRAIN_BASE_MODEL: HuggingFaceTB/SmolLM2-360M-Instruct
+      MICROBRAIN_EPOCHS: '1'
+      MICROBRAIN_LR: '0.0001'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
