@@ -12,7 +12,9 @@ def _clean(value: str) -> str:
     value = (value or '').strip()
     if value.startswith('\\'):
         value = value[1:].strip()
-    return value
+    # API secrets/URLs should be ASCII. Remove invisible direction/format marks
+    # that can be introduced by mobile clipboard or web forms.
+    return ''.join(ch for ch in value if ord(ch) < 128).strip()
 
 
 @dataclass(frozen=True)
