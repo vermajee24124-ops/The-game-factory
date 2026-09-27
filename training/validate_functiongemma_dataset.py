@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / 'training' / 'data'
 
 EXPECTED_TOOLS = {
-    'project.summary','scene.tree','script.current','editor.play','editor.stop',
+    'project.summary','scene.tree','scene.node_info','scene.verify_property','scene.save','script.current','editor.play','editor.stop',
     'scene.add_node','scene.set_property','file.read_text','file.write_text',
     'asset.create_3d_character','asset.import_glb',
     'godot.api.summary','godot.api.query_classes','godot.api.class_info',
