@@ -17,6 +17,7 @@ def main():
     if not KB.exists() or not CUR.exists() or not CAT.exists() or not UP.exists():
         fail('required knowledge/catalog file missing')
     text=KB.read_text(encoding='utf-8',errors='ignore')
+    normalized_text=text.replace(',', '')
     cur=json.loads(CUR.read_text(encoding='utf-8'))
     cat=json.loads(CAT.read_text(encoding='utf-8'))
 
@@ -36,7 +37,7 @@ def main():
     if len(cur.get('class_reference',[]))!=810:
         fail(f'class reference does not contain 810 entries: {len(cur.get("class_reference",[]))}')
     for k,v in expected.items():
-        if str(v) not in text and k not in {'modules','project_settings','editor_settings','cli_options','importers','gdscript_annotations','export_plugins'}:
+        if str(v) not in normalized_text and k not in {'modules','project_settings','editor_settings','cli_options','importers','gdscript_annotations','export_plugins'}:
             fail(f'source text missing expected marker for {k}')
 
     up_text=UP.read_text(encoding='utf-8',errors='ignore')
