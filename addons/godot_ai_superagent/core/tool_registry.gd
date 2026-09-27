@@ -5,11 +5,16 @@ var editor: EditorInterface
 var permissions: RefCounted
 var tools: Dictionary = {}
 var asset_factory: RefCounted
+var api_knowledge: RefCounted
+var runtime_tooling: RefCounted
 
 func _init(editor_interface: EditorInterface, permission_gate: RefCounted) -> void:
     editor = editor_interface
     permissions = permission_gate
     asset_factory = preload("res://addons/godot_ai_superagent/core/asset_factory.gd").new(editor_interface)
+    api_knowledge = preload("res://addons/godot_ai_superagent/core/api_knowledge.gd").new()
+    api_knowledge.load_knowledge()
+    runtime_tooling = preload("res://addons/godot_ai_superagent/core/runtime_tooling.gd").new(editor_interface, api_knowledge)
     _register_tools()
 
 func register_tool(name: String, description: String, mode: String, callback: Callable) -> void:
@@ -44,6 +49,9 @@ func _register_tools() -> void:
     register_tool("file.write_text", "Write a UTF-8 text file under res://.", "write", Callable(self, "_write_text"))
     register_tool("asset.create_3d_character", "Create a stylized 3D character directly inside the edited Godot scene using native 3D primitives.", "write", Callable(self, "_create_3d_character"))
     register_tool("asset.import_glb", "Import a generated GLB into res:// and trigger Godot resource scanning.", "write", Callable(self, "_import_glb"))
+    register_tool("godot.api.summary", "Read the 4.7.2 machine-readable curriculum inventory.", "safe", Callable(self, "_api_summary"))
+    register_tool("godot.api.query_classes", "Search the live Godot ClassDB class list.", "safe", Callable(self, "_api_query_classes"))
+    register_tool("godot.api.class_info", "Inspect live ClassDB properties, methods and signals for a Godot class.", "safe", Callable(self, "_api_class_info"))
 
 func _project_summary(_args: Dictionary) -> Dictionary:
     var root := editor.get_edited_scene_root()
@@ -136,3 +144,13 @@ func _create_3d_character(args: Dictionary) -> Dictionary:
 
 func _import_glb(args: Dictionary) -> Dictionary:
     return asset_factory.import_glb(args)
+
+
+func _api_summary(args: Dictionary) -> Dictionary:
+    return runtime_tooling.knowledge_summary(args)
+
+func _api_query_classes(args: Dictionary) -> Dictionary:
+    return runtime_tooling.query_classes(args)
+
+func _api_class_info(args: Dictionary) -> Dictionary:
+    return runtime_tooling.class_info(args)
