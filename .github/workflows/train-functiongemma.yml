@@ -43,7 +43,7 @@ jobs:
   train:
     needs: prepare-data
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 180
     env:
       MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
@@ -69,9 +69,9 @@ jobs:
           import os, subprocess
           subprocess.run(['modal','volume','create','game-factory-smollm2'],check=False)
           subprocess.run(['modal','volume','put','-f','game-factory-smollm2','training/data/train.jsonl','/workspace/train.jsonl'],check=True)
-          subprocess.run(['modal','volume','put','-f','game-factory-functiongemma','training/data/eval.jsonl','/workspace/eval.jsonl'],check=True)
+          subprocess.run(['modal','volume','put','-f','game-factory-smollm2','training/data/eval.jsonl','/workspace/eval.jsonl'],check=True)
           PY
       - name: Launch GPU fine-tuning
         run: modal run modal/train_functiongemma.py::train
       - name: Verify Modal training output
-        run: modal volume ls game-factory-smollm2 /workspace/functiongemma-godot --json
+        run: modal volume ls game-factory-smollm2 /workspace/smollm2-godot-microbrain --json
