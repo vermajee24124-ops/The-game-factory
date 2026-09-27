@@ -3,11 +3,11 @@ from pathlib import Path
 
 import modal
 
-APP_NAME = 'the-game-factory-functiongemma-training'
-MODEL_ID = os.getenv('FUNCTIONGEMMA_BASE_MODEL', 'google/functiongemma-270m-it')
+APP_NAME = 'the-game-factory-smollm2-training'
+MODEL_ID = os.getenv('MICROBRAIN_BASE_MODEL', 'HuggingFaceTB/SmolLM2-360M-Instruct')
 TRAIN_FILE = '/workspace/train.jsonl'
 EVAL_FILE = '/workspace/eval.jsonl'
-OUTPUT_DIR = '/workspace/functiongemma-godot'
+OUTPUT_DIR = '/workspace/smollm2-godot-microbrain'
 
 image = (
     modal.Image.debian_slim(python_version='3.11')
@@ -45,11 +45,11 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
         output_dir=OUTPUT_DIR,
         max_length=512,
         packing=True,
-        num_train_epochs=float(os.getenv('FUNCTIONGEMMA_EPOCHS','1')),
+        num_train_epochs=float(os.getenv('MICROBRAIN_EPOCHS','1')),
         per_device_train_batch_size=8,
         per_device_eval_batch_size=8,
         gradient_accumulation_steps=1,
-        learning_rate=float(os.getenv('FUNCTIONGEMMA_LR','0.0001')),
+        learning_rate=float(os.getenv('MICROBRAIN_LR','0.0001')),
         logging_steps=10,
         eval_strategy='epoch',
         save_strategy='epoch',
