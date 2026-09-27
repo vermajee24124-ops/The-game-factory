@@ -54,7 +54,6 @@ func relevant(query: String, limit: int = 12) -> Array[Dictionary]:
 func class_runtime_info(class_name_text: String) -> Dictionary:
     if not ClassDB.class_exists(class_name_text):
         return {"ok": false, "error": "Unknown Godot class: %s" % class_name_text}
-    var obj = ClassDB.instantiate(class_name_text)
     var props := ClassDB.class_get_property_list(class_name_text)
     var methods := ClassDB.class_get_method_list(class_name_text)
     var signals := ClassDB.class_get_signal_list(class_name_text)
@@ -67,10 +66,6 @@ func class_runtime_info(class_name_text: String) -> Dictionary:
         "methods": methods,
         "signals": signals,
     }
-    if obj != null and obj is Node:
-        obj.free()
-    elif obj != null and obj is RefCounted:
-        obj.unreference()
     return info
 
 func global_api_query(query: String) -> Dictionary:
