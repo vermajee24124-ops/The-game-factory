@@ -40,6 +40,9 @@ func execute(name: String, args: Dictionary = {}) -> Dictionary:
 func _register_tools() -> void:
     register_tool("project.summary", "Inspect edited scene and basic editor state.", "safe", Callable(self, "_project_summary"))
     register_tool("scene.tree", "Read the full edited scene tree.", "safe", Callable(self, "_scene_tree"))
+    register_tool("scene.node_info", "Read one node's class, path and selected properties.", "safe", Callable(self, "_node_info"))
+    register_tool("scene.verify_property", "Read back one node property after a change.", "safe", Callable(self, "_verify_property"))
+    register_tool("scene.save", "Save the currently edited scene to disk.", "write", Callable(self, "_save_scene"))
     register_tool("script.current", "Read the current script path.", "safe", Callable(self, "_current_script"))
     register_tool("editor.play", "Run the main scene.", "safe", Callable(self, "_play"))
     register_tool("editor.stop", "Stop the running game.", "safe", Callable(self, "_stop"))
@@ -71,6 +74,48 @@ func _flatten(node: Node) -> Array:
     for child in node.get_children():
         rows.append_array(_flatten(child))
     return rows
+
+func _node_info(args: Dictionary) -> Dictionary:
+    var root := editor.get_edited_scene_root()
+    if root == null:
+        return {"ok":false, "error":"No edited scene."}
+    var path := str(args.get("node_path", "."))
+    var node: Node = root if path in [".", ""] else root.get_node_or_null(NodePath(path))
+    if node == null:
+        return {"ok":false, "error":"Node not found."}
+    return {
+        "ok":true,
+        "name":node.name,
+        "type":node.get_class(),
+        "path":str(node.get_path()),
+        "parent":str(node.get_parent().get_path()) if node.get_parent() else "",
+        "process_mode":node.process_mode,
+        "visible":node.visible if node is CanvasItem or node is Node3D else null
+    }
+
+func _verify_property(args: Dictionary) -> Dictionary:
+    var root := editor.get_edited_scene_root()
+    if root == null:
+        return {"ok":false, "error":"No edited scene."}
+    var node := root.get_node_or_null(NodePath(str(args.get("node_path", ""))))
+    if node == null:
+        return {"ok":false, "error":"Node not found."}
+    var prop := str(args.get("property", ""))
+    if prop.is_empty():
+        return {"ok":false, "error":"Property required."}
+    return {
+        "ok":true,
+        "node_path":str(node.get_path()),
+        "property":prop,
+        "value":node.get(prop)
+    }
+
+func _save_scene(_args: Dictionary) -> Dictionary:
+    var root := editor.get_edited_scene_root()
+    if root == null or root.scene_file_path.is_empty():
+        return {"ok":false, "error":"No saved edited scene."}
+    var err := editor.save_scene()
+    return {"ok":err == OK, "scene":root.scene_file_path, "error":err if err != OK else null}
 
 func _current_script(_args: Dictionary) -> Dictionary:
     var script = editor.get_script_editor().get_current_script()
@@ -138,13 +183,11 @@ func _write_text(args: Dictionary) -> Dictionary:
     file.close()
     return {"ok":true, "path":path}
 
-
 func _create_3d_character(args: Dictionary) -> Dictionary:
     return asset_factory.create_3d_character(args)
 
 func _import_glb(args: Dictionary) -> Dictionary:
     return asset_factory.import_glb(args)
-
 
 func _api_summary(args: Dictionary) -> Dictionary:
     return runtime_tooling.knowledge_summary(args)
