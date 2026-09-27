@@ -17,6 +17,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: train-functiongemma
+  cancel-in-progress: true
+
 jobs:
   prepare-data:
     runs-on: ubuntu-latest
@@ -63,11 +67,11 @@ jobs:
         run: |
           python - <<'PY'
           import os, subprocess
-          token_id=os.environ['MODAL_TOKEN_ID']
-          token_secret=os.environ['MODAL_TOKEN_SECRET']
-          subprocess.run(['modal','volume','create','game-factory-functiongemma','--yes'],check=False)
-          subprocess.run(['modal','volume','put','game-factory-functiongemma','training/data/train.jsonl','/workspace/train.jsonl'],check=True)
-          subprocess.run(['modal','volume','put','game-factory-functiongemma','training/data/eval.jsonl','/workspace/eval.jsonl'],check=True)
+          subprocess.run(['modal','volume','create','game-factory-functiongemma'],check=False)
+          subprocess.run(['modal','volume','put','-f','game-factory-functiongemma','training/data/train.jsonl','/workspace/train.jsonl'],check=True)
+          subprocess.run(['modal','volume','put','-f','game-factory-functiongemma','training/data/eval.jsonl','/workspace/eval.jsonl'],check=True)
           PY
       - name: Launch GPU fine-tuning
-        run: modal run modal/train_functiongemma.py
+        run: modal run modal/train_functiongemma.py::train
+      - name: Verify Modal training output
+        run: modal volume ls game-factory-functiongemma /workspace/functiongemma-godot --json
