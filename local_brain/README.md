@@ -1,17 +1,34 @@
-# Local Micro-Brain
+# Local FunctionGemma Micro-Brain
 
-Default model: `HuggingFaceTB/SmolLM2-360M-Instruct-GGUF` using Q4_K_M.
+The selected local model is **Google FunctionGemma 270M Instruct**. A current GGUF Q4_K_M build is about **253 MB**, comfortably below the 500 MB target. FunctionGemma is explicitly designed for function calling and Google documents fine-tuning and model distillation for custom tool use.
 
-The Q4_K_M GGUF is about 271 MB. It is intended as the fast local CPU lane, not as the main reasoning model. The agent uses it for frequent small operations such as intent classification, tool selection, short summaries, JSON/schema formatting, and deciding whether a task should be escalated to a stronger remote model.
+## What it handles locally
 
-Remote escalation remains the default for long code generation, difficult debugging, multimodal image/video reasoning, and image-to-3D reconstruction.
+- classify short user intent
+- select the correct Godot tool
+- create compact function-call arguments
+- small scene/file organization actions
+- repeated editor micro-operations
+- route difficult work to the remote model
 
-Runtime variables:
-- `LOCAL_LLM_BASE_URL` = local llama.cpp OpenAI-compatible server, for example `http://127.0.0.1:8080/v1`
-- `LOCAL_LLM_MODEL` = local model identifier
+## What stays remote
 
-Do not commit the GGUF binary to the Git repository. Download it on the target machine or cache it in the build environment.
+Long code generation, difficult debugging, broad game design, multimodal image/video reasoning, and image-to-3D reconstruction remain on stronger external or GPU services.
 
-llama.cpp supports Android arm64-v8a builds and CPU feature detection, including Arm KleidiAI acceleration paths.
+The local model does **not** need to see the raw photo itself. The main agent sends the image to a vision-capable provider, turns the result into structured intent, and then the tiny model selects and calls the Godot tools.
 
-The local model is deliberately kept stateless at the weights level. The agent's project-specific learning is stored in skills, playbooks, tool schemas, benchmarks and memory so that the tiny model can stay small.
+## Training
+
+The training pipeline builds a FunctionGemma-specific function-calling dataset from verified Godot tool schemas, existing agent tasks, learned research notes, and selected multimodal research summaries. The final model is fine-tuned with SFT and then evaluated on held-out tasks.
+
+The repository never stores the large model binary. The trained model is published externally and the target device downloads the final GGUF.
+
+## Runtime
+
+Start a local llama.cpp OpenAI-compatible server and point:
+
+`LOCAL_LLM_BASE_URL=http://127.0.0.1:8080/v1`
+
+`LOCAL_LLM_MODEL=functiongemma-270m-it.Q4_K_M.gguf`
+
+The agent treats this as the fast local lane and escalates to remote providers when confidence, complexity, multimodal input, or verification requirements exceed the local model's scope.
