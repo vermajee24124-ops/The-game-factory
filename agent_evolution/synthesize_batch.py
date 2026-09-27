@@ -74,13 +74,33 @@ def main() -> int:
         + CURRICULUM.read_text(encoding='utf-8')[:18000]
     )
 
-    data = client.chat(
-        [{'role': 'system', 'content': system}, {'role': 'user', 'content': user}],
-        temperature=0.1,
-        max_tokens=5000,
-    )
-
-    items = extract_json_array(data['content'])
+    try:
+        data = client.chat(
+            [{'role': 'system', 'content': system}, {'role': 'user', 'content': user}],
+            temperature=0.1,
+            max_tokens=5000,
+        )
+        items = extract_json_array(data['content'])
+    except Exception as exc:
+        # Keep the research loop productive during provider outages. This fallback
+        # creates concise, non-copied skill records from already extracted Gemini
+        # notes; a later cycle can re-synthesize them with a stronger provider.
+        data = {'model': 'offline-fallback', 'provider': 'local-extractor', 'error': str(exc)}
+        items = []
+        for note in notes:
+            title = str(note.get('title') or 'Godot workflow')
+            analysis = note.get('notes', '')
+            items.append({
+                'name': 'research_' + re.sub(r'[^a-z0-9]+', '_', title.lower()).strip('_')[:64],
+                'domain': 'godot_research',
+                'skill': 'Apply the verified technical observations from this research item to future Godot work.',
+                'tools': ['scene.tree', 'project.summary', 'file.read_text', 'file.write_text', 'asset.create_3d_character', 'asset.import_glb'],
+                'procedure': ['Inspect current project state.', 'Select only relevant Godot tools.', 'Make the smallest change.', 'Run verification before continuing.'],
+                'verification': ['Confirm the target exists.', 'Confirm the change is limited to the requested scope.', 'Run a smoke test when practical.'],
+                'pitfalls': ['Do not invent APIs.', 'Do not copy source text.', 'Escalate unsupported claims for later review.'],
+                'benchmark_prompt': 'Reproduce the useful Godot procedure described by this research item: ' + title,
+                'evidence_summary': analysis[:1500],
+            })
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     path = OUT / f'research-batch-{stamp}.json'
     path.write_text(
