@@ -101,6 +101,53 @@ def main() -> int:
                 'benchmark_prompt': 'Reproduce the useful Godot procedure described by this research item: ' + title,
                 'evidence_summary': analysis[:1500],
             })
+        # Keep the learning store useful during provider outages.
+        # When Gemini notes are empty, derive durable domain playbooks from
+        # the verified Godot 4.7.2 curriculum instead of recording zero skills.
+        if not items:
+            curriculum = json.loads(CURRICULUM.read_text(encoding='utf-8'))
+            class_rows = curriculum.get('class_reference', [])
+            for domain in curriculum.get('domains', []):
+                examples = []
+                domain_text = str(domain).lower()
+                for row in class_rows:
+                    hay = (
+                        str(row.get('name', '')) + ' ' +
+                        str(row.get('inherits', '')) + ' ' +
+                        str(row.get('brief', ''))
+                    ).lower()
+                    if domain_text in hay:
+                        examples.append(row.get('name'))
+                    if len(examples) >= 20:
+                        break
+                items.append({
+                    'name': 'curriculum_' + re.sub(r'[^a-z0-9]+', '_', str(domain).lower()).strip('_'),
+                    'domain': str(domain),
+                    'skill': 'Use verified Godot 4.7.2 API evidence and live ClassDB inspection for ' + str(domain) + ' tasks; prefer small verified edits and escalate uncertain work.',
+                    'tools': ['godot.api.summary', 'godot.api.query_classes', 'godot.api.class_info', 'project.summary', 'scene.tree', 'scene.node_info', 'scene.verify_property', 'scene.save'],
+                    'procedure': [
+                        'Identify the relevant Godot domain.',
+                        'Inspect the current project and live API.',
+                        'Select only the required executable tools.',
+                        'Apply the smallest change.',
+                        'Read back the result and save the scene when appropriate.',
+                        'Run a smoke test for meaningful changes.',
+                    ],
+                    'verification': [
+                        'The requested target exists.',
+                        'The used class/property/method is present in live ClassDB when applicable.',
+                        'The final scene/project state matches the request.',
+                        'No unrelated files or nodes changed.',
+                    ],
+                    'pitfalls': [
+                        'Never invent Godot APIs.',
+                        'Do not assume a community addon is built in.',
+                        'Do not skip read-back verification after writes.',
+                        'Escalate complex multimodal or architecture tasks.',
+                    ],
+                    'benchmark_prompt': 'Complete a representative Godot 4.7.2 ' + str(domain) + ' task using API inspection, minimal edits, verification and save.',
+                    'curriculum_class_examples': examples,
+                })
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     path = OUT / f'research-batch-{stamp}.json'
     path.write_text(
