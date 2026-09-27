@@ -27,7 +27,8 @@ app = modal.App(APP_NAME)
     image=image,
     cpu=8,
     memory=16384,
-    timeout=60*60*4,
+    gpu='T4',
+    timeout=60*60*2,
     volumes={'/workspace': volume},
     secrets=[hf_secret],
     env={'OMP_NUM_THREADS':'8','MKL_NUM_THREADS':'8','TOKENIZERS_PARALLELISM':'false'},
@@ -62,6 +63,12 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
         attn_implementation='eager',
     )
 
+    import torch
+    print(f'CUDA available: {torch.cuda.is_available()}')
+    if torch.cuda.is_available():
+        print(f'GPU: {torch.cuda.get_device_name(0)}')
+        print(f'GPU memory: {torch.cuda.get_device_properties(0).total_memory / (1024**3):.2f} GiB')
+
     data = load_dataset('json', data_files={'train': train_file, 'test': eval_file})
 
     args = SFTConfig(
@@ -69,15 +76,15 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
         max_length=512,
         packing=True,
         num_train_epochs=float(os.getenv('MICROBRAIN_EPOCHS', '1')),
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=4,
-        gradient_accumulation_steps=2,
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=8,
+        gradient_accumulation_steps=1,
         learning_rate=float(os.getenv('MICROBRAIN_LR', '0.0001')),
         logging_steps=10,
         eval_strategy='epoch',
         save_strategy='epoch',
         save_total_limit=2,
-        fp16=False,
+        fp16=True,
         bf16=False,
         gradient_checkpointing=False,
         report_to='none',
