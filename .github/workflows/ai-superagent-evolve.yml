@@ -18,7 +18,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: ai-superagent-evolution
+  group: game-factory-learning
   cancel-in-progress: false
 
 jobs:
@@ -132,5 +132,11 @@ jobs:
           git config user.name "SuperAgent-Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add build/ai_superagent
-          git diff --cached --quiet || git commit -m "ai-superagent: update evolution report"
-          git push
+          if git diff --cached --quiet; then
+            echo 'No evolution report changes.'
+            exit 0
+          fi
+          git commit -m 'ai-superagent: update evolution report'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
