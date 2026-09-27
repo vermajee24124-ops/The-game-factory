@@ -73,7 +73,7 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
     args = SFTConfig(
         output_dir=OUTPUT_DIR,
         max_length=512,
-        packing=True,
+        packing=False,
         num_train_epochs=float(os.getenv('MICROBRAIN_EPOCHS', '1')),
         per_device_train_batch_size=8,
         per_device_eval_batch_size=8,
@@ -87,6 +87,8 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
         bf16=False,
         gradient_checkpointing=False,
         report_to='none',
+        dataloader_num_workers=2,
+        dataloader_pin_memory=False,
     )
 
     trainer = SFTTrainer(
