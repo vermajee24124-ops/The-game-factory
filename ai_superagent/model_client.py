@@ -33,6 +33,8 @@ class LLMConfig:
     nvidia_model: str
     gemini_api_key: str
     gemini_model: str
+    hf_token: str
+    hf_model: str
     timeout: int = 90
 
     @classmethod
@@ -52,6 +54,8 @@ class LLMConfig:
             _clean(os.getenv('NVIDIA_MODEL', 'meta/llama-3.3-70b-instruct')) or 'meta/llama-3.3-70b-instruct',
             _clean(os.getenv('GEMINI_API_KEY', '')),
             _clean(os.getenv('GEMINI_TEXT_MODEL', 'gemini-3.8-flash')) or 'gemini-3.8-flash',
+            _clean(os.getenv('HF_TOKEN', '')),
+            _clean(os.getenv('HF_MODEL', 'openai/gpt-oss-20b:fastest')) or 'openai/gpt-oss-20b:fastest',
         )
 
 
@@ -64,7 +68,7 @@ class OpenAICompatibleClient:
         c = self.config
         return any([
             c.freellm_base_url and c.freellm_api_key,
-            c.nara_api_key, c.zai_api_key, c.nvidia_api_key, c.gemini_api_key,
+            c.nara_api_key, c.zai_api_key, c.nvidia_api_key, c.gemini_api_key, c.hf_token,
         ])
 
     @staticmethod
@@ -119,6 +123,7 @@ class OpenAICompatibleClient:
             ('zai', c.zai_api_key, c.zai_base_url, c.zai_model),
             ('nara', c.nara_api_key, c.nara_base_url, c.nara_model),
             ('gemini', c.gemini_api_key, '', c.gemini_model),
+            ('huggingface', c.hf_token, 'https://router.huggingface.co/v1', c.hf_model),
             ('freellmapi', c.freellm_api_key, c.freellm_base_url, c.freellm_model),
         ]
         errors=[]
