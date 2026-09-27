@@ -59,6 +59,7 @@ func class_runtime_info(class_name_text: String) -> Dictionary:
     var signals := ClassDB.class_get_signal_list(class_name_text)
     var info := {
         "ok": true,
+        "engine": "4.7.2",
         "class": class_name_text,
         "is_node": ClassDB.is_parent_class(class_name_text, "Node"),
         "is_resource": ClassDB.is_parent_class(class_name_text, "Resource"),
