@@ -12,6 +12,7 @@ on:
     paths:
       - 'training/**'
       - 'local_brain/**'
+      - 'agent_evolution/learned/**'
       - '.github/workflows/train-functiongemma.yml'
 
 permissions:
@@ -34,6 +35,8 @@ jobs:
           python-version: '3.12'
       - name: Build distilled function-calling dataset
         run: python training/build_functiongemma_dataset.py
+      - name: Validate dataset
+        run: python training/validate_functiongemma_dataset.py
       - name: Upload dataset
         uses: actions/upload-artifact@v4
         with:
