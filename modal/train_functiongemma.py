@@ -18,11 +18,20 @@ image = (
     )
 )
 
-volume = modal.Volume.from_name('game-factory-functiongemma', create_if_missing=True)
+# This MUST match the volume populated by GitHub Actions.
+volume = modal.Volume.from_name('game-factory-smollm2', create_if_missing=True)
 hf_secret = modal.Secret.from_local_environ(['HF_TOKEN'])
 app = modal.App(APP_NAME)
 
-@app.function(image=image, cpu=8, memory=16384, timeout=60*60*4, volumes={'/workspace': volume}, secrets=[hf_secret], env={'OMP_NUM_THREADS':'8','MKL_NUM_THREADS':'8','TOKENIZERS_PARALLELISM':'false'})
+@app.function(
+    image=image,
+    cpu=8,
+    memory=16384,
+    timeout=60*60*4,
+    volumes={'/workspace': volume},
+    secrets=[hf_secret],
+    env={'OMP_NUM_THREADS':'8','MKL_NUM_THREADS':'8','TOKENIZERS_PARALLELISM':'false'},
+)
 def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
     import json
     import os
@@ -31,30 +40,45 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
     from peft import LoraConfig
     from trl import SFTConfig, SFTTrainer
 
-    if train_path:
-        volume.reload()
+    # Force the container to see the newest snapshot uploaded by the workflow.
+    volume.reload()
+
+    train_file = train_path or TRAIN_FILE
+    eval_file = eval_path or EVAL_FILE
+    for required in (train_file, eval_file):
+        if not Path(required).exists():
+            raise FileNotFoundError(
+                f'Missing training file {required}. '
+                'GitHub Actions must upload it to the game-factory-smollm2 Modal Volume first.'
+            )
+
     processor = AutoTokenizer.from_pretrained(MODEL_ID)
     if processor.pad_token is None:
         processor.pad_token = processor.eos_token
-    model = AutoModelForCausalLM.from_pretrained(MODEL_ID, dtype='auto', attn_implementation='eager')
 
-    files = {'train': train_path or TRAIN_FILE, 'test': eval_path or EVAL_FILE}
-    data = load_dataset('json', data_files=files)
+    model = AutoModelForCausalLM.from_pretrained(
+        MODEL_ID,
+        dtype='auto',
+        attn_implementation='eager',
+    )
+
+    data = load_dataset('json', data_files={'train': train_file, 'test': eval_file})
 
     args = SFTConfig(
         output_dir=OUTPUT_DIR,
         max_length=512,
         packing=True,
-        num_train_epochs=float(os.getenv('MICROBRAIN_EPOCHS','1')),
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
-        gradient_accumulation_steps=1,
-        learning_rate=float(os.getenv('MICROBRAIN_LR','0.0001')),
+        num_train_epochs=float(os.getenv('MICROBRAIN_EPOCHS', '1')),
+        per_device_train_batch_size=4,
+        per_device_eval_batch_size=4,
+        gradient_accumulation_steps=2,
+        learning_rate=float(os.getenv('MICROBRAIN_LR', '0.0001')),
         logging_steps=10,
         eval_strategy='epoch',
         save_strategy='epoch',
         save_total_limit=2,
-        fp16=True,
+        fp16=False,
+        bf16=False,
         gradient_checkpointing=False,
         report_to='none',
     )
@@ -65,14 +89,25 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
         train_dataset=data['train'],
         eval_dataset=data['test'],
         processing_class=processor,
-        peft_config=LoraConfig(r=16, lora_alpha=32, lora_dropout=0.05, target_modules='all-linear', task_type='CAUSAL_LM'),
+        peft_config=LoraConfig(
+            r=16,
+            lora_alpha=32,
+            lora_dropout=0.05,
+            target_modules='all-linear',
+            task_type='CAUSAL_LM',
+        ),
     )
+
     trainer.train()
     trainer.save_model(OUTPUT_DIR)
     processor.save_pretrained(OUTPUT_DIR)
 
     metrics = trainer.evaluate()
-    Path(OUTPUT_DIR, 'training_metrics.json').write_text(json.dumps(metrics, indent=2), encoding='utf-8')
+    Path(OUTPUT_DIR, 'training_metrics.json').write_text(
+        json.dumps(metrics, indent=2),
+        encoding='utf-8',
+    )
+    Path(OUTPUT_DIR, 'base_model.txt').write_text(MODEL_ID, encoding='utf-8')
     volume.commit()
 
     if output_repo:
@@ -81,6 +116,4 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
 
 @app.local_entrypoint()
 def main():
-    # GitHub Actions uploads the dataset to the persistent Modal Volume before this call.
     print(train.remote())
-
