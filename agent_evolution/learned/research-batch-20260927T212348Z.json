@@ -1,0 +1,149 @@
+{
+  "generated_at": "20260927T212348Z",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "skills": [
+    {
+      "name": "character_body_kinematic_controller",
+      "domain": "physics_and_movement",
+      "skill": "Implement robust kinematic 2D/3D player controllers using CharacterBody2D/CharacterBody3D with proper delta scaling, gravity, variable jump, and slope handling.",
+      "tools": [
+        "godot_editor_cli",
+        "gdscript_lsp",
+        "scene_tree_inspector"
+      ],
+      "procedure": [
+        "Select CharacterBody2D or CharacterBody3D as root node for player entities.",
+        "Declare explicit exports for move_speed, acceleration, friction, jump_velocity, and gravity vector.",
+        "Process input actions inside _physics_process(delta) using Input.get_vector() or Input.get_axis().",
+        "Apply directional acceleration towards target velocity using move_toward() or lerp() to prevent abrupt stops.",
+        "Check is_on_floor() before applying gravity or permitting jump initiation.",
+        "Execute move_and_slide() without passing velocity as an argument (reading and writing the built-in self.velocity property).",
+        "Inspect get_platform_velocity() and configure floor_snap_length / floor_stop_on_slope to prevent bouncing down slopes."
+      ],
+      "verification": [
+        "Assert velocity is modified prior to move_and_slide() invocation.",
+        "Verify character grounded status toggles accurately on flat ground and ramps.",
+        "Confirm jump height is independent of physics tick rate (engine/physics/common/physics_ticks_per_second)."
+      ],
+      "pitfalls": [
+        "Do not multiply velocity by delta before calling move_and_slide(); Godot 4 automatically integrates delta.",
+        "Never modify global_position directly on kinematic bodies during movement loops, as this bypasses collision solver manifolds."
+      ],
+      "benchmark_prompt": "Create a complete CharacterBody3D GDScript script with smooth acceleration, coyote time, jump buffering, and proper slope snapping for Godot 4.7.2."
+    },
+    {
+      "name": "animation_tree_hierarchical_state_machine",
+      "domain": "animation_systems",
+      "skill": "Construct and drive hierarchical animation blending systems using AnimationMixer, AnimationPlayer, and AnimationTree with state machine playbacks.",
+      "tools": [
+        "animation_editor",
+        "animation_tree_debugger",
+        "gdscript_lsp"
+      ],
+      "procedure": [
+        "Attach an AnimationPlayer to the rig containing base clips (idle, run, jump, fall, attack).",
+        "Add an AnimationTree node, assign the anim_player property to the AnimationPlayer, and set tree_root to an AnimationNodeStateMachine.",
+        "Configure internal states using AnimationNodeBlendSpace1D/2D for directional locomotion and AnimationNodeOneShot for upper-body actions.",
+        "Establish AnimationNodeStateMachineTransition connections with appropriate switch modes (IMMEDIATE, SYNC, AT_END) and advance expressions or conditions.",
+        "Activate the AnimationTree via active = true.",
+        "In GDScript, query the state machine playback via: var state_machine = get_node(\"AnimationTree\").get(\"parameters/playback\") as AnimationNodeStateMachinePlayback.",
+        "Trigger state changes using state_machine.travel(\"StateName\") and update blend positions via set(\"parameters/BlendSpace2D/blend_position\", vector)."
+      ],
+      "verification": [
+        "Verify animation playback smoothly blends between distinct locomotion velocities without T-pose flickers.",
+        "Ensure transition conditions do not cause recursive state loops in the same frame.",
+        "Check that state_machine.is_playing() and state_machine.get_current_node() reflect expected states."
+      ],
+      "pitfalls": [
+        "Failing to mark AnimationTree active in code or editor will freeze playback silently.",
+        "Accessing incorrect parameter paths (e.g. mismatched case or missing 'parameters/' prefix) results in runtime null references."
+      ],
+      "benchmark_prompt": "Write a GDScript controller that feeds input vectors and combat trigger flags into an AnimationTree using AnimationNodeStateMachinePlayback and a 2D blend space."
+    },
+    {
+      "name": "polyphonic_audio_emitter_pool",
+      "domain": "audio_architecture",
+      "skill": "Design high-throughput, low-latency sound effect pipelines utilizing AudioStreamPolyphonic and AudioStreamPlayer without audio dropouts.",
+      "tools": [
+        "audio_bus_inspector",
+        "audio_profiler",
+        "gdscript_lsp"
+      ],
+      "procedure": [
+        "Create an AudioStreamPlayer (or 2D/3D variant) and assign an AudioStreamPolyphonic resource to stream.",
+        "Set polyphony parameter to accommodate max concurrent sounds (e.g., 16–32 voices).",
+        "Obtain the playback stream in code using: var poly_playback = audio_player.get_stream_playback() as AudioStreamPlaybackPolyphonic.",
+        "Encapsulate playback requests into a function accepting an AudioStream sample, pitch variance, and volume offset.",
+        "Play individual voices with poly_playback.play_stream(sample, offset, volume_db, pitch_scale).",
+        "Track returned stream IDs to allow premature cancellation or dynamic attenuation with poly_playback.stop_stream(id)."
+      ],
+      "verification": [
+        "Verify multiple instances of the same sound overlap without clipping or voice starvation.",
+        "Check memory allocations via AudioServer to ensure stream references are freed properly after termination.",
+        "Measure audio latency and buffer under-runs under high-frequency firing conditions."
+      ],
+      "pitfalls": [
+        "AudioStreamPlaybackPolyphonic can only be fetched after the parent AudioStreamPlayer is active in the scene tree and playing.",
+        "Exceeding the max_polyphony voice limit will silently drop oldest or newest voices based on engine voice allocation heuristics."
+      ],
+      "benchmark_prompt": "Implement a GDScript audio manager node utilizing AudioStreamPolyphonic to play pooled positional impact sounds with randomized pitch and volume."
+    },
+    {
+      "name": "procedural_grid_pathfinding",
+      "domain": "ai_and_pathfinding",
+      "skill": "Implement high-performance 2D and 3D grid pathfinding using AStarGrid2D and AStar3D with weighted navigation and obstacle rasterization.",
+      "tools": [
+        "tilemap_editor",
+        "navigation_debugger",
+        "gdscript_lsp"
+      ],
+      "procedure": [
+        "Instantiate AStarGrid2D for uniform 2D grids or AStar3D for arbitrary 3D topological graphs.",
+        "For AStarGrid2D, configure region Rect2i, cell_size, and update().",
+        "Set diagonal_mode (e.g., DIAGONAL_MODE_NEVER, ALWAYS, or AT_LEAST_ONE_WALKABLE) and default_compute_heuristic.",
+        "Iterate over obstacle collision layers or TileMap patterns and invoke set_point_solid(coord, true) for unpassable cells.",
+        "Apply terrain traversal penalties using set_point_weight_scale(coord, weight).",
+        "Compute navigation paths using get_point_path(from_coord, to_coord) and convert grid coordinates to world positions."
+      ],
+      "verification": [
+        "Verify paths avoid solid tiles completely across corner traversals.",
+        "Validate path query performance over large grids (e.g., 500x500 cells executed under 2ms).",
+        "Ensure start or end points on solid nodes degrade gracefully using is_point_solid() checks before querying."
+      ],
+      "pitfalls": [
+        "Calling AStarGrid2D point-editing functions without invoking update() first causes invalid bounds errors.",
+        "Mixing local grid indices (Vector2i) with world-space coordinates (Vector2) leads to out-of-bound graph queries."
+      ],
+      "benchmark_prompt": "Construct an AStarGrid2D pathfinder class in GDScript that synchronizes solid points from a TileMapLayer and provides smoothed world-coordinate path slices."
+    },
+    {
+      "name": "responsive_ui_layout_engine",
+      "domain": "user_interface",
+      "skill": "Build resolution-agnostic, responsive UI systems utilizing Container hierarchies (BoxContainer, CenterContainer, AspectRatioContainer) and anchor-offset math.",
+      "tools": [
+        "control_node_inspector",
+        "viewport_preview_tool",
+        "theme_editor"
+      ],
+      "procedure": [
+        "Establish UI roots on CanvasLayer nodes with a top-level Control configured to full-rect anchors (anchor_right = 1.0, anchor_bottom = 1.0).",
+        "Nest structural containers (MarginContainer -> VBoxContainer/HBoxContainer) to handle automatic layout calculation.",
+        "Configure size_flags_horizontal and size_flags_vertical (SIZE_EXPAND, SIZE_SHRINK_CENTER, SIZE_FILL) explicitly on child Controls.",
+        "Enforce specific aspect ratios for previews/cards using AspectRatioContainer.",
+        "Apply Theme resources containing StyleBoxFlat or StyleBoxTexture variations for uniform style propagation.",
+        "Implement dynamic layout readjustment handling by listening to viewport size_changed signals when programmatic repositioning is necessary."
+      ],
+      "verification": [
+        "Preview scene across multiple aspect ratios (16:9, 21:9, 4:3, 9:16 mobile) and verify no control overlapping or boundary clipping occurs.",
+        "Ensure min_size constraints prevent text truncation in Label and Button nodes.",
+        "Confirm UI elements properly accept or ignore mouse input based on mouse_filter settings (MOUSE_FILTER_PASS, STOP, IGNORE)."
+      ],
+      "pitfalls": [
+        "Manually setting custom_minimum_size or position on direct children of Containers will get overridden by container layout passes.",
+        "Leaving mouse_filter as STOP on full-screen container overlays will unintentionally block gameplay input underneath."
+      ],
+      "benchmark_prompt": "Create a responsive pause menu UI layout in Godot 4.7.2 with animated modal background, centered button stack, audio sliders, and multi-resolution support."
+    }
+  ]
+}
