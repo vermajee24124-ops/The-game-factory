@@ -16,7 +16,7 @@ on:
       - 'factory/**'
       - 'agents/**'
       - 'projects/**'
-      - '.github/workflows/**'
+      - '.github/workflows/game-factory.yml'
 
 permissions:
   contents: write
