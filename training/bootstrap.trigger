@@ -1,1 +1,1 @@
-final-training-cycle-2026-09-27-v12-cpu-free
+final-training-cycle-2026-09-27-v13-cpu-optimized
