@@ -8,6 +8,7 @@ var registry: RefCounted
 var model: RefCounted
 var memory: RefCounted
 var skills: RefCounted
+var api_knowledge: RefCounted
 var step_count := 0
 var active := false
 var goal := ""
@@ -17,6 +18,8 @@ func _init(tool_registry: RefCounted, model_client: RefCounted, memory_store: Re
     model = model_client
     memory = memory_store
     skills = skill_store
+    api_knowledge = preload("res://addons/godot_ai_superagent/core/api_knowledge.gd").new()
+    api_knowledge.load_knowledge()
     model.completed.connect(_on_model_completed)
     model.failed.connect(_on_model_failed)
 
