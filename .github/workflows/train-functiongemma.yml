@@ -1,4 +1,4 @@
-name: Train FunctionGemma Godot Micro-Brain
+name: Train SmolLM2 Godot Micro-Brain
 
 on:
   workflow_dispatch:
@@ -6,7 +6,11 @@ on:
       target_examples:
         description: 'Maximum distilled micro-task examples'
         required: false
-        default: '4000'
+        default: '12000'
+  push:
+    branches: [main]
+    paths:
+      - 'training/bootstrap.trigger'
 
 permissions:
   contents: read
@@ -33,7 +37,7 @@ jobs:
       - name: Upload dataset
         uses: actions/upload-artifact@v4
         with:
-          name: functiongemma-dataset
+          name: smollm2-microbrain-dataset
           path: training/data/
 
   train:
@@ -56,18 +60,18 @@ jobs:
         run: python -m pip install modal huggingface_hub
       - uses: actions/download-artifact@v4
         with:
-          name: functiongemma-dataset
+          name: smollm2-microbrain-dataset
           path: training/data/
       - name: Create or refresh Modal training volume and upload dataset
         shell: bash
         run: |
           python - <<'PY'
           import os, subprocess
-          subprocess.run(['modal','volume','create','game-factory-functiongemma'],check=False)
-          subprocess.run(['modal','volume','put','-f','game-factory-functiongemma','training/data/train.jsonl','/workspace/train.jsonl'],check=True)
+          subprocess.run(['modal','volume','create','game-factory-smollm2'],check=False)
+          subprocess.run(['modal','volume','put','-f','game-factory-smollm2','training/data/train.jsonl','/workspace/train.jsonl'],check=True)
           subprocess.run(['modal','volume','put','-f','game-factory-functiongemma','training/data/eval.jsonl','/workspace/eval.jsonl'],check=True)
           PY
       - name: Launch GPU fine-tuning
         run: modal run modal/train_functiongemma.py::train
       - name: Verify Modal training output
-        run: modal volume ls game-factory-functiongemma /workspace/functiongemma-godot --json
+        run: modal volume ls game-factory-smollm2 /workspace/functiongemma-godot --json
