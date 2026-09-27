@@ -1,1 +1,1 @@
-final-training-cycle-2026-09-27-v10
+final-training-cycle-2026-09-27-v11-gpu-t4
