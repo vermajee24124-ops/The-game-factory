@@ -27,12 +27,13 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
     import json
     import os
     from datasets import load_dataset
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoModelForCausalLM, AutoProcessor
+    from peft import LoraConfig
     from trl import SFTConfig, SFTTrainer
 
     if train_path:
         volume.reload()
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+    processor = AutoProcessor.from_pretrained(MODEL_ID)
     model = AutoModelForCausalLM.from_pretrained(MODEL_ID, dtype='auto', attn_implementation='eager')
 
     files = {'train': train_path or TRAIN_FILE, 'test': eval_path or EVAL_FILE}
@@ -41,18 +42,18 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
     args = SFTConfig(
         output_dir=OUTPUT_DIR,
         max_length=768,
-        packing=False,
-        num_train_epochs=float(os.getenv('FUNCTIONGEMMA_EPOCHS','3')),
+        packing=True,
+        num_train_epochs=float(os.getenv('FUNCTIONGEMMA_EPOCHS','2')),
         per_device_train_batch_size=4,
         per_device_eval_batch_size=4,
-        gradient_accumulation_steps=4,
-        learning_rate=float(os.getenv('FUNCTIONGEMMA_LR','5e-5')),
-        logging_steps=10,
+        gradient_accumulation_steps=2,
+        learning_rate=float(os.getenv('FUNCTIONGEMMA_LR','0.0001')),
+        logging_steps=20,
         eval_strategy='epoch',
         save_strategy='epoch',
         save_total_limit=2,
-        bf16=False,
         fp16=True,
+        gradient_checkpointing=False,
         report_to='none',
     )
 
@@ -61,11 +62,12 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
         args=args,
         train_dataset=data['train'],
         eval_dataset=data['test'],
-        processing_class=tokenizer,
+        processing_class=processor,
+        peft_config=LoraConfig(r=16, lora_alpha=32, lora_dropout=0.05, target_modules='all-linear', task_type='CAUSAL_LM'),
     )
     trainer.train()
     trainer.save_model(OUTPUT_DIR)
-    tokenizer.save_pretrained(OUTPUT_DIR)
+    processor.save_pretrained(OUTPUT_DIR)
 
     metrics = trainer.evaluate()
     Path(OUTPUT_DIR, 'training_metrics.json').write_text(json.dumps(metrics, indent=2), encoding='utf-8')
@@ -77,6 +79,6 @@ def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
 
 @app.local_entrypoint()
 def main():
-    # GitHub Actions prepares and uploads the dataset to this persistent Modal Volume.
+    # GitHub Actions uploads the dataset to the persistent Modal Volume before this call.
     print(train.remote())
 
