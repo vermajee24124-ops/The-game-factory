@@ -19,6 +19,8 @@ def _clean(value: str) -> str:
 
 @dataclass(frozen=True)
 class LLMConfig:
+    local_base_url: str
+    local_model: str
     freellm_base_url: str
     freellm_api_key: str
     freellm_model: str
@@ -40,6 +42,8 @@ class LLMConfig:
     @classmethod
     def from_env(cls) -> 'LLMConfig':
         return cls(
+            _clean(os.getenv('LOCAL_LLM_BASE_URL', '')),
+            _clean(os.getenv('LOCAL_LLM_MODEL', 'HuggingFaceTB/SmolLM2-360M-Instruct-Q4_K_M.gguf')) or 'HuggingFaceTB/SmolLM2-360M-Instruct-Q4_K_M.gguf',
             _clean(os.getenv('FREELLMAPI_BASE_URL', '')),
             _clean(os.getenv('FREELLMAPI_API_KEY', '')),
             _clean(os.getenv('FREELLMAPI_MODEL', 'auto')) or 'auto',
@@ -67,6 +71,7 @@ class OpenAICompatibleClient:
     def enabled(self) -> bool:
         c = self.config
         return any([
+            c.local_base_url,
             c.freellm_base_url and c.freellm_api_key,
             c.nara_api_key, c.zai_api_key, c.nvidia_api_key, c.gemini_api_key, c.hf_token,
         ])
@@ -119,6 +124,7 @@ class OpenAICompatibleClient:
             raise RuntimeError('Configure at least one external LLM provider secret')
         c=self.config
         providers=[
+            ('local', 'local', c.local_base_url, c.local_model),
             ('nvidia', c.nvidia_api_key, c.nvidia_base_url, c.nvidia_model),
             ('zai', c.zai_api_key, c.zai_base_url, c.zai_model),
             ('nara', c.nara_api_key, c.nara_base_url, c.nara_model),
@@ -128,8 +134,13 @@ class OpenAICompatibleClient:
         ]
         errors=[]
         for provider,key,base_url,model in providers:
-            if not key: continue
+            if provider == 'local':
+                if not base_url: continue
+            elif not key:
+                continue
             try:
+                if provider == 'local':
+                    return self._chat_openai(base_url, '', model, messages, temperature, max_tokens, provider)
                 if provider == 'gemini':
                     return self._chat_gemini(key, model, messages, temperature, max_tokens)
                 return self._chat_openai(base_url, key, model, messages, temperature, max_tokens, provider)
