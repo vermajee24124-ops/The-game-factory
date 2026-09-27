@@ -43,7 +43,7 @@ class LLMConfig:
     def from_env(cls) -> 'LLMConfig':
         return cls(
             _clean(os.getenv('LOCAL_LLM_BASE_URL', '')),
-            _clean(os.getenv('LOCAL_LLM_MODEL', 'HuggingFaceTB/SmolLM2-360M-Instruct-Q4_K_M.gguf')) or 'HuggingFaceTB/SmolLM2-360M-Instruct-Q4_K_M.gguf',
+            _clean(os.getenv('LOCAL_LLM_MODEL', 'functiongemma-270m-it.Q4_K_M.gguf')) or 'functiongemma-270m-it.Q4_K_M.gguf',
             _clean(os.getenv('FREELLMAPI_BASE_URL', '')),
             _clean(os.getenv('FREELLMAPI_API_KEY', '')),
             _clean(os.getenv('FREELLMAPI_MODEL', 'auto')) or 'auto',
