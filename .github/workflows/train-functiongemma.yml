@@ -30,7 +30,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Build distilled function-calling dataset
+      - name: Verify Godot 4.7.2 knowledge contract
+        run: python scripts/verify_godot_knowledge.py
+      - name: Build distilled micro-action dataset
         run: python training/build_functiongemma_dataset.py
       - name: Validate dataset
         run: python training/validate_functiongemma_dataset.py
@@ -66,12 +68,12 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
-          import os, subprocess
+          import subprocess
           subprocess.run(['modal','volume','create','game-factory-smollm2'],check=False)
           subprocess.run(['modal','volume','put','-f','game-factory-smollm2','training/data/train.jsonl','/workspace/train.jsonl'],check=True)
           subprocess.run(['modal','volume','put','-f','game-factory-smollm2','training/data/eval.jsonl','/workspace/eval.jsonl'],check=True)
           PY
-      - name: Launch GPU fine-tuning
+      - name: Launch Modal fine-tuning
         run: modal run modal/train_functiongemma.py::train
       - name: Verify Modal training output
         run: modal volume ls game-factory-smollm2 /workspace/smollm2-godot-microbrain --json
