@@ -33,15 +33,20 @@ VARIANTS = [
   'Do not rewrite unrelated things; {task}.',
 ]
 
-def call(name, args=None):
-    return {'type':'function','function':{'name':name,'arguments':args or {}}}
+def call(name, args=None, call_id='call_1'):
+    return {'id':call_id,'type':'function','function':{'name':name,'arguments':json.dumps(args or {}, ensure_ascii=False,separators=(',',':'))}}
 
 def add(rows, task, name, args=None):
     user = random.choice(VARIANTS).format(task=task)
+    call_id = f'call_{len(rows)+1}'
+    tool_call = call(name, args, call_id)
+    tool_result = json.dumps({'ok': True, 'tool': name, 'verified': True}, ensure_ascii=False, separators=(',',':'))
     rows.append({'messages':[
         {'role':'developer','content':DEVELOPER},
         {'role':'user','content':user},
-        {'role':'assistant','tool_calls':[call(name,args)]}
+        {'role':'assistant','content':None,'tool_calls':[tool_call]},
+        {'role':'tool','tool_call_id':call_id,'content':tool_result},
+        {'role':'assistant','content':'Done. The requested small Godot operation was completed and verified.'}
     ],'tools':TOOLS})
 
 def stable_seed(text):
