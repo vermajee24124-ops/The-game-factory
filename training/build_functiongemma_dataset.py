@@ -22,9 +22,17 @@ TOOLS = [
   {'type':'function','function':{'name':'file.write_text','description':'Write a UTF-8 text file under res://.','parameters':{'type':'object','properties':{'path':{'type':'string'},'content':{'type':'string'}},'required':['path','content'],'additionalProperties':False}}},
   {'type':'function','function':{'name':'asset.create_3d_character','description':'Create a stylized procedural 3D character directly in the edited Godot scene.','parameters':{'type':'object','properties':{'name':{'type':'string'},'skin_color':{'type':'string'},'outfit_color':{'type':'string'},'hair_color':{'type':'string'},'save_path':{'type':'string'}},'required':['name'],'additionalProperties':False}}},
   {'type':'function','function':{'name':'asset.import_glb','description':'Import a generated GLB into a res:// path and trigger Godot resource scanning.','parameters':{'type':'object','properties':{'source_path':{'type':'string'},'destination_path':{'type':'string'}},'required':['source_path'],'additionalProperties':False}}},
+  {'type':'function','function':{'name':'godot.api.summary','description':'Read the Godot 4.7.2 curriculum inventory.','parameters':{'type':'object','properties':{},'additionalProperties':False}}},
+  {'type':'function','function':{'name':'godot.api.query_classes','description':'Search the live Godot ClassDB class list.','parameters':{'type':'object','properties':{'query':{'type':'string'}},'required':['query'],'additionalProperties':False}}},
+  {'type':'function','function':{'name':'godot.api.class_info','description':'Inspect live ClassDB properties, methods and signals for a Godot class.','parameters':{'type':'object','properties':{'class_name':{'type':'string'}},'required':['class_name'],'additionalProperties':False}}},
 ]
 
-DEVELOPER = 'You are the local Godot micro-action model. Use the available functions for small editor, scene, file and asset operations. Never invent tools. For complex coding, multimodal reasoning or production architecture, return an escalation decision instead of pretending.'
+DEVELOPER = (
+    'You are the local Godot micro-action model for Godot 4.7.2. '
+    'Return exactly one small action as JSON. Use only the supplied tool names. '
+    'For complex coding, architecture, multimodal reasoning, large refactors, or uncertain tasks, '
+    'return an escalation action rather than inventing an API.'
+)
 
 VARIANTS = [
   'Please {task}.', 'Can you {task}?', 'Do this in my Godot project: {task}.',
@@ -33,58 +41,66 @@ VARIANTS = [
   'Do not rewrite unrelated things; {task}.',
 ]
 
-def call(name, args=None, call_id='call_1'):
-    return {'id':call_id,'type':'function','function':{'name':name,'arguments':json.dumps(args or {}, ensure_ascii=False,separators=(',',':'))}}
+def stable_seed(text: str) -> int:
+    return int(hashlib.sha256(text.encode('utf-8')).hexdigest()[:8], 16)
 
-def add(rows, task, name, args=None):
+def add(rows, task: str, action: dict):
     user = random.choice(VARIANTS).format(task=task)
-    call_id = f'call_{len(rows)+1}'
-    tool_call = call(name, args, call_id)
-    tool_result = json.dumps({'ok': True, 'tool': name, 'verified': True}, ensure_ascii=False, separators=(',',':'))
-    rows.append({'messages':[
-        {'role':'developer','content':DEVELOPER},
-        {'role':'user','content':user},
-        {'role':'assistant','content':None,'tool_calls':[tool_call]},
-        {'role':'tool','tool_call_id':call_id,'content':tool_result},
-        {'role':'assistant','content':'Done. The requested small Godot operation was completed and verified.'}
-    ],'tools':TOOLS})
+    rows.append({
+        'messages': [
+            {'role':'developer','content':DEVELOPER},
+            {'role':'user','content':user},
+            {'role':'assistant','content':json.dumps(action, ensure_ascii=False, separators=(',',':'))},
+        ],
+        'tools': TOOLS,
+    })
 
-def stable_seed(text):
-    return int(hashlib.sha256(text.encode('utf-8')).hexdigest()[:8],16)
+def tool(name: str, args=None) -> dict:
+    return {'action':'tool_call','tool':name,'args':args or {}}
+
+def escalate(reason: str) -> dict:
+    return {'action':'final','result':'escalate','evidence':[reason]}
 
 def main():
-    seed=int(os.getenv('DATASET_SEED','20260927'))
+    seed = int(os.getenv('DATASET_SEED','20260927'))
     random.seed(seed)
-    target=int(os.getenv('TARGET_EXAMPLES','12000'))
-    rows=[]
-    tasks=list((ROOT/'ai_superagent'/'tasks.jsonl').read_text(encoding='utf-8').splitlines())
-    for line in tasks:
-        item=json.loads(line)
-        p=item['prompt']
-        add(rows,p,'project.summary',{})
-        add(rows,p,'scene.tree',{})
+    target = int(os.getenv('TARGET_EXAMPLES','12000'))
+    rows = []
 
-    research_files=[]
-    for pattern in ['build/agent_research/gemini_visual_notes.jsonl','agent_evolution/learned/*.json']:
-        research_files += list(ROOT.glob(pattern))
-    evidence=[]
+    tasks_path = ROOT / 'ai_superagent' / 'tasks.jsonl'
+    for line in tasks_path.read_text(encoding='utf-8').splitlines():
+        if not line.strip():
+            continue
+        prompt = json.loads(line)['prompt']
+        add(rows, prompt, tool('project.summary'))
+        add(rows, prompt, tool('scene.tree'))
+
+    research_files = []
+    for pattern in [
+        'build/agent_research/gemini_visual_notes.jsonl',
+        'agent_evolution/learned/*.json',
+    ]:
+        research_files.extend(ROOT.glob(pattern))
+
+    evidence = []
     for path in research_files:
-        if path.is_file():
-            try:
-                if path.suffix=='.jsonl':
-                    for line in path.read_text(encoding='utf-8').splitlines():
-                        if line.strip(): evidence.append(json.loads(line))
-                else:
-                    obj=json.loads(path.read_text(encoding='utf-8'))
-                    evidence.extend(obj.get('skills',[]))
-            except Exception:
-                continue
+        if not path.is_file():
+            continue
+        try:
+            if path.suffix == '.jsonl':
+                for line in path.read_text(encoding='utf-8').splitlines():
+                    if line.strip():
+                        evidence.append(json.loads(line))
+            else:
+                evidence.extend(json.loads(path.read_text(encoding='utf-8')).get('skills', []))
+        except Exception:
+            continue
 
-    for idx,item in enumerate(evidence):
-        title=str(item.get('title') or item.get('name') or item.get('domain') or 'Godot workflow')
-        seed_text=json.dumps(item,ensure_ascii=False)[:1500]
-        random.seed(seed+stable_seed(seed_text))
-        recipes=[
+    for item in evidence:
+        title = str(item.get('title') or item.get('name') or item.get('domain') or 'Godot workflow')
+        seed_text = json.dumps(item, ensure_ascii=False)[:1500]
+        random.seed(seed + stable_seed(seed_text))
+        recipes = [
           ('inspect the scene tree before changing anything','scene.tree',{}),
           ('inspect the current project state','project.summary',{}),
           ('create a simple 3D character named Runner','asset.create_3d_character',{'name':'Runner','save_path':'res://assets/generated/Runner.tscn'}),
@@ -97,14 +113,19 @@ def main():
           ('create a GPUParticles3D node under the scene root','scene.add_node',{'parent_path':'.','node_type':'GPUParticles3D','name':'AIParticles'}),
           ('set a visible node position to a safe test value','scene.set_property',{'node_path':'Camera3D','property':'position','value':[0,3,6]}),
           ('import a generated character GLB into the assets folder','asset.import_glb',{'source_path':'/tmp/generated_character.glb','destination_path':'res://assets/generated/generated_character.glb'}),
+          ('read the Godot 4.7.2 API inventory','godot.api.summary',{}),
+          ('search live Godot classes for CharacterBody3D','godot.api.query_classes',{'query':'CharacterBody3D'}),
+          ('inspect the live API of Node3D','godot.api.class_info',{'class_name':'Node3D'}),
         ]
-        for task,name,args in recipes:
-            add(rows,f'Use this Godot research context as guidance: {title}. Then {task}',name,args)
-        if len(rows)>=target: break
+        for task, name, args in recipes:
+            add(rows, f'Use this Godot research context as guidance: {title}. Then {task}', tool(name,args))
+        add(rows, f'Use this research context: {title}. Decide whether the task needs a stronger remote model before acting.', escalate('Complexity or uncertainty must be handled by the remote reasoner.'))
+        if len(rows) >= target:
+            break
 
-    while len(rows)<target:
-        idx=len(rows)
-        variants=[
+    while len(rows) < target:
+        idx = len(rows)
+        variants = [
           ('create a coin pickup','scene.add_node',{'parent_path':'.','node_type':'MeshInstance3D','name':f'Coin{idx}'}),
           ('create a 3D player body','scene.add_node',{'parent_path':'.','node_type':'CharacterBody3D','name':f'Player{idx}'}),
           ('inspect the scene before making a file change','scene.tree',{}),
@@ -114,17 +135,38 @@ def main():
           ('create a stylized 3D character','asset.create_3d_character',{'name':f'Character{idx}'}),
           ('read a scene file before editing it','file.read_text',{'path':'res://main.tscn'}),
           ('import a previously generated GLB after checking its path','asset.import_glb',{'source_path':'/tmp/model.glb','destination_path':f'res://assets/generated/model_{idx}.glb'}),
+          ('inspect the API for Node3D before using it','godot.api.class_info',{'class_name':'Node3D'}),
+          ('search the live ClassDB for a particle node','godot.api.query_classes',{'query':'GPUParticles3D'}),
+          ('ask for escalation instead of guessing a complex task',None,None),
         ]
-        task,name,args=random.choice(variants)
-        add(rows,task,name,args)
+        task, name, args = random.choice(variants)
+        add(rows, task, escalate('Escalate complex or uncertain tasks.')) if name is None else add(rows, task, tool(name,args))
 
     random.shuffle(rows)
-    split=max(1,int(len(rows)*0.9))
-    train=rows[:split]; test=rows[split:]
-    (OUT/'train.jsonl').write_text(''.join(json.dumps(x,ensure_ascii=False)+'\n' for x in train),encoding='utf-8')
-    (OUT/'eval.jsonl').write_text(''.join(json.dumps(x,ensure_ascii=False)+'\n' for x in test),encoding='utf-8')
-    (OUT/'manifest.json').write_text(json.dumps({'train_examples':len(train),'eval_examples':len(test),'total':len(rows),'source_evidence_files':len(research_files),'seed':seed},indent=2),encoding='utf-8')
-    print(json.dumps({'total':len(rows),'train':len(train),'eval':len(test)}))
+    split = max(1, int(len(rows) * 0.9))
+    train, test = rows[:split], rows[split:]
+    (OUT/'train.jsonl').write_text(
+        ''.join(json.dumps(x, ensure_ascii=False) + '\n' for x in train),
+        encoding='utf-8'
+    )
+    (OUT/'eval.jsonl').write_text(
+        ''.join(json.dumps(x, ensure_ascii=False) + '\n' for x in test),
+        encoding='utf-8'
+    )
+    (OUT/'manifest.json').write_text(
+        json.dumps({
+            'train_examples':len(train),
+            'eval_examples':len(test),
+            'total':len(rows),
+            'source_evidence_files':len(research_files),
+            'seed':seed,
+            'task_style':'runtime_action_json',
+            'tool_count':len(TOOLS),
+            'includes_escalation_examples':True,
+        }, indent=2),
+        encoding='utf-8',
+    )
+    print(json.dumps({'total':len(rows),'train':len(train),'eval':len(test),'tools':len(TOOLS)}))
 
 if __name__=='__main__':
     main()
