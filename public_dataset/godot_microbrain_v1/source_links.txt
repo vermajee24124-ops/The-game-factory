@@ -1,0 +1,4 @@
+https://github.com/vermajee24124-ops/The-game-factory/blob/main/knowledge/Godot-4.7.2-Exhaustive-Knowledge-Base.md
+https://github.com/vermajee24124-ops/The-game-factory/blob/main/knowledge/agent_curriculum.json
+https://github.com/vermajee24124-ops/The-game-factory/blob/main/knowledge/godot_ai_tool_catalog.json
+https://github.com/vermajee24124-ops/The-game-factory/blob/main/ai_superagent/tasks.jsonl
