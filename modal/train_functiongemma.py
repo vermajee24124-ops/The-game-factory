@@ -3,124 +3,125 @@ from pathlib import Path
 
 import modal
 
-APP_NAME = 'the-game-factory-smollm2-training'
-MODEL_ID = os.getenv('MICROBRAIN_BASE_MODEL', 'HuggingFaceTB/SmolLM2-360M-Instruct')
-TRAIN_FILE = '/workspace/train.jsonl'
-EVAL_FILE = '/workspace/eval.jsonl'
-OUTPUT_DIR = '/workspace/smollm2-godot-microbrain'
+APP_NAME = "the-game-factory-smollm2-training"
+MODEL_ID = os.getenv("MICROBRAIN_BASE_MODEL", "HuggingFaceTB/SmolLM2-135M-Instruct")
+TRAIN_FILE = "/workspace/train.jsonl"
+EVAL_FILE = "/workspace/eval.jsonl"
+OUTPUT_DIR = "/workspace/smollm2-godot-microbrain"
 
 image = (
-    modal.Image.debian_slim(python_version='3.11')
+    modal.Image.debian_slim(python_version="3.11")
     .pip_install(
-        'torch', 'transformers>=5.17,<5.18', 'datasets', 'accelerate',
-        'trl>=0.28', 'sentencepiece', 'protobuf', 'safetensors',
-        'huggingface_hub', 'peft'
+        "torch",
+        "transformers>=5.17,<5.18",
+        "datasets",
+        "accelerate",
+        "trl>=0.28",
+        "sentencepiece",
+        "protobuf",
+        "safetensors",
+        "huggingface_hub",
+        "peft",
     )
 )
 
-# This MUST match the volume populated by GitHub Actions.
-volume = modal.Volume.from_name('game-factory-smollm2', create_if_missing=True)
-hf_secret = modal.Secret.from_local_environ(['HF_TOKEN'])
+volume = modal.Volume.from_name("game-factory-smollm2", create_if_missing=True)
+hf_secret = modal.Secret.from_local_environ(["HF_TOKEN"])
 app = modal.App(APP_NAME)
+
 
 @app.function(
     image=image,
     cpu=8,
     memory=16384,
-    timeout=60*60*4,
-    volumes={'/workspace': volume},
+    timeout=60 * 60 * 4,
+    volumes={"/workspace": volume},
     secrets=[hf_secret],
-    env={'OMP_NUM_THREADS':'8','MKL_NUM_THREADS':'8','TOKENIZERS_PARALLELISM':'false'},
+    env={
+        "OMP_NUM_THREADS": "8",
+        "MKL_NUM_THREADS": "8",
+        "TOKENIZERS_PARALLELISM": "false",
+    },
 )
-def train(train_path: str = '', eval_path: str = '', output_repo: str = ''):
+def train(train_path: str = "", eval_path: str = ""):
     import json
-    import os
+    import torch
     from datasets import load_dataset
-    from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import LoraConfig
+    from transformers import AutoModelForCausalLM, AutoTokenizer
     from trl import SFTConfig, SFTTrainer
 
-    # Force the container to see the newest snapshot uploaded by the workflow.
     volume.reload()
 
     train_file = train_path or TRAIN_FILE
     eval_file = eval_path or EVAL_FILE
-    for required in (train_file, eval_file):
-        if not Path(required).exists():
-            raise FileNotFoundError(
-                f'Missing training file {required}. '
-                'GitHub Actions must upload it to the game-factory-smollm2 Modal Volume first.'
-            )
 
-    processor = AutoTokenizer.from_pretrained(MODEL_ID)
-    if processor.pad_token is None:
-        processor.pad_token = processor.eos_token
+    if not Path(train_file).exists() or not Path(eval_file).exists():
+        raise FileNotFoundError("Training data was not uploaded to the game-factory-smollm2 Modal Volume.")
 
-    model = AutoModelForCausalLM.from_pretrained(
-        MODEL_ID,
-        dtype='auto',
-        attn_implementation='eager',
-    )
+    print(f"Model: {MODEL_ID}")
+    print(f"CUDA available: {torch.cuda.is_available()}")
 
-    import torch
-    print(f'CUDA available: {torch.cuda.is_available()}')
-    if torch.cuda.is_available():
-        print(f'GPU: {torch.cuda.get_device_name(0)}')
-        print(f'GPU memory: {torch.cuda.get_device_properties(0).total_memory / (1024**3):.2f} GiB')
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
 
-    data = load_dataset('json', data_files={'train': train_file, 'test': eval_file})
+    model = AutoModelForCausalLM.from_pretrained(MODEL_ID)
+
+    data = load_dataset("json", data_files={"train": train_file, "test": eval_file})
 
     args = SFTConfig(
         output_dir=OUTPUT_DIR,
-        max_length=512,
-        packing=False,
-        num_train_epochs=float(os.getenv('MICROBRAIN_EPOCHS', '1')),
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
+        dataset_text_field="text",
+        max_length=384,
+        packing=True,
+        num_train_epochs=float(os.getenv("MICROBRAIN_EPOCHS", "1")),
+        per_device_train_batch_size=16,
+        per_device_eval_batch_size=16,
         gradient_accumulation_steps=1,
-        learning_rate=float(os.getenv('MICROBRAIN_LR', '0.0001')),
-        logging_steps=10,
-        eval_strategy='epoch',
-        save_strategy='epoch',
-        save_total_limit=2,
+        learning_rate=float(os.getenv("MICROBRAIN_LR", "0.00015")),
+        logging_steps=20,
+        eval_strategy="epoch",
+        save_strategy="epoch",
+        save_total_limit=1,
         fp16=False,
         bf16=False,
         gradient_checkpointing=False,
-        report_to='none',
-        dataloader_num_workers=2,
+        report_to="none",
+        dataloader_num_workers=4,
         dataloader_pin_memory=False,
     )
 
     trainer = SFTTrainer(
         model=model,
         args=args,
-        train_dataset=data['train'],
-        eval_dataset=data['test'],
-        processing_class=processor,
+        train_dataset=data["train"],
+        eval_dataset=data["test"],
+        processing_class=tokenizer,
         peft_config=LoraConfig(
-            r=16,
-            lora_alpha=32,
+            r=8,
+            lora_alpha=16,
             lora_dropout=0.05,
-            target_modules='all-linear',
-            task_type='CAUSAL_LM',
+            target_modules="all-linear",
+            task_type="CAUSAL_LM",
         ),
     )
 
     trainer.train()
     trainer.save_model(OUTPUT_DIR)
-    processor.save_pretrained(OUTPUT_DIR)
+    tokenizer.save_pretrained(OUTPUT_DIR)
 
     metrics = trainer.evaluate()
-    Path(OUTPUT_DIR, 'training_metrics.json').write_text(
+    Path(OUTPUT_DIR, "training_metrics.json").write_text(
         json.dumps(metrics, indent=2),
-        encoding='utf-8',
+        encoding="utf-8",
     )
-    Path(OUTPUT_DIR, 'base_model.txt').write_text(MODEL_ID, encoding='utf-8')
+    Path(OUTPUT_DIR, "base_model.txt").write_text(MODEL_ID, encoding="utf-8")
+    Path(OUTPUT_DIR, "TRAINING_COMPLETE").write_text("ok\n", encoding="utf-8")
     volume.commit()
 
-    if output_repo:
-        trainer.push_to_hub(output_repo)
     return metrics
+
 
 @app.local_entrypoint()
 def main():
