@@ -32,8 +32,9 @@ app = modal.App(APP_NAME)
 
 @app.function(
     image=image,
-    cpu=8,
+    cpu=4,
     memory=16384,
+    gpu="T4",
     timeout=60 * 60 * 4,
     volumes={"/workspace": volume},
     secrets=[hf_secret],
@@ -61,12 +62,14 @@ def train(train_path: str = "", eval_path: str = ""):
 
     print(f"Model: {MODEL_ID}")
     print(f"CUDA available: {torch.cuda.is_available()}")
+    if not torch.cuda.is_available():
+        raise RuntimeError("T4 GPU was requested but CUDA is unavailable")
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    model = AutoModelForCausalLM.from_pretrained(MODEL_ID)
+    model = AutoModelForCausalLM.from_pretrained(MODEL_ID, dtype=torch.float16)
 
     data = load_dataset("json", data_files={"train": train_file, "test": eval_file})
 
@@ -84,7 +87,7 @@ def train(train_path: str = "", eval_path: str = ""):
         eval_strategy="epoch",
         save_strategy="epoch",
         save_total_limit=1,
-        fp16=False,
+        fp16=True,
         bf16=False,
         gradient_checkpointing=False,
         report_to="none",
