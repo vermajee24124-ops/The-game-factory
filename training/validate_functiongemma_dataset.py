@@ -33,7 +33,13 @@ def main():
             marker=text.split('ASSISTANT:',1)[1].split('\n',1)[0].strip()
             try: action=json.loads(marker)
             except json.JSONDecodeError as e: fail(f'{p}:{line_no}: invalid action JSON: {e}')
-            if action.get('action')!='tool_call' or not isinstance(action.get('tool'),str) or not isinstance(action.get('args'),dict):
+            if action.get('action') == 'tool_call':
+                if not isinstance(action.get('tool'),str) or not isinstance(action.get('args'),dict):
+                    fail(f'{p}:{line_no}: invalid tool-call schema')
+            elif action.get('action') == 'final':
+                if action.get('result') != 'escalate' or not isinstance(action.get('evidence'),list):
+                    fail(f'{p}:{line_no}: invalid escalation schema')
+            else:
                 fail(f'{p}:{line_no}: invalid action schema')
             valid+=1
     if total<100: fail('dataset unexpectedly small')
