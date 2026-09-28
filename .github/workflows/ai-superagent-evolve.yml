@@ -131,7 +131,7 @@ jobs:
         run: |
           git config user.name "SuperAgent-Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add build/ai_superagent
+          git add -f build/ai_superagent
           if git diff --cached --quiet; then
             echo 'No evolution report changes.'
             exit 0
