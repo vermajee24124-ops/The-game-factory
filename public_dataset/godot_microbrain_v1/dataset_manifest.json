@@ -1,0 +1,34 @@
+{
+  "dataset_name": "Godot 4.7.2 Micro-Brain Full Training Dataset",
+  "version": "1.0",
+  "total_examples": 6000,
+  "shards": 12,
+  "examples_per_shard": 500,
+  "target_model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+  "training_mode": "LoRA SFT",
+  "intended_use": "Use ALL 6000 examples for the final fit.",
+  "engine": "Godot 4.7.2",
+  "class_count": 810,
+  "inventory": {
+    "classes": 810,
+    "methods": 9896,
+    "members": 5534,
+    "signals": 451,
+    "constants": 5229,
+    "modules": 57,
+    "project_settings": 230,
+    "editor_settings": 171,
+    "cli_options": 104,
+    "importers": 19,
+    "gdscript_annotations": 36,
+    "export_plugins": 8
+  },
+  "tool_count": 47,
+  "source_files": [
+    "knowledge/Godot-4.7.2-Exhaustive-Knowledge-Base.md",
+    "knowledge/agent_curriculum.json",
+    "knowledge/godot_ai_tool_catalog.json",
+    "ai_superagent/tasks.jsonl"
+  ],
+  "note": "All 810 class_reference entries are represented. The curriculum file records method counts but not all 9,896 method names individually."
+}
