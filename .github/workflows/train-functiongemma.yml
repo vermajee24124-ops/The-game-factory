@@ -6,7 +6,7 @@ on:
       target_examples:
         description: 'Maximum distilled micro-task examples'
         required: false
-        default: '12000'
+        default: '6000'
   push:
     branches: [main]
     paths:
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      TARGET_EXAMPLES: ${{ inputs.target_examples || '12000' }}
+      TARGET_EXAMPLES: ${{ inputs.target_examples || '6000' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -50,7 +50,7 @@ jobs:
       MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      MICROBRAIN_BASE_MODEL: HuggingFaceTB/SmolLM2-360M-Instruct
+      MICROBRAIN_BASE_MODEL: HuggingFaceTB/SmolLM2-135M-Instruct
       MICROBRAIN_EPOCHS: '1'
       MICROBRAIN_LR: '0.0001'
     steps:
