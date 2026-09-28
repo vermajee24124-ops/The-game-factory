@@ -1,0 +1,12 @@
+Use this public dataset as the complete final training corpus for the Godot 4.7.2 micro-brain.
+
+DATASET: https://github.com/vermajee24124-ops/The-game-factory/tree/main/public_dataset/godot_microbrain_v1
+Download all 12 dataset shards and concatenate them in numeric order.
+CRITICAL: Train on ALL 6000 examples. Do not discard 600 examples. Do not perform the old 90/10 split for the final fit.
+
+MODEL: HuggingFaceTB/SmolLM2-135M-Instruct
+TRAINING: LoRA supervised fine-tuning
+GPU: NVIDIA Tesla T4 or another CUDA GPU
+VERIFY: torch.cuda.is_available() must be True before training.
+
+The micro-brain is only a local action-selection layer. Complex architecture, long code, multimodal/video reasoning, and uncertain work must escalate to the external LLM.
