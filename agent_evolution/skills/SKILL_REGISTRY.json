@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "engine": "Godot 4.7.2",
+  "status": "post_training_skill_layer",
+  "skills": [
+    {
+      "id": "godot_asset_store",
+      "file": "agent_evolution/skills/godot_asset_store.md",
+      "capabilities": ["search", "inspect", "compatibility", "license", "install", "verify", "remove", "sandbox", "asset_records"]
+    },
+    {
+      "id": "multimodal_vision",
+      "file": "agent_evolution/skills/multimodal_vision.md",
+      "capabilities": ["editor_screenshot", "game_screenshot", "asset_preview", "visual_qa", "before_after", "evidence_separation"]
+    },
+    {
+      "id": "video_audio_understanding",
+      "file": "agent_evolution/skills/video_understanding.md",
+      "capabilities": ["video_visual_analysis", "audio_analysis", "timestamped_evidence", "technical_extraction", "skill_extraction", "verification"]
+    }
+  ],
+  "execution_policy": {
+    "use_live_godot_tools": true,
+    "verify_before_write": true,
+    "verify_after_write": true,
+    "escalate_uncertain_tasks": true,
+    "do_not_invent_godot_api": true
+  }
+}
