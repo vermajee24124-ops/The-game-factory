@@ -1,0 +1,11 @@
+{
+  "version":"1.0",
+  "skills":[
+    {"name":"Godot Asset Library and Asset Store lifecycle","domain":"asset_store","skill":"DISCOVER -> INSPECT -> LICENSE -> COMPATIBILITY -> DEPENDENCIES -> SANDBOX -> INSTALL -> IMPORT -> ENABLE -> TEST -> VISUAL_QA -> RUNTIME_QA -> EXPORT_QA -> RECORD -> PROMOTE","confidence":"high","verification":"Use Godot 4.7 documentation, live store metadata, source repository, package inspection and runtime smoke tests."},
+    {"name":"Asset package safety","domain":"asset_store","skill":"Inspect archive structure, addons/plugin.cfg, project files, scripts, native binaries, licenses and dependencies before production installation.","confidence":"high","verification":"Sandbox installation followed by logs, dependency checks and rollback test."},
+    {"name":"Asset compatibility","domain":"asset_store","skill":"Check Godot version, API compatibility, dependencies, renderer assumptions, native binaries and platform constraints before integration.","confidence":"high","verification":"Open/import/run/export smoke tests on target Godot version."},
+    {"name":"Visual evidence","domain":"multimodal","skill":"Separate OBSERVED, INFERRED and UNKNOWN; use screenshots as evidence and follow visual observations with live Godot property/node inspection.","confidence":"high","verification":"Before/after screenshot plus live node/property verification."},
+    {"name":"Video workflow extraction","domain":"video","skill":"Use video and audio evidence to reconstruct Godot workflows, timestamps, tool actions, expected results, pitfalls and verification procedures.","confidence":"high","verification":"Cross-check important claims against Godot documentation or live engine behavior."},
+    {"name":"Microbrain execution boundary","domain":"runtime","skill":"Use the local micro-brain for small validated tool actions; escalate complex, multimodal or uncertain tasks to the external reasoning model.","confidence":"high","verification":"JSON validation, tool catalog validation, escalation tests and runtime smoke tests."}
+  ]
+}
