@@ -1,104 +1,169 @@
-# Godot Asset Store / Asset Library Master Skill
+# Godot Asset Library / Asset Store Master Skill
 
-Target: Godot 4.7.2.
+Target engine: Godot 4.7.2.
 
-The agent must treat the Asset Store and legacy Asset Library as a first-class development capability.
+This skill covers the complete lifecycle of the legacy Godot Asset Library and the newer Godot Asset Store. The catalog is dynamic external data, so the agent must inspect live metadata and source rather than rely on stale memory.
 
-## Coverage
+## 0. Terminology
+Godot 4.7 uses the newer Asset Store. The older Asset Library remains online. Distinguish:
+- legacy Asset Library
+- current Asset Store
+- standalone project/template
+- addon/resource for an existing project
 
-Learn to search, inspect, compare, validate, install, enable, test, update, remove, and document Godot assets.
+Never assume an old Asset Library entry was automatically migrated.
 
-For every asset inspect:
-- name and author
-- description and tags
+## 1. Discovery
+Search by exact name, feature, synonym, category, tag, author/publisher, Godot version, asset type, and technical domain.
+
+Domains include 2D, 3D, rendering, materials, shaders, particles, animation, characters, terrain, navigation, audio, UI, dialogue, networking, multiplayer, save systems, debugging, profiling, editor tooling, import/export, XR, localization, procedural generation, and workflow automation.
+
+Search iteratively:
+exact query -> synonyms -> domain/tag -> compatibility -> candidate inspection -> evidence-based selection.
+
+Do not assume search-result ordering means quality.
+
+## 2. Asset inspection
+Collect when available:
+- name
+- author/publisher
+- description
+- tags
+- asset type
 - supported Godot version
-- exact asset version and changelog
-- license and attribution
-- source repository when available
+- asset version
+- changelog
+- source repository
+- source branch/release
+- issues tracker
+- license
+- attribution requirements
 - dependencies
+- external libraries/services
 - preview images/video
-- whether it is a template/standalone project or an addon/resource for an existing project
+- documentation
+- examples/demos
+- installation instructions
+- update history
+- last update date
+- package/download information
 
-## Safe workflow
+Unknown values remain UNKNOWN.
 
-1. Understand the requested game feature.
-2. Search exact feature terms and useful tags.
-3. Inspect several relevant candidates.
-4. Check Godot 4.7.2 compatibility.
-5. Check license and dependencies.
-6. Inspect changelog and preview media.
-7. Snapshot the project before installation.
-8. Install in a sandbox when risk or complexity is non-trivial.
-9. Let Godot import the files.
-10. Enable the plugin when applicable.
-11. Check logs and dependencies.
-12. Run a minimal smoke test.
-13. Test the asset in the target scene.
-14. Record the exact version used.
-15. Promote it to production only after verification.
+## 3. Compatibility
+Check engine version, GDScript/API compatibility, renderer assumptions, GDExtension/native binaries, architecture/platform restrictions, imports, and external dependencies.
 
-## Legacy Asset Library
+For Godot 4.7.2, prefer explicitly compatible assets or verify source against the live engine.
 
-Godot 4.7 uses the newer Asset Store. The older Asset Library remains online, and older assets were not automatically migrated. The agent must distinguish the two.
+Uncertain compatibility:
+SANDBOX -> TEST -> VERIFY -> PROMOTE or REJECT.
 
-## Verification
+## 4. License
+Inspect license name, license file, copyright holder, attribution, commercial-use terms, redistribution/modification terms, and bundled third-party licenses.
 
-An asset is not considered integrated just because it downloaded.
+Never infer a license from a repository name or preview.
+
+Keep an asset decision record.
+
+## 5. Dependency graph
+Build:
+asset -> addon/plugin -> dependency -> version -> native binary/GDExtension -> external service.
+
+Detect missing/incompatible/circular dependencies, duplicate plugins, conflicting autoloads, input actions, project settings, classes, namespaces, and native binaries.
+
+## 6. Package inspection
+Before installation inspect ZIP/archive structure, addons/, plugin.cfg, project files, scripts, native/GDExtension files, README/license, imported resources, and unexpected executable/binary content.
+
+Never blindly install an unknown addon into production.
+
+## 7. Template vs addon
+Standalone templates belong in a project-level sandbox.
+Addons/resources are integrated into an existing project.
+For editor plugins, identify plugin.cfg under addons/.
+Do not enable a normal runtime script merely because its repository calls it a plugin.
+
+## 8. Safe installation
+Record current project state -> create sandbox/isolated branch -> download/import -> inspect -> install required files -> import -> scan filesystem -> enable plugin when applicable -> inspect logs -> resolve dependencies -> smoke test -> test requested feature -> compare before/after -> record exact version -> promote.
+
+## 9. Plugin lifecycle
+Understand install, enable, disable, reload, update, rollback, remove, orphan cleanup, plugin.cfg validation, and editor plugin state verification.
+
+## 10. Resource lifecycle
+For non-plugin assets: import -> inspect -> instantiate -> configure import settings -> use -> save -> test -> update/remove.
+
+Respect Godot's import pipeline. Do not depend on hidden .godot/imported files in exported-game logic.
+
+## 11. Visual and video evidence
+Preview media proves appearance or demonstrated behavior, not compatibility.
+Use the multimodal skills to inspect appearance, materials, animation, UI, artifacts, and demonstrated workflows.
+
+## 12. Comparison
+Use factual fields:
+compatibility, feature coverage, license, dependencies, maintenance, documentation, platform support, performance evidence, integration complexity, verification status.
+
+Do not use a vague overall score.
+
+## 13. Verification
+An asset is not integrated merely because it downloaded.
 
 Verify:
-- intended files exist under res://
-- plugin metadata is valid when applicable
-- plugin loads without errors
-- dependencies resolve
-- requested nodes/resources/scripts can be instantiated
-- main scene opens
-- game runs
+- expected files under res://
+- plugin metadata
+- plugin load
+- dependencies
+- expected classes/nodes/resources
+- scenes open
 - requested feature works
-- no unrelated files or nodes changed
-- license/attribution record exists
+- game runs
+- no unexpected errors
+- no unrelated project changes
+- export test where relevant
 
-## Security and quality
+## 14. Runtime QA
+Run the main scene, instantiate the asset, exercise its primary feature, inspect logs, capture a screenshot, compare expected vs actual result, run target-platform smoke tests, and record performance observations when relevant.
 
-Never silently install an unknown addon into a production project.
+## 15. Updates
+Record old version/source revision -> inspect changelog -> check breaking/dependency changes -> create rollback point -> update -> import -> smoke/regression tests -> export test.
 
-If compatibility, license, dependency, or behavior is uncertain, sandbox it or escalate.
+## 16. Removal
+Identify installed files, plugin registration, autoloads, project settings, input actions, script/scene/resource references, and shared dependencies before removal.
 
-Never treat preview media as proof of compatibility.
+Do not delete shared dependencies used elsewhere.
 
-Never copy proprietary source/assets beyond their license.
-
-## Tool mapping
-
-Prefer live Godot AI tools:
-filesystem_manage, project_manage, project_run, editor_manage, editor_state,
-scene_open, scene_manage, scene_save, node_find, node_manage,
-resource_manage, logs_read, test_run, test_manage.
-
-## Asset Decision Record
-
+## 17. Asset Decision Record
 Store:
 {
-  "name": "...",
-  "source": "...",
-  "asset_version": "...",
-  "godot_version": "...",
-  "license": "...",
-  "dependencies": [],
-  "install_path": "res://...",
-  "tested": true,
-  "smoke_test": "...",
-  "notes": "..."
+  "name":"...",
+  "source":"...",
+  "author":"...",
+  "asset_type":"addon|template|resource|project|unknown",
+  "asset_version":"...",
+  "source_revision":"...",
+  "godot_min":"...",
+  "godot_max":"...",
+  "tested_engine":"4.7.2",
+  "license":"...",
+  "attribution":"...",
+  "dependencies":[],
+  "install_path":"res://...",
+  "sandbox_test":true,
+  "smoke_test":"...",
+  "runtime_test":"...",
+  "export_test":"...",
+  "status":"verified|needs_review|rejected|unknown",
+  "evidence":[],
+  "notes":"..."
 }
 
-## Benchmarks
+## 18. Required benchmark classes
+The agent must be able to:
+find 3D characters, terrain, animation, editor plugins, UI/audio/navigation/procedural-generation assets; inspect license/changelog/version; identify template vs addon; inspect dependencies/package contents; install and enable in sandbox; smoke test; detect failures; rollback; update; remove; verify no unrelated damage; create decision records; and inspect preview media without treating it as compatibility proof.
 
-Pass tests for:
-- finding a 3D character asset
-- finding a terrain/animation/tool addon
-- inspecting license and changelog
-- identifying template versus addon
-- checking Godot 4.7.2 compatibility
-- installing and enabling a plugin in a sandbox
-- verifying and removing the plugin
-- detecting a dependency problem
-- creating an asset decision record
+## 19. Core rule
+DISCOVER -> INSPECT -> LICENSE -> COMPATIBILITY -> DEPENDENCIES -> SANDBOX -> INSTALL -> IMPORT -> ENABLE -> TEST -> VISUAL_QA -> RUNTIME_QA -> EXPORT_QA -> RECORD -> PROMOTE.
+
+For uncertainty:
+UNKNOWN + evidence request + escalation.
+
+## 20. Source policy
+Use official Godot 4.7 documentation and the actual asset repository/source as primary evidence. Query the live store for dynamic information.
