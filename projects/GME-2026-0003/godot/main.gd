@@ -78,7 +78,10 @@ func _ready()->void:
     HapticsSystem.enabled=bool(SaveSystem.data["settings"]["haptics_enabled"])
     _setup_world()
     _setup_ui()
-    _show_main_menu()
+    if not bool(SaveSystem.data["profile"].get("onboarding_completed", false)):
+        _show_onboarding()
+    else:
+        _show_main_menu()
 
 func _setup_world()->void:
     world_root=Node3D.new()
@@ -148,6 +151,7 @@ func _setup_ui()->void:
     ui_root=Control.new()
     ui_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     ui_layer.add_child(ui_root)
+    _build_onboarding()
     _build_main_menu()
     _build_level_select()
     _build_pre_race()
@@ -176,6 +180,25 @@ func _refresh_currency_header()->void:
 
 func _show_main_menu()->void:
     _show_only("main_menu")
+
+func _show_onboarding()->void:
+    _show_only("onboarding")
+    var p:Control=screens["onboarding"].get_node("Panel")
+    var bonus:=_button(p,"START ROOKIE RACE",Vector2(480,90),true)
+    bonus.position=Vector2(70,300)
+    bonus.pressed.connect(func():
+        if not bool(SaveSystem.data["profile"].get("onboarding_completed",false)):
+            EconomyService.grant_coins(120,"onboarding_bonus")
+            _start_race(1)
+    )
+
+func _build_onboarding()->void:
+    var c:=_new_screen("onboarding","WELCOME TO TURBO RUSH")
+    var p:Control=c.get_node("Panel")
+    var intro:=_label(p,"Learn the basics in one guided Level 1 race.",28,palette.muted)
+    intro.position=Vector2(70,160)
+    var steps:=_label(p,"STEER  •  AVOID TRAFFIC  •  COLLECT COINS  •  TAP BOOST\nFinish the race to unlock Level 2 and unlock your first upgrade.",24,palette.text)
+    steps.position=Vector2(70,225)
 
 func _build_main_menu()->void:
     var c:=_new_screen("main_menu","TURBO RUSH")
@@ -425,30 +448,41 @@ func _build_garage()->void:
     var cars:=VBoxContainer.new()
     cars.name="Cars"
     cars.position=Vector2(55,130)
-    cars.size=Vector2(500,800)
-    cars.add_theme_constant_override("separation",10)
+    cars.size=Vector2(520,520)
+    cars.add_theme_constant_override("separation",8)
     p.add_child(cars)
-    var up:=VBoxContainer.new()
-    up.name="Upgrades"
-    up.position=Vector2(620,130)
-    up.size=Vector2(1120,800)
-    up.add_theme_constant_override("separation",10)
-    p.add_child(up)
+    var upgrades:=VBoxContainer.new()
+    upgrades.name="Upgrades"
+    upgrades.position=Vector2(610,130)
+    upgrades.size=Vector2(570,520)
+    upgrades.add_theme_constant_override("separation",8)
+    p.add_child(upgrades)
+    var cosmetics:=VBoxContainer.new()
+    cosmetics.name="Cosmetics"
+    cosmetics.position=Vector2(1210,130)
+    cosmetics.size=Vector2(610,730)
+    cosmetics.add_theme_constant_override("separation",8)
+    p.add_child(cosmetics)
 
 func _refresh_garage()->void:
     var cars:VBoxContainer=screens["garage"].get_node("Panel/Cars")
-    var up:VBoxContainer=screens["garage"].get_node("Panel/Upgrades")
+    var upgrades:VBoxContainer=screens["garage"].get_node("Panel/Upgrades")
+    var cosmetics:VBoxContainer=screens["garage"].get_node("Panel/Cosmetics")
     for n in cars.get_children():n.queue_free()
-    for n in up.get_children():n.queue_free()
+    for n in upgrades.get_children():n.queue_free()
+    for n in cosmetics.get_children():n.queue_free()
     var owned:Array=SaveSystem.data["progression"]["cars"]["owned"]
+    _label(cars,"CARS",28,palette.muted)
     for id in GameConfig.CARS.keys():
         var cd:Dictionary=GameConfig.car(str(id))
-        var can_level:=ProgressionService.player_level()>=int(cd.get("level",1))
-        var can_buy:=can_level and EconomyService.coins()>=int(cd.get("cost",0))
-        var b:=_button(cars,"%s • L%d • %d Coins" % [str(cd.get("name","")),int(cd.get("level",1)),int(cd.get("cost",0))],owned.has(id) or can_buy)
-        b.disabled=not (owned.has(id) or can_buy)
+        var owned_now:=owned.has(id)
+        var can_buy:=ProgressionService.can_buy_car(str(id))
+        var title:=str(cd.get("name",""))+" • L"+str(cd.get("level",1))
+        if not owned_now:title+=" • "+str(cd.get("cost",0))+" Coins"
+        var b:=_button(cars,title,Vector2(500,60),owned_now or can_buy)
+        b.disabled=not (owned_now or can_buy)
         b.pressed.connect(func(car_id=str(id)):
-            if owned.has(car_id):
+            if ProgressionService.owns_car(car_id):
                 ProgressionService.select_car(car_id)
                 _show_toast("Equipped")
             elif ProgressionService.buy_car(car_id):
@@ -458,20 +492,50 @@ func _refresh_garage()->void:
             _refresh_garage()
             _refresh_currency_header()
         )
-    _label(up,"GLOBAL UPGRADES",28,palette.muted)
+
+    _label(upgrades,"PERFORMANCE",28,palette.muted)
     for stat in ProgressionService.STAT_KEYS:
         var row:=HBoxContainer.new()
-        row.custom_minimum_size=Vector2(900,62)
-        up.add_child(row)
-        var cur:=int(SaveSystem.data["progression"]["upgrades"].get(stat,0))
-        var lab:=_label(row,"%s • Level %d" % [str(stat).replace("_"," ").capitalize(),cur],21,palette.text)
-        lab.custom_minimum_size=Vector2(560,60)
-        var can:=ProgressionService.can_upgrade(stat)
-        var b:=_button(row,"MAX" if cur>=10 else "UPGRADE • %d" % GameConfig.UPGRADE_COSTS[cur+1],Vector2(300,60),true)
-        b.disabled=cur>=10 or not can
+        row.custom_minimum_size=Vector2(560,58)
+        upgrades.add_child(row)
+        var cur:=ProgressionService.upgrade_level(stat)
+        var label:=_label(row,str(stat).replace("_"," ").capitalize()+" • "+str(cur),19,palette.text)
+        label.custom_minimum_size=Vector2(330,55)
+        var b:=_button(row,"MAX" if cur>=10 else "UP "+str(GameConfig.UPGRADE_COSTS[cur+1]),Vector2(200,52),true)
+        b.disabled=cur>=10 or not ProgressionService.can_upgrade(stat)
         b.pressed.connect(func(s=stat):
             if ProgressionService.upgrade(s):_show_toast("Upgrade applied")
-            else:_show_toast("Check player level and Coins")
+            else:_show_toast("Check level and Coins")
+            _refresh_garage()
+            _refresh_currency_header()
+        )
+
+    _label(cosmetics,"PAINTS + WHEELS",28,palette.muted)
+    for id in GameConfig.PAINTS.keys():
+        var item:Dictionary=GameConfig.paint(str(id))
+        var owned_p:=ProgressionService.has_cosmetic(str(id))
+        var cur_p:=str(SaveSystem.data["cosmetics"]["equipped"].get("paint","paint_red"))==str(id)
+        var ptxt:=str(item.get("name",""))+" • L"+str(item.get("level",1))
+        if not owned_p:ptxt+=" • "+str(item.get("cost",0))+" "+str(item.get("currency","coins")).capitalize()
+        var b:=_button(cosmetics,("✓ " if cur_p else "")+ptxt,Vector2(590,54),owned_p or ProgressionService.player_level()>=int(item.get("level",1)))
+        b.disabled=not (owned_p or ProgressionService.player_level()>=int(item.get("level",1)))
+        b.pressed.connect(func(paint_id=str(id)):
+            if ProgressionService.buy_paint(paint_id):_show_toast("Paint equipped")
+            else:_show_toast("Level or currency required")
+            _refresh_garage()
+            _refresh_currency_header()
+        )
+    for id in GameConfig.WHEELS.keys():
+        var item:Dictionary=GameConfig.wheel(str(id))
+        var owned_w:=ProgressionService.has_cosmetic(str(id))
+        var cur_w:=str(SaveSystem.data["cosmetics"]["equipped"].get("wheel","wheel_stock"))==str(id)
+        var wtxt:=str(item.get("name",""))+" • L"+str(item.get("level",1))
+        if not owned_w:wtxt+=" • "+str(item.get("cost",0))+" "+("Diamonds" if bool(item.get("premium",false)) else "Coins")
+        var b:=_button(cosmetics,("✓ " if cur_w else "")+wtxt,Vector2(590,54),owned_w or ProgressionService.player_level()>=int(item.get("level",1)))
+        b.disabled=not (owned_w or ProgressionService.player_level()>=int(item.get("level",1)))
+        b.pressed.connect(func(wheel_id=str(id)):
+            if ProgressionService.buy_wheel(wheel_id):_show_toast("Wheels equipped")
+            else:_show_toast("Level or currency required")
             _refresh_garage()
             _refresh_currency_header()
         )
@@ -1040,6 +1104,9 @@ func _finish_race(completed:bool)->void:
     var rewards:Dictionary=RewardService.resolve_result(result)
     rewards["stars"]=stars
     ProgressionService.handle_race_result(result)
+    if bool(result.completed) and not bool(SaveSystem.data["profile"].get("onboarding_completed",false)):
+        SaveSystem.data["profile"]["onboarding_completed"]=true
+        SaveSystem.save_now()
     _show_results(result,rewards)
 
 func _show_results(result:Dictionary,rewards:Dictionary)->void:
