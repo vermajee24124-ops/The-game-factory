@@ -1,0 +1,154 @@
+{
+  "generated_at": "20260930T124527Z",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "skills": [
+    {
+      "name": "godot4_character_body_controller",
+      "domain": "Physics & Gameplay",
+      "skill": "Implement kinematic player controllers using CharacterBody3D and CharacterBody2D with Godot 4 move_and_slide physics semantics.",
+      "tools": [
+        "godot_editor_cli",
+        "gdscript_compiler",
+        "scene_instantiator"
+      ],
+      "procedure": [
+        "Create a scene root inheriting from CharacterBody3D or CharacterBody2D with a CollisionShape child.",
+        "In _physics_process(delta), query input vectors using Input.get_vector() for normalized directional movement.",
+        "Apply project gravity using ProjectSettings.get_setting('physics/3d/default_gravity') scaled by delta when not is_on_floor().",
+        "Update velocity property directly (e.g., velocity.x, velocity.z for 3D; velocity.x, velocity.y for 2D) using lerp or move_toward for acceleration and friction.",
+        "Invoke move_and_slide() with no arguments (uses internal velocity vector in Godot 4).",
+        "Handle floor and ceiling contacts using is_on_floor() and is_on_wall() post-movement."
+      ],
+      "verification": [
+        "Execute headless headless runner with `--headless --run-tests` to verify collision resolution.",
+        "Confirm velocity decays to zero when input is released without drifting.",
+        "Verify jumping is only enabled when is_on_floor() evaluates to true.",
+        "Inspect get_last_slide_collision() to confirm surface normal detection on slopes."
+      ],
+      "pitfalls": [
+        "Passing velocity to move_and_slide(velocity) like in Godot 3; in Godot 4, move_and_slide takes no arguments and mutates self.velocity.",
+        "Multiplying velocity by delta before calling move_and_slide(); Godot 4 automatically handles delta time internally for slide calculations.",
+        "Relying on direct global_transform modifications instead of velocity for moving platforms or dynamic collision."
+      ],
+      "benchmark_prompt": "Create a CharacterBody3D script in Godot 4.7 that implements smooth WASD ground movement, jumping with gravity falloff, slope snapping, and wall slide detection without multiplying velocity by delta."
+    },
+    {
+      "name": "godot4_animation_blend_tree_system",
+      "domain": "Animation",
+      "skill": "Build and manipulate complex node-based animation hierarchies using AnimationTree, AnimationNodeStateMachine, and AnimationMixer.",
+      "tools": [
+        "godot_editor_cli",
+        "gdscript_compiler",
+        "resource_loader"
+      ],
+      "procedure": [
+        "Attach an AnimationPlayer and AnimationTree to the target entity, assigning the AnimationPlayer node path to tree.anim_player.",
+        "Initialize tree.tree_root with AnimationNodeStateMachine or AnimationNodeBlendTree.",
+        "Configure state transitions via AnimationNodeStateMachineTransition with appropriate advance modes (e.g., ADVANCE_MODE_AUTO with conditions or ADVANCE_MODE_ENABLED).",
+        "Set tree.active = true after all node connections and parameters are configured.",
+        "Retrieve the playback controller using tree.get('parameters/playback') as AnimationNodeStateMachinePlayback.",
+        "Drive directional blends by assigning Vector2 values to 'parameters/BlendSpace2D/blend_position' based on character velocity."
+      ],
+      "verification": [
+        "Assert that tree.is_active() returns true during runtime.",
+        "Call playback.travel('TargetState') and verify current node via playback.get_current_node().",
+        "Verify crossfade blend times by asserting absence of instantaneous skeletal pops in visual test snapshots."
+      ],
+      "pitfalls": [
+        "Setting tree.active = true before assigning the root AnimationNode or anim_player path, which causes silent initialization failures.",
+        "Accessing parameter paths with misspelled strings; always verify exact paths defined in the AnimationTree root graph.",
+        "Modifying bone transforms manually in _process while AnimationTree runs, causing frame conflicts unless SkeletonModifier3D is used."
+      ],
+      "benchmark_prompt": "Write a GDScript helper for an AnimationTree that configures an AnimationNodeStateMachine with 'Idle', 'Run', and 'Jump' states, establishes bi-directional crossfade transitions, and exposes a travel() wrapper."
+    },
+    {
+      "name": "godot4_astargrid2d_tactical_navigation",
+      "domain": "Navigation & AI",
+      "skill": "Implement high-performance 2D grid pathfinding and dynamic obstacle updates using AStarGrid2D.",
+      "tools": [
+        "gdscript_compiler",
+        "profiler",
+        "unit_test_framework"
+      ],
+      "procedure": [
+        "Instantiate AStarGrid2D and define the operational bounds using region (Rect2i).",
+        "Configure cell_size to match game grid tile metrics.",
+        "Set diagonal_mode (e.g., DIAGONAL_MODE_NEVER or DIAGONAL_MODE_AT_LEAST_ONE_WALKABLE) and heuristic type.",
+        "Call update() to build the internal search structure.",
+        "Synchronize obstacles by calling set_point_solid(grid_coords, true) or clear_point_solid(grid_coords).",
+        "Query paths using get_point_path(start_coords, end_coords) for world-space coordinates or get_id_path() for cell indices."
+      ],
+      "verification": [
+        "Assert that paths generated around marked solid points avoid the blocked cells completely.",
+        "Verify path continuity: adjacent waypoints must never exceed cell_size * sqrt(2) distance.",
+        "Bench test path generation query duration under 100 simultaneous agent queries (<2ms on 100x100 grid)."
+      ],
+      "pitfalls": [
+        "Forgetting to call update() after mutating region or cell_size; queries will fail or use stale layouts.",
+        "Passing floating-point world coordinates into set_point_solid() instead of integer Vector2i grid coordinates.",
+        "Misaligning grid offsets: failing to add half cell_size offset when translating grid coordinates back to world center-points."
+      ],
+      "benchmark_prompt": "Implement a 2D grid navigation manager in GDScript using AStarGrid2D on a 64x64 map that supports runtime obstacle toggling, diagonal walk rules, and returns center-aligned Vector2 paths."
+    },
+    {
+      "name": "godot4_compositor_effect_custom_pass",
+      "domain": "Rendering & Shaders",
+      "skill": "Implement custom viewport post-processing and compute shader render passes using Godot 4 CompositorEffect.",
+      "tools": [
+        "godot_editor_cli",
+        "rendering_device_api",
+        "glsl_compiler"
+      ],
+      "procedure": [
+        "Create a custom resource extending CompositorEffect and set access_resolves_color and access_resolves_depth as needed.",
+        "Set effect_callback_type to the appropriate execution stage (e.g., EFFECT_CALLBACK_TYPE_POST_OPAQUE or EFFECT_CALLBACK_TYPE_POST_TRANSPARENT).",
+        "Override _render_callback(effect_callback_type, render_data) to receive Godot render pipeline contexts.",
+        "Extract RenderingDevice from RenderingServer.get_rendering_device().",
+        "Retrieve viewport color/depth buffers using render_data.get_render_scene_buffers().",
+        "Execute compute dispatch or raster blit commands through the RenderingDevice command list.",
+        "Attach the CompositorEffect resource to the Compositor resource on the active World3D or Camera3D."
+      ],
+      "verification": [
+        "Confirm RenderingDevice.draw_command_begin_label() / end_label() tags match cleanly in frame capture debuggers.",
+        "Verify texture format compatibility between the scene buffer and shader pipeline inputs.",
+        "Check that rendering pipeline output contains the modified post-process result without rendering artifacts."
+      ],
+      "pitfalls": [
+        "Accessing RenderSceneBuffers when using non-Vulkan rendering backends (Compatibility renderer does not support custom compute CompositorEffects).",
+        "Failing to synchronize read/write pipeline barriers on scene textures, causing flickering and GPU race conditions.",
+        "Creating RenderingDevice pipelines or allocating uniform sets per-frame inside _render_callback instead of caching them."
+      ],
+      "benchmark_prompt": "Construct a custom CompositorEffect resource in GDScript for Godot 4.7 that binds to the post-opaque pass, retrieves the active render scene buffers, and validates RenderingDevice availability before dispatching work."
+    },
+    {
+      "name": "godot4_polyphonic_sound_system",
+      "domain": "Audio & Systems",
+      "skill": "Build concurrent, zero-alloc sound playback architectures using AudioStreamPolyphonic and AudioStreamPlayer.",
+      "tools": [
+        "audio_server_debugger",
+        "gdscript_compiler",
+        "resource_loader"
+      ],
+      "procedure": [
+        "Instantiate an AudioStreamPlayer and assign an AudioStreamPolyphonic instance to its stream property.",
+        "Set stream.polyphony to the desired concurrent voice limit (e.g., 16 or 32).",
+        "Call play() on the player node to start the polyphonic playback context.",
+        "Obtain the stream playback reference by calling player.get_stream_playback() typed as AudioStreamPlaybackPolyphonic.",
+        "Trigger one-shot sounds by calling playback.play_stream(sample, offset, volume_db, pitch_scale).",
+        "Track returned stream IDs to allow dynamic stopping, volume fading, or pitch adjustments on active voices."
+      ],
+      "verification": [
+        "Trigger 16 concurrent sounds and assert that all voices execute simultaneously without cutting off or raising node count.",
+        "Verify playback.is_stream_playing(voice_id) correctly reports true during playback and false after completion.",
+        "Monitor scene tree node count to ensure zero new nodes are spawned per sound trigger."
+      ],
+      "pitfalls": [
+        "Calling get_stream_playback() before player.play(); the playback instance will be null until playback starts.",
+        "Spawning new AudioStreamPlayer nodes per sound effect, leading to memory allocations and scene tree thrashing.",
+        "Exceeding polyphony limit without voice priority management, resulting in silent dropouts of crucial audio cues."
+      ],
+      "benchmark_prompt": "Develop an AudioPool manager in GDScript using a single AudioStreamPlayer with AudioStreamPolyphonic that exposes play_sfx(stream: AudioStream, pitch_variance: float) and returns voice handles for dynamic control."
+    }
+  ]
+}
