@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "products": [
+    {"id":"diamond_small","type":"consumable","diamonds":80,"reference_price_usd":0.99},
+    {"id":"diamond_medium","type":"consumable","diamonds":400,"reference_price_usd":4.99},
+    {"id":"diamond_large","type":"consumable","diamonds":900,"reference_price_usd":9.99},
+    {"id":"diamond_epic","type":"consumable","diamonds":2000,"reference_price_usd":19.99},
+    {"id":"remove_ads","type":"non_consumable","reference_price_usd":2.99}
+  ],
+  "note": "Reference prices come from the canonical PRD. Final localized storefront prices must come from the target store."
+}
