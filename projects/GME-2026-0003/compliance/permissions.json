@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "project_id": "GME-2026-0003",
+  "core_runtime_permissions": [],
+  "notes": "Native ad, billing, consent and platform SDK integrations may add permissions; re-audit before release."
+}
