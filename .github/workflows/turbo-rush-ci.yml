@@ -6,6 +6,8 @@ on:
     paths:
       - 'projects/GME-2026-0003/**'
       - '.github/workflows/turbo-rush-ci.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
