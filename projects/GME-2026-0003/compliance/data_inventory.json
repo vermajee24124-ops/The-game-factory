@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "project_id": "GME-2026-0003",
+  "data_collected": [],
+  "local_data": [
+    "progression",
+    "currencies",
+    "cosmetics",
+    "settings",
+    "monetization_entitlements",
+    "privacy_consent",
+    "statistics"
+  ],
+  "network_data": [
+    "native_ads_requests",
+    "native_store_purchase_metadata"
+  ],
+  "notes": "Production SDK behavior must be audited again after native ads, billing, analytics or platform consent components are attached."
+}

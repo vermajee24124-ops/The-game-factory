@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "project_id": "GME-2026-0003",
+  "name": "Turbo Rush",
+  "short_description": "A fast, fair, offline-first 3D arcade racing game with short skill-based races.",
+  "platforms": ["android", "ios"],
+  "orientation": "landscape",
+  "core_features": [
+    "finite level-based races",
+    "1 player + 5 AI",
+    "procedural deterministic tracks",
+    "coins, diamonds and boost",
+    "cars, upgrades and cosmetics",
+    "offline-first progression"
+  ]
+}
