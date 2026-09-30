@@ -4,8 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'projects/GME-2026-0003/**'
-      - '.github/workflows/turbo-rush-finalize.yml'
+      - 'projects/GME-2026-0003/state/FINALIZE_NOW'
   workflow_dispatch:
     inputs:
       max_turns:
@@ -134,6 +133,10 @@ jobs:
       - name: Final smoke test
         run: |
           godot --headless             --path projects/GME-2026-0003/godot             --script res://tests/smoke_test.gd             2>&1 | tee /tmp/turbo_smoke_final.log
+
+      - name: Remove trigger file
+        run: |
+          rm -f projects/GME-2026-0003/state/FINALIZE_NOW
 
       - name: Persist verified changes
         run: |
