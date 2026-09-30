@@ -1,0 +1,14 @@
+extends Node
+signal race_started(level:int)
+signal countdown_tick(value:int)
+signal race_finished(result:Dictionary)
+signal position_updated(player_position:int,total:int)
+signal coin_collected(amount:int)
+signal diamond_collected
+signal boost_changed(energy:float,active:bool)
+signal damage_changed(value:float)
+signal wrecked
+signal revive_used
+signal clean_score_changed(value:float)
+signal save_changed
+signal toast_requested(message:String)

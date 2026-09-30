@@ -1,0 +1,50 @@
+schema_version: 1
+project_id: GME-2026-0003
+title: "Turbo Rush"
+genre: "Mobile 3D Arcade Racing"
+platforms: [android, ios]
+engine: "Godot 4.7.2"
+renderer: "mobile"
+orientation: "landscape"
+connectivity: "offline_first"
+player_count: 1
+ai_opponents: 5
+race_mode: "finite level-based"
+target_race_seconds:
+  standard: [120, 170]
+  sprint: [85, 115]
+  endurance: [175, 215]
+  elite: [130, 180]
+progression:
+  next_level_unlock_position_max: 5
+  assist_after_failures: 2
+  car_count: 6
+  upgrade_levels: 10
+economy:
+  currencies: [coins, diamonds]
+  revive_diamonds: 5
+  rank_reward_deterministic: true
+  random_chest: true
+  random_bonus: true
+  star_milestones: [30, 100, 250, 500, 1000]
+procedural:
+  deterministic_by_level: true
+  seed_rule: "64-bit hash(level_number + game_salt)"
+  required_modules: [start_straight, straight, gentle_curve, medium_curve, tight_curve, hairpin, chicane, narrow_gate, jump, boost_lane, traffic_zone, finish_straight]
+save:
+  mode: local_json
+  checksum: sha256
+  backup: true
+  migration: required
+monetization:
+  rewarded_ads: [revive, double_coins, bonus_coins]
+  interstitial: "results_to_menu only; max once per 5 minutes; first 10 minutes disabled"
+  banner_locations: [garage, shop, settings, cosmetics]
+  iap_products: [diamond_small, diamond_medium, diamond_large, diamond_epic, remove_ads]
+  pay_to_win: false
+release:
+  requires_build: true
+  requires_tests: true
+  requires_security_scan: true
+  requires_compliance_audit: true
+  no_secrets_in_client: true
