@@ -1,0 +1,156 @@
+name: Turbo Rush Finalize with CodeCraft
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_turns:
+        description: "Maximum Claude Code agent turns per pass"
+        required: false
+        default: "30"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: turbo-rush-finalize
+  cancel-in-progress: false
+
+env:
+  ANTHROPIC_BASE_URL: https://www.codecraftapi.com/v1
+  ANTHROPIC_AUTH_TOKEN: ${{ secrets.CODECRAFT_API_KEY }}
+  ANTHROPIC_MODEL: claude-opus-5-5
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify CodeCraft model availability
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ANTHROPIC_AUTH_TOKEN}" || {
+            echo "CODECRAFT_API_KEY GitHub secret is missing."
+            exit 2
+          }
+          curl -fsS "${ANTHROPIC_BASE_URL}/models"             -H "Authorization: Bearer ${ANTHROPIC_AUTH_TOKEN}"             -o /tmp/models.json
+          python - <<'PY'
+          import json
+          data=json.load(open("/tmp/models.json",encoding="utf-8"))
+          ids={str(x.get("id","")) for x in data.get("data",[])}
+          wanted="claude-opus-5-5"
+          if wanted not in ids:
+              raise SystemExit("Required CodeCraft model claude-opus-5-5 is not currently exposed to this key.")
+          print("CodeCraft model verified:", wanted)
+          PY
+
+      - name: Install Godot 4.7.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y curl unzip
+          mkdir -p /tmp/godot
+          curl -L --fail --retry 3             -o /tmp/godot/godot.zip             https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          unzip -q /tmp/godot/godot.zip -d /tmp/godot
+          chmod +x /tmp/godot/Godot_v4.7.2-stable_linux.x86_64
+          echo "/tmp/godot" >> "${GITHUB_PATH}"
+
+      - name: Baseline import
+        run: |
+          godot --headless             --path projects/GME-2026-0003/godot             --editor --quit             2>&1 | tee /tmp/turbo_import_before.log
+
+      - name: Baseline smoke test
+        run: |
+          godot --headless             --path projects/GME-2026-0003/godot             --script res://tests/smoke_test.gd             2>&1 | tee /tmp/turbo_smoke_before.log
+
+      - name: CodeCraft engineering pass
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt_file: projects/GME-2026-0003/state/FINAL_BUILD_PROMPT.md
+          claude_args: |
+            --model claude-opus-5-5
+            --max-turns ${{ inputs.max_turns }}
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(godot *),Bash(python *),Bash(git diff *),Bash(git status *)"
+
+      - name: Post-agent import and smoke test
+        id: post_agent_test
+        continue-on-error: true
+        run: |
+          set +e
+          godot --headless             --path projects/GME-2026-0003/godot             --editor --quit             2>&1 | tee /tmp/turbo_import_after.log
+          import_rc=${PIPESTATUS[0]}
+          godot --headless             --path projects/GME-2026-0003/godot             --script res://tests/smoke_test.gd             2>&1 | tee /tmp/turbo_smoke_after.log
+          smoke_rc=${PIPESTATUS[0]}
+          python - <<'PY'
+          import json, os
+          json.dump({
+            "import_rc": int(os.environ.get("IMPORT_RC","0")),
+            "smoke_rc": int(os.environ.get("SMOKE_RC","0"))
+          }, open("projects/GME-2026-0003/logs/ci_result.json","w",encoding="utf-8"), indent=2)
+          PY
+          echo "import_rc=${import_rc}" >> "${GITHUB_OUTPUT}"
+          echo "smoke_rc=${smoke_rc}" >> "${GITHUB_OUTPUT}"
+          exit 0
+
+      - name: CodeCraft repair pass
+        if: steps.post_agent_test.outputs.import_rc != '0' || steps.post_agent_test.outputs.smoke_rc != '0'
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            Repair the Turbo Rush project in projects/GME-2026-0003.
+            Read these files first:
+            - projects/GME-2026-0003/state/FINAL_BUILD_PROMPT.md
+            - /tmp/turbo_import_after.log
+            - /tmp/turbo_smoke_after.log
+            - projects/GME-2026-0003/godot/main.gd
+            - projects/GME-2026-0003/godot/tests/smoke_test.gd
+
+            Diagnose the actual failure, edit the minimum correct files, then run the Godot import and smoke test again.
+            Preserve all canonical PRD/TRD rules.
+            Do not add secrets, do not change the game to an online-only design, and do not fabricate successful ads or purchases.
+          claude_args: |
+            --model claude-opus-5-5
+            --max-turns ${{ inputs.max_turns }}
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(godot *),Bash(python *),Bash(git diff *),Bash(git status *)"
+
+      - name: Final import
+        run: |
+          godot --headless             --path projects/GME-2026-0003/godot             --editor --quit             2>&1 | tee /tmp/turbo_import_final.log
+
+      - name: Final smoke test
+        run: |
+          godot --headless             --path projects/GME-2026-0003/godot             --script res://tests/smoke_test.gd             2>&1 | tee /tmp/turbo_smoke_final.log
+
+      - name: Persist verified changes
+        run: |
+          set -euo pipefail
+          git status --short
+          git config user.name "Turbo-Rush-Agent"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add projects/GME-2026-0003
+          if git diff --cached --quiet; then
+            echo "No Turbo Rush changes to commit."
+          else
+            git commit -m "turbo-rush: CodeCraft finalization pass"
+            git push origin HEAD:main
+          fi
+
+      - name: Upload final QA logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: turbo-rush-final-qa
+          path: |
+            /tmp/turbo_import_before.log
+            /tmp/turbo_smoke_before.log
+            /tmp/turbo_import_after.log
+            /tmp/turbo_smoke_after.log
+            /tmp/turbo_import_final.log
+            /tmp/turbo_smoke_final.log
+            projects/GME-2026-0003/logs/
