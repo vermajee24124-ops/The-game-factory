@@ -33,12 +33,14 @@ const WHEELS := {
  "nova_edge":{"name":"Nova Edge","level":100,"cost":150,"premium":true}
 }
 const PAINTS := {
- "paint_red":{"name":"Turbo Red","level":1,"cost":0,"color":"#FF3B30"},
- "paint_blue":{"name":"Electric Blue","level":1,"cost":250,"color":"#23C4FF"},
- "paint_green":{"name":"Rush Green","level":5,"cost":500,"color":"#3BD47A"},
- "paint_violet":{"name":"Violet Pulse","level":25,"cost":2000,"color":"#B77BFF"},
- "paint_chrome":{"name":"Chrome Finish","level":70,"cost":50,"color":"#DDE3F0"},
- "paint_gold":{"name":"Gold Rush","level":120,"cost":120,"color":"#FFC93C"}
+ "paint_red":{"name":"Turbo Red","level":1,"cost":0,"currency":"coins","type":"basic","color":"#FF3B30"},
+ "paint_blue":{"name":"Electric Blue","level":1,"cost":250,"currency":"coins","type":"basic","color":"#23C4FF"},
+ "paint_green":{"name":"Rush Green","level":5,"cost":500,"currency":"coins","type":"basic","color":"#3BD47A"},
+ "paint_violet":{"name":"Violet Pulse","level":25,"cost":2000,"currency":"coins","type":"metallic","color":"#B77BFF"},
+ "paint_matte":{"name":"Matte Shadow","level":40,"cost":3500,"currency":"coins","type":"matte","color":"#2E3442"},
+ "paint_chrome":{"name":"Chrome Finish","level":70,"cost":50,"currency":"diamonds","type":"chrome","color":"#DDE3F0"},
+ "paint_animated":{"name":"Animated Gradient","level":120,"cost":120,"currency":"diamonds","type":"animated","color":"#6BE1FF"},
+ "paint_legendary":{"name":"Legendary Rush","level":150,"cost":300,"currency":"diamonds","type":"legendary","color":"#FFC93C"}
 }
 const ENVIRONMENTS := [
  ["sunrise_city","Sunrise City"],["coastal_highway","Coastal Highway"],["desert_canyon","Desert Canyon"],["mountain_pass","Mountain Pass"],["industrial_night","Industrial Night"],["snowline","Snowline"],["neon_metro","Neon Metro"],["volcanic_rim","Volcanic Rim"]
