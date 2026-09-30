@@ -1,6 +1,11 @@
 name: Turbo Rush Finalize with CodeCraft
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'projects/GME-2026-0003/**'
+      - '.github/workflows/turbo-rush-finalize.yml'
   workflow_dispatch:
     inputs:
       max_turns:
@@ -18,7 +23,7 @@ concurrency:
 
 env:
   ANTHROPIC_BASE_URL: https://www.codecraftapi.com/v1
-  ANTHROPIC_AUTH_TOKEN: ${{ secrets.CODECRAFT_API_KEY }}
+  ANTHROPIC_AUTH_TOKEN: ${{ secrets.CODECRAFT_API_KEY || secrets.CODECTAF_API }}
   ANTHROPIC_MODEL: claude-opus-5-5
 
 jobs:
@@ -74,9 +79,10 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           prompt_file: projects/GME-2026-0003/state/FINAL_BUILD_PROMPT.md
+          anthropic_api_key: ${{ secrets.CODECRAFT_API_KEY || secrets.CODECTAF_API }}
           claude_args: |
             --model claude-opus-5-5
-            --max-turns ${{ inputs.max_turns }}
+            --max-turns ${{ inputs.max_turns || '30' }}
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(godot *),Bash(python *),Bash(git diff *),Bash(git status *)"
 
       - name: Post-agent import and smoke test
@@ -103,6 +109,7 @@ jobs:
         if: steps.post_agent_test.outputs.import_rc != '0' || steps.post_agent_test.outputs.smoke_rc != '0'
         uses: anthropics/claude-code-action@v1
         with:
+          anthropic_api_key: ${{ secrets.CODECRAFT_API_KEY || secrets.CODECTAF_API }}
           prompt: |
             Repair the Turbo Rush project in projects/GME-2026-0003.
             Read these files first:
