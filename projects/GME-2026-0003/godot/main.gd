@@ -935,7 +935,10 @@ func _update_race(delta:float)->void:
     var up:Dictionary=SaveSystem.data["progression"]["upgrades"]
     var top_speed:=float(cd.get("top_speed",140.0))+2.5*int(up.get("top_speed",0))
     var accel:=float(cd.get("accel",8.0))+0.35*int(up.get("acceleration",0))
+    var braking:=float(cd.get("brake",12.0))+0.7*int(up.get("braking",0))
     var boost_power:=float(cd.get("boost_power",25.0))+2.0*int(up.get("boost_power",0))
+    var handling:=float(cd.get("grip",1.0))*(1.0+0.025*int(up.get("handling",0)))
+    var stability:=float(cd.get("stability",1.0))*(1.0+0.02*int(up.get("stability",0)))
     var target_speed:=top_speed/3.6*GameConfig.EXPECTED_SPEED_FACTOR
     if boosting:
         target_speed+=boost_power/3.6
@@ -947,10 +950,11 @@ func _update_race(delta:float)->void:
     if left_held or Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):steer-=1.0
     if right_held or Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):steer+=1.0
     var sensitivity:=float(SaveSystem.data["settings"]["controls"].get("steering_sensitivity",0.5))
-    player_lane+=steer*6.0*(0.55+0.9*sensitivity)*delta
+    player_lane+=steer*6.0*(0.55+0.9*sensitivity)*handling*stability*delta
     var width:=float(_sample_path(player_progress).width)
     player_lane=clampf(player_lane,-width*0.45,width*0.45)
-    if brake_held or Input.is_key_pressed(KEY_S):target_speed*=0.72
+    if brake_held or Input.is_key_pressed(KEY_S):
+        target_speed*=clampf(0.72+(braking-12.0)*0.01,0.55,0.72)
     player_speed=move_toward(player_speed,target_speed,accel*delta)
     player_progress=minf(player_progress+player_speed*delta,float(level_def.track_length_m))
     _place_racer(player_car,player_progress,player_lane)
