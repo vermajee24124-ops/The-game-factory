@@ -171,7 +171,8 @@ func _show_only(id:String)->void:
         screens[k].visible=false
     screens[id].visible=true
     current_screen=id
-    hud.visible=(id=="race") if hud else false
+    if hud:
+        hud.visible = id == "race"
     _refresh_currency_header()
 
 func _refresh_currency_header()->void:
