@@ -662,6 +662,9 @@ func _build_settings()->void:
     )
     var txt:=_label(p,"Landscape locked • Safe area • Offline-first\nUpgrade, car and cosmetic progress is stored locally.",24,palette.muted)
     txt.position=Vector2(70,350)
+    var support:=_label(p,"Support: %s\nPackage: %s" % [ReleaseConfig.SUPPORT_EMAIL,ReleaseConfig.PACKAGE_NAME],20,palette.muted)
+    support.position=Vector2(70,465)
+    support.size=Vector2(900,80)
 
 func _start_race(level:int)->void:
     current_level=maxi(1,level)
