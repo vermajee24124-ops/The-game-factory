@@ -76,7 +76,15 @@ func _ids(prefix: String, first_id: int, last_id: int) -> Array:
         out.append("%s_%02d" % [prefix, n])
     return out
 
-func _bundle(id: String, name: String, reference_price_usd: float, coins: int, diamonds: int, skins: Array, cards: Array, non_consumable := false) -> void:
+func _range_from_array(source:Array, first_index:int, last_index:int) -> Array:
+    var out:Array=[]
+    if source.is_empty(): return out
+    var first:=clampi(first_index-1,0,source.size()-1)
+    var last:=clampi(last_index,first+1,source.size())
+    for i in range(first,last): out.append(source[i])
+    return out
+
+func _bundle(id: String, name: String, reference_price_usd: float, coins: int, diamonds: int, skins: Array, cards: Array, cars: Array=[], wheels: Array=[], non_consumable := false) -> void:
     BUNDLES[id] = {
         "id": id,
         "name": name,
@@ -85,19 +93,23 @@ func _bundle(id: String, name: String, reference_price_usd: float, coins: int, d
         "coins": coins,
         "diamonds": diamonds,
         "skins": skins,
-        "cards": cards
+        "cards": cards,
+        "cars": cars,
+        "wheels": wheels
     }
 
 func _build_bundles() -> void:
-    _bundle("starter_garage", "Starter Garage", 0.99, 1200, 60, _ids("skin",1,2), _ids("card",1,3))
-    _bundle("racer_bundle", "Racer Bundle", 2.99, 5000, 180, _ids("skin",3,6), _ids("card",4,9))
-    _bundle("pro_garage", "Pro Garage", 4.99, 11000, 450, _ids("skin",7,13), _ids("card",10,19))
-    _bundle("skin_vault_01", "Skin Vault I", 3.49, 2500, 120, _ids("skin",14,21), _ids("card",20,21))
-    _bundle("skin_vault_02", "Skin Vault II", 4.99, 4000, 200, _ids("skin",22,31), _ids("card",22,25))
-    _bundle("card_vault_01", "Card Vault I", 5.99, 5000, 220, _ids("skin",32,35), _ids("card",26,35))
-    _bundle("card_vault_02", "Card Vault II", 7.99, 7500, 320, _ids("skin",36,41), _ids("card",36,43))
-    _bundle("mega_rush", "Mega Rush", 9.99, 15000, 700, _ids("skin",42,47), _ids("card",44,46))
-    _bundle("ultimate_garage", "Ultimate Garage", 14.99, 30000, 1500, _ids("skin",48,54), _ids("card",47,48))
+    var car_ids:Array=GameConfig.CARS.keys()
+    var wheel_ids:Array=GameConfig.WHEELS.keys()
+    _bundle("starter_garage", "Starter Garage", 0.99, 1200, 60, _ids("skin",1,2), _ids("card",1,3), _range_from_array(car_ids,2,3), _range_from_array(wheel_ids,2,4))
+    _bundle("racer_bundle", "Racer Bundle", 2.99, 5000, 180, _ids("skin",3,6), _ids("card",4,9), _range_from_array(car_ids,4,7), _range_from_array(wheel_ids,5,9))
+    _bundle("pro_garage", "Pro Garage", 4.99, 11000, 450, _ids("skin",7,13), _ids("card",10,19), _range_from_array(car_ids,8,13), _range_from_array(wheel_ids,10,15))
+    _bundle("skin_vault_01", "Skin Vault I", 3.49, 2500, 120, _ids("skin",14,21), _ids("card",20,21), _range_from_array(car_ids,14,19), _range_from_array(wheel_ids,16,21))
+    _bundle("skin_vault_02", "Skin Vault II", 4.99, 4000, 200, _ids("skin",22,31), _ids("card",22,25), _range_from_array(car_ids,20,26), _range_from_array(wheel_ids,22,29))
+    _bundle("card_vault_01", "Card Vault I", 5.99, 5000, 220, _ids("skin",32,35), _ids("card",26,35), _range_from_array(car_ids,27,34), _range_from_array(wheel_ids,30,37))
+    _bundle("card_vault_02", "Card Vault II", 7.99, 7500, 320, _ids("skin",36,41), _ids("card",36,43), _range_from_array(car_ids,35,42), _range_from_array(wheel_ids,38,45))
+    _bundle("mega_rush", "Mega Rush", 9.99, 15000, 700, _ids("skin",42,47), _ids("card",44,46), _range_from_array(car_ids,43,49), _range_from_array(wheel_ids,46,52))
+    _bundle("ultimate_garage", "Ultimate Garage", 14.99, 30000, 1500, _ids("skin",48,54), _ids("card",47,48), _range_from_array(car_ids,50,54), _range_from_array(wheel_ids,53,60))
     BUNDLES["remove_ads"] = {
         "id": "remove_ads",
         "name": "Remove Ads",
@@ -106,7 +118,9 @@ func _build_bundles() -> void:
         "coins": 0,
         "diamonds": 0,
         "skins": [],
-        "cards": []
+        "cards": [],
+        "cars": [],
+        "wheels": []
     }
 
 func skin(id: String) -> Dictionary:
