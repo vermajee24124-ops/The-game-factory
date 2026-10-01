@@ -2082,6 +2082,8 @@ func _update_ai(delta:float)->void:
         if gap>0.0 and gap<28.0:
             var side:=1.0 if fmod(float(i),2.0)==0.0 else -1.0
             target_lane=clampf(player_lane+side*2.2,-5.5,5.5)
+        elif gap< -8.0:
+            target_lane=clampf(float(ai.lane)*0.75+sin(race_clock*(0.7+0.08*i)+i)*1.1,-5.5,5.5)
         for obstacle in obstacles:
             if bool(obstacle.get("hit",false)):
                 continue
@@ -2090,8 +2092,6 @@ func _update_ai(delta:float)->void:
                 var avoid_dir:=1.0 if float(ai.lane)<=float(obstacle.get("lane",0.0)) else -1.0
                 target_lane=clampf(float(ai.lane)+avoid_dir*3.0,-5.5,5.5)
                 break
-        elif gap< -8.0:
-            target_lane=clampf(float(ai.lane)*0.75+sin(race_clock*(0.7+0.08*i)+i)*1.1,-5.5,5.5)
         if str(ai.role)=="aggressive":
             target_lane=clampf(target_lane+sin(race_clock*0.55+i)*0.6,-5.5,5.5)
         elif str(ai.role)=="front":
