@@ -77,7 +77,7 @@ func _extend_cars() -> void:
         var av:float = float([0.05,0.07,0.06,0.05,0.04,0.06,0.05,0.025][base % 8])
         var an:String = ["Launch Burst","Nitro Saver","Impact Guard","Coin Rush","Apex Grip","Turbo Core","Stability Pro","Velocity Core"][base % 8]
         CARS[ids[i]] = {
-            "name": str(["Street King","Turbo Viper","Canyon Falcon","Circuit Phantom","Hyper Nova","Volt Striker","Apex Runner","Nitro Falcon","Road Phantom","Blaze GT","Iron Comet","Storm Racer","Neon Sprint","Desert X","Coastal GT","Midnight RS","Thunder Bolt","Silver Arrow","Crimson Apex","Blue Orbit","Green Fury","Violet XR","Solar GT","Arctic RS","Carbon V","Shadow Racer","Rally Nova","Drift King","Pulse GT","Meteor RS","Night Falcon","Ocean Fury","Firestorm GT","Glacier X","Vertex Pro","Quantum GT","Aurora Racer","Titan RS","Velocity XR","Phantom X","Zenith GT","Inferno RS","Cyclone Pro","Eclipse GT","Prism Racer","Hyperion RS","Galaxy GT","Nova Striker","Legend RS","Apex Ultra","Finale XR"][n-1]),
+            "name": str(["Street King","Turbo Viper","Canyon Falcon","Circuit Phantom","Hyper Nova","Volt Striker","Apex Runner","Nitro Falcon","Road Phantom","Blaze GT","Iron Comet","Storm Racer","Neon Sprint","Desert X","Coastal GT","Midnight RS","Thunder Bolt","Silver Arrow","Crimson Apex","Blue Orbit","Green Fury","Violet XR","Solar GT","Arctic RS","Carbon V","Shadow Racer","Rally Nova","Drift King","Pulse GT","Meteor RS","Night Falcon","Ocean Fury","Firestorm GT","Glacier X","Vertex Pro","Quantum GT","Aurora Racer","Titan RS","Velocity XR","Phantom X","Zenith GT","Inferno RS","Cyclone Pro","Eclipse GT","Prism Racer","Hyperion RS","Galaxy GT","Nova Striker","Legend RS","Apex Ultra","Finale XR","Titan Racer","Quantum Rush","World GT"][n-1]),
             "level": level,
             "cost": coins,
             "cost_coins": coins,
@@ -95,7 +95,7 @@ func _extend_cars() -> void:
         }
 
 func _extend_wheels() -> void:
-    var ids := ["velocity_mesh","apex_split","rally_grip","circuit_blade","drift_halo","road_forge","storm_alloy","pulse_rim","quantum_ring","titan_mesh","inferno_rim","glacier_edge","aurora_wheel","phantom_disk","vortex_wheel","solar_ring","lunar_alloy","cyber_mesh","blaze_rim","ocean_edge","hyper_ring","carbon_halo","meteor_mesh","nova_forge","royal_spin","crimson_edge","volt_ring","arctic_mesh","shadow_alloy","prism_rim","fusion_wheel","legend_mesh","turbo_crown","racing_orbit","apex_halo","night_ring","chrome_pulse","titan_crown","velocity_edge","storm_ring","galaxy_mesh","inferno_crown","quantum_edge","aurora_ring","phantom_crown","solar_mesh","eclipse_rim","zenith_wheel","nova_crown","legend_edge","ultra_carbon","rush_supreme"]
+    var ids := ["velocity_mesh","apex_split","rally_grip","circuit_blade","drift_halo","road_forge","storm_alloy","pulse_rim","quantum_ring","titan_mesh","inferno_rim","glacier_edge","aurora_wheel","phantom_disk","vortex_wheel","solar_ring","lunar_alloy","cyber_mesh","blaze_rim","ocean_edge","hyper_ring","carbon_halo","meteor_mesh","nova_forge","royal_spin","crimson_edge","volt_ring","arctic_mesh","shadow_alloy","prism_rim","fusion_wheel","legend_mesh","turbo_crown","racing_orbit","apex_halo","night_ring","chrome_pulse","titan_crown","velocity_edge","storm_ring","galaxy_mesh","inferno_crown","quantum_edge","aurora_ring","phantom_crown","solar_mesh","eclipse_rim","zenith_wheel","nova_crown","legend_edge","ultra_carbon"]
     for i in range(ids.size()):
         var n := i + 10
         var level := 4 + i * 3
