@@ -15,7 +15,7 @@ Turbo Rush is a standalone, offline-first level-based racing game. CodeCraft is 
 - damage, wreck and revive flow
 - rank / chest / bonus / star rewards
 - level unlock and repeat-failure assist
-- six cars, seven upgrade stats, paints and wheels
+- 54 cars, 60 wheels, seven upgrade stats, paints and wheels
 - local JSON save, backup and SHA-256 integrity check
 - landscape mobile UI and touch controls
 - 10,000-level smoke-test coverage
@@ -27,7 +27,7 @@ Turbo Rush is a standalone, offline-first level-based racing game. CodeCraft is 
 - Unity Android Game ID: `6195679`
 - Unity iOS Game ID: `6195678`
 - Aptoide public key stored in `autoload/ReleaseConfig.gd`
-- 54 fixed cosmetic skins and 48 collectible cards added to the content catalog
+- 54 fixed cosmetic skins, 48 collectible cards, 54 cars and 60 wheels added to the content catalog
 - Aptoide catalog expanded to 10 fixed-content products: 9 mixed bundles plus Remove Ads
 - Mixed bundles can contain coins, diamonds, skins and cards; paid contents are disclosed, not randomized
 - Reference price anchors: $0.99 / $2.99 / $3.49 / $4.99 / $5.99 / $7.99 / $9.99 / $14.99, plus $2.99 Remove Ads
