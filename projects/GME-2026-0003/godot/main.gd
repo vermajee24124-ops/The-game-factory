@@ -425,15 +425,15 @@ func _impact_feedback()->void:
 func _update_car_fx()->void:
     if not is_instance_valid(player_car):
         return
-    var flame:=player_car.get_meta("boost_flame",null)
+    var flame:Node=player_car.get_meta("boost_flame",null)
     if flame is Node3D:
         flame.visible=boosting
         if boosting:
             flame.scale=Vector3(0.85,0.72,0.35)+Vector3(0.12,0.08,0.16)*sin(race_clock*32.0)
-    var glow:=player_car.get_meta("boost_glow",null)
+    var glow:Node=player_car.get_meta("boost_glow",null)
     if glow is OmniLight3D:
         glow.visible=boosting
-    var brake_fx:=player_car.get_meta("brake_glow",null)
+    var brake_fx:Node=player_car.get_meta("brake_glow",null)
     if brake_fx is MeshInstance3D:
         brake_fx.visible=brake_held
 
