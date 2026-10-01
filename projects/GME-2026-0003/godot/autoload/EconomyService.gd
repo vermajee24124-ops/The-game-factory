@@ -30,3 +30,19 @@ func spend_diamonds(amount:int, _reason:String="")->bool:
     SaveSystem.data["stats"]["diamonds_spent_lifetime"]+=amount
     SaveSystem.save_now()
     return true
+
+
+func can_afford_combo(coins_cost:int, diamonds_cost:int) -> bool:
+    return coins() >= maxi(0, coins_cost) and diamonds() >= maxi(0, diamonds_cost)
+
+func spend_combo(coins_cost:int, diamonds_cost:int, reason:String="") -> bool:
+    coins_cost=maxi(0,coins_cost)
+    diamonds_cost=maxi(0,diamonds_cost)
+    if not can_afford_combo(coins_cost,diamonds_cost):
+        return false
+    SaveSystem.data["currencies"]["coins"]-=coins_cost
+    SaveSystem.data["currencies"]["diamonds"]-=diamonds_cost
+    SaveSystem.data["stats"]["coins_spent_lifetime"]+=coins_cost
+    SaveSystem.data["stats"]["diamonds_spent_lifetime"]+=diamonds_cost
+    SaveSystem.save_now()
+    return true
