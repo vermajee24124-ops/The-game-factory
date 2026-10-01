@@ -69,6 +69,9 @@ func _initialize() -> void:
 
     if failures.is_empty():
         print("Turbo Rush smoke tests passed")
+        print("Turbo Rush smoke tests passed")
         quit(0)
+        return
     print("Turbo Rush smoke tests FAILED: ", failures)
     quit(1)
+    return
