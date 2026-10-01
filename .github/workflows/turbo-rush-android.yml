@@ -90,7 +90,7 @@ jobs:
           unzip -q /tmp/android_source.zip -d projects/GME-2026-0003/godot/android/build
           test -f projects/GME-2026-0003/godot/android/build/build.gradle
           test -f projects/GME-2026-0003/godot/android/build/gradlew
-          printf '%s\n' "4.7.2.stable.ed1daf0bf" > projects/GME-2026-0003/godot/android/.build_version
+          printf '%s\n' "4.7.2.stable" > projects/GME-2026-0003/godot/android/.build_version
           test -f projects/GME-2026-0003/godot/android/.build_version
 
       - name: Verify project files
