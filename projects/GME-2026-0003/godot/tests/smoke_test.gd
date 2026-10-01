@@ -2,10 +2,10 @@ extends SceneTree
 
 func _initialize() -> void:
     var failures: Array[String] = []
-    var game_config:Node=get_node("/root/GameConfig")
-    var level_generator:Node=get_node("/root/LevelGenerator")
-    var reward_service:Node=get_node("/root/RewardService")
-    var catalog:Node=get_node("/root/ContentCatalog")
+    var game_config:Node=get_root().get_node("GameConfig")
+    var level_generator:Node=get_root().get_node("LevelGenerator")
+    var reward_service:Node=get_root().get_node("RewardService")
+    var catalog:Node=get_root().get_node("ContentCatalog")
 
     if game_config.CARS.size() != 54:
         failures.append("expected 54 cars, got %d" % game_config.CARS.size())
