@@ -260,3 +260,26 @@ func car_ability_bonus(type:String)->float:
 func wheel_ability_bonus(type:String)->float:
     var w:=equipped_wheel_ability()
     return float(w.get("ability_value",0.0)) if str(w.get("ability_type",""))==type else 0.0
+
+
+func grant_car(id:String) -> bool:
+    var c:Dictionary=GameConfig.car(id)
+    if c.is_empty(): return false
+    var owned:Array=SaveSystem.data["progression"]["cars"]["owned"]
+    if owned.has(id):
+        EconomyService.grant_coins(500,"duplicate_iap_car_conversion")
+        return false
+    owned.append(id)
+    SaveSystem.save_now()
+    return true
+
+func grant_wheel(id:String) -> bool:
+    var item:Dictionary=GameConfig.wheel(id)
+    if item.is_empty(): return false
+    var owned:Array=SaveSystem.data["cosmetics"]["owned"]
+    if owned.has(id):
+        EconomyService.grant_coins(200,"duplicate_iap_wheel_conversion")
+        return false
+    owned.append(id)
+    SaveSystem.save_now()
+    return true
