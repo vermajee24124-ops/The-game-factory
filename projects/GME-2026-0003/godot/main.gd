@@ -40,6 +40,10 @@ var ui_root:Control
 var screens:Dictionary = {}
 var hud:Control
 var toast:Label
+var loading_screen:Control
+var loading_logo:TextureRect
+var loading_status:Label
+var loading_progress:ProgressBar
 var position_label:Label
 var progress_bar:ProgressBar
 var boost_bar:ProgressBar
@@ -78,10 +82,7 @@ func _ready()->void:
     HapticsSystem.enabled=bool(SaveSystem.data["settings"]["haptics_enabled"])
     _setup_world()
     _setup_ui()
-    if not bool(SaveSystem.data["profile"].get("onboarding_completed", false)):
-        _show_onboarding()
-    else:
-        _show_main_menu()
+    await _run_startup_sequence()
 
 func _setup_world()->void:
     world_root=Node3D.new()
@@ -162,6 +163,7 @@ func _setup_ui()->void:
     _build_garage()
     _build_shop()
     _build_settings()
+    _build_loading_screen()
     toast=_label(ui_root,"",22,palette.text)
     toast.position=Vector2(730,990)
     toast.visible=false
@@ -179,7 +181,80 @@ func _refresh_currency_header()->void:
     if coins_label:coins_label.text="COINS  %d" % EconomyService.coins()
     if diamonds_label:diamonds_label.text="DIAMONDS  %d" % EconomyService.diamonds()
 
+func _build_loading_screen()->void:
+    loading_screen=Control.new()
+    loading_screen.name="StartupLoading"
+    loading_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    ui_root.add_child(loading_screen)
+    var bg:=Panel.new()
+    bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    bg.add_theme_stylebox_override("panel",_style(Color("#050812"),0))
+    loading_screen.add_child(bg)
+
+    loading_logo=TextureRect.new()
+    loading_logo.name="Logo"
+    loading_logo.position=Vector2(660,175)
+    loading_logo.size=Vector2(600,600)
+    loading_logo.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+    loading_logo.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+    var logo=load("res://assets/turbo_rush_logo.jpg")
+    if logo:
+        loading_logo.texture=logo
+    loading_screen.add_child(loading_logo)
+
+    var title:=_label(loading_screen,"TURBO RUSH",54,palette.text)
+    title.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+    title.position=Vector2(460,735)
+    title.size=Vector2(1000,80)
+
+    loading_status=_label(loading_screen,"INITIALIZING GARAGE...",22,palette.muted)
+    loading_status.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+    loading_status.position=Vector2(520,815)
+    loading_status.size=Vector2(880,50)
+
+    loading_progress=ProgressBar.new()
+    loading_progress.position=Vector2(620,875)
+    loading_progress.size=Vector2(680,18)
+    loading_progress.min_value=0
+    loading_progress.max_value=100
+    loading_progress.value=0
+    loading_progress.show_percentage=false
+    loading_screen.add_child(loading_progress)
+
+func _run_startup_sequence()->void:
+    _show_only("main_menu")
+    for k in screens.keys():
+        screens[k].visible=false
+    if loading_screen:
+        loading_screen.visible=true
+
+    # Ads may appear only while this startup/loading screen is active.
+    # The native adapter must itself confirm connectivity and consent.
+    AdsManager.show_loading_banners()
+
+    var steps=[
+        ["LOADING TURBO RUSH...",10],
+        ["PREPARING GARAGE...",35],
+        ["PREPARING CAMPAIGN...",60],
+        ["CHECKING LOCAL SAVE...",82],
+        ["READY TO RACE",100]
+    ]
+    for step in steps:
+        loading_status.text=str(step[0])
+        loading_progress.value=float(step[1])
+        await get_tree().create_timer(0.28).timeout
+
+    # Never make the player wait for an ad response.
+    AdsManager.hide_loading_banners()
+    loading_screen.visible=false
+
+    if not bool(SaveSystem.data["profile"].get("onboarding_completed", false)):
+        _show_onboarding()
+    else:
+        _show_main_menu()
+
 func _show_main_menu()->void:
+    AdsManager.hide_loading_banners()
     _show_only("main_menu")
 
 func _show_onboarding()->void:
