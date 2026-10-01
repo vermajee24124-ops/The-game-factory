@@ -90,4 +90,25 @@ func show_rewarded(slot_id: String, callback: Callable) -> void:
     if not bridge.has_method("show_rewarded"):
         callback.call(false)
         return
-    bridge.show_rewarded(UNITY_ANDROID_REWARDED_AD_UNIT_ID, callback)
+    bridge.show_rewarded(UNITY_ANDROID_REWARDED_AD_UNIT_ID, func(ok:bool):
+        if ok:
+            _record_rewarded_success(slot_id)
+        callback.call(ok)
+    )
+
+
+func _record_rewarded_success(slot_id:String) -> void:
+    var daily:Dictionary=SaveSystem.data["monetization"]["ads"]["daily"]
+    var key:=slot_id+"_count"
+    daily[key]=int(daily.get(key,0))+1
+    if slot_id=="revive": SaveSystem.data["stats"]["ads_revive_used"]+=1
+    elif slot_id=="double_coins": SaveSystem.data["stats"]["ads_double_coins_used"]+=1
+    elif slot_id=="bonus_coins": SaveSystem.data["stats"]["ads_bonus_coins_used"]+=1
+    SaveSystem.save_now()
+
+func daily_remaining(slot_id:String)->int:
+    _sync_daily()
+    var caps:Dictionary={"revive":5,"double_coins":10,"bonus_coins":3}
+    if not caps.has(slot_id): return 0
+    var daily:Dictionary=SaveSystem.data["monetization"]["ads"]["daily"]
+    return maxi(0,int(caps[slot_id])-int(daily.get(slot_id+"_count",0)))
