@@ -70,6 +70,11 @@ var menu_spin:=0.0
 var impact_shake:=0.0
 var race_theme_env:WorldEnvironment
 var race_sun:DirectionalLight3D
+var sky_material:ProceduralSkyMaterial
+var last_rewards:Dictionary={}
+var last_result:Dictionary={}
+var double_reward_claimed:=false
+var pickup_time:=0.0
 
 var palette := {
     "bg":Color("#0B1020"),
@@ -103,13 +108,24 @@ func _setup_world()->void:
     var env:=WorldEnvironment.new()
     race_theme_env=env
     var e:=Environment.new()
-    e.background_mode=Environment.BG_COLOR
+    e.background_mode=Environment.BG_SKY
     e.background_color=Color("#10192B")
+    var sky:=Sky.new()
+    sky_material=ProceduralSkyMaterial.new()
+    sky_material.sky_top_color=Color("#18314A")
+    sky_material.sky_horizon_color=Color("#8AAED0")
+    sky_material.ground_horizon_color=Color("#394B60")
+    sky_material.ground_bottom_color=Color("#111A26")
+    sky_material.sun_angle_max=18.0
+    sky_material.sun_curve=0.12
+    sky.sky_material=sky_material
+    e.sky=sky
+    e.background_energy_multiplier=0.92
     e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
     e.ambient_light_color=Color("#7896C8")
     e.ambient_light_energy=1.05
     e.tonemap_mode=Environment.TONE_MAPPER_FILMIC
-    e.tonemap_exposure=1.15
+    e.tonemap_exposure=1.10
     e.fog_enabled=true
     e.fog_light_color=Color("#56657F")
     e.fog_light_energy=0.20
@@ -133,6 +149,13 @@ func _style(color:Color,radius:=16)->StyleBoxFlat:
     s.corner_radius_top_right=radius
     s.corner_radius_bottom_left=radius
     s.corner_radius_bottom_right=radius
+    s.border_width_left=1
+    s.border_width_top=1
+    s.border_width_right=1
+    s.border_width_bottom=1
+    s.border_color=Color(1,1,1,0.08)
+    s.shadow_color=Color(0,0,0,0.32)
+    s.shadow_size=6
     return s
 
 func _label(parent:Node,text_value:String,size:=22,color:=Color.WHITE)->Label:
@@ -149,7 +172,11 @@ func _button(parent:Node,text_value:String,size:=Vector2(300,70),primary:=true)-
     b.custom_minimum_size=size
     b.add_theme_font_size_override("font_size",22)
     b.add_theme_stylebox_override("normal",_style(palette.primary if primary else palette.panel_light,12))
+    b.add_theme_stylebox_override("hover",_style(palette.primary.lightened(0.08) if primary else palette.panel_light.lightened(0.08),12))
     b.add_theme_stylebox_override("pressed",_style(palette.primary.darkened(0.20) if primary else palette.panel_light.darkened(0.10),12))
+    b.add_theme_stylebox_override("focus",_style(palette.primary.lightened(0.03) if primary else palette.panel_light,12))
+    b.add_theme_stylebox_override("disabled",_style(Color(0.16,0.18,0.23,0.82),12))
+    b.focus_mode=Control.FOCUS_ALL
     parent.add_child(b)
     return b
 
@@ -225,6 +252,37 @@ func _build_menu_stage()->void:
     floor_mat.roughness=0.80
     floor.material_override=floor_mat
     menu_stage.add_child(floor)
+
+    var platform:=MeshInstance3D.new()
+    platform.name="HeroPlatform"
+    var pm:=CylinderMesh.new()
+    pm.top_radius=6.8
+    pm.bottom_radius=7.3
+    pm.height=0.34
+    platform.mesh=pm
+    platform.position=Vector3(0,0.12,0)
+    var platform_mat:=StandardMaterial3D.new()
+    platform_mat.albedo_color=Color("#111C31")
+    platform_mat.metallic=0.42
+    platform_mat.roughness=0.28
+    platform.material_override=platform_mat
+    menu_stage.add_child(platform)
+
+    var accent_platform:=MeshInstance3D.new()
+    accent_platform.name="HeroPlatformAccent"
+    var apm:=CylinderMesh.new()
+    apm.top_radius=5.9
+    apm.bottom_radius=6.0
+    apm.height=0.05
+    accent_platform.mesh=apm
+    accent_platform.position=Vector3(0,0.31,0)
+    var accent_mat:=StandardMaterial3D.new()
+    accent_mat.albedo_color=palette.secondary
+    accent_mat.emission_enabled=true
+    accent_mat.emission=palette.secondary
+    accent_mat.emission_energy_multiplier=0.42
+    accent_platform.material_override=accent_mat
+    menu_stage.add_child(accent_platform)
 
     for x in [-7.0,-3.5,0.0,3.5,7.0]:
         var strip:=MeshInstance3D.new()
@@ -325,6 +383,11 @@ func _apply_race_theme()->void:
     e.fog_density=0.0038 if condition=="Fog" else 0.0025
     race_sun.light_color=sun_color
     race_sun.light_energy=sun_energy
+    if sky_material:
+        sky_material.sky_top_color=bg.darkened(0.10)
+        sky_material.sky_horizon_color=ambient.lightened(0.12)
+        sky_material.ground_horizon_color=fog.lightened(0.06)
+        sky_material.ground_bottom_color=bg.darkened(0.35)
 
 func _add_road_details()->void:
     if path_points.size()<2:
