@@ -108,7 +108,6 @@ func _setup_world()->void:
     e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
     e.ambient_light_color=Color("#7896C8")
     e.ambient_light_energy=1.05
-    e.reflected_light_source=Environment.REFLECTION_SOURCE_COLOR
     e.tonemap_mode=Environment.TONE_MAPPER_FILMIC
     e.tonemap_exposure=1.15
     e.fog_enabled=true
@@ -378,9 +377,12 @@ func _spawn_landmarks(env_id:String,rng:RandomNumberGenerator)->void:
     for n in range(count):
         var idx:=clampi(int(float(n+1)*float(path_points.size()-1)/float(count+1)),2,path_points.size()-2)
         var sample:=_sample_path(path_distances[idx])
-        var side:=Vector3(-sample.tangent.z,0,sample.tangent.x).normalized()
-        var sgn:=1.0 if n%2==0 else -1.0
-        var base:=sample.pos+side*sgn*(sample.width*0.5+6.0)
+        var sample_pos:Vector3=sample["pos"]
+        var sample_tangent:Vector3=sample["tangent"]
+        var sample_width:float=float(sample["width"])
+        var side:Vector3=Vector3(-sample_tangent.z,0,sample_tangent.x).normalized()
+        var sgn:float=1.0 if n%2==0 else -1.0
+        var base:Vector3=sample_pos+side*sgn*(sample_width*0.5+6.0)
 
         var pole:=MeshInstance3D.new()
         var pm:=CylinderMesh.new()
@@ -401,7 +403,7 @@ func _spawn_landmarks(env_id:String,rng:RandomNumberGenerator)->void:
         sm.size=Vector3(2.8,1.0,0.12)
         sign.mesh=sm
         sign.position=base+Vector3.UP*4.8
-        sign.rotation.y=atan2(sample.tangent.x,sample.tangent.z)
+        sign.rotation.y=atan2(sample_tangent.x,sample_tangent.z)
         var signmat:=StandardMaterial3D.new()
         signmat.albedo_color=palette.secondary if env_id=="neon_metro" else palette.primary
         signmat.emission_enabled=true
@@ -412,7 +414,7 @@ func _spawn_landmarks(env_id:String,rng:RandomNumberGenerator)->void:
 
 func _impact_feedback()->void:
     impact_shake=minf(1.0,impact_shake+0.75)
-    var flash:=hud.get_node_or_null("ImpactFlash") if hud else null
+    var flash:Node = hud.get_node_or_null("ImpactFlash") if hud else null
     if flash is ColorRect:
         flash.visible=true
         flash.modulate.a=0.42
@@ -1343,12 +1345,15 @@ func _spawn_scenery()->void:
         world_root.add_child(ground)
 
     for i in range(0,path_points.size(),6):
-        var sample:=_sample_path(path_distances[i])
-        var side:=Vector3(-sample.tangent.z,0,sample.tangent.x).normalized()
+        var sample:Dictionary=_sample_path(path_distances[i])
+        var sample_pos:Vector3=sample["pos"]
+        var sample_tangent:Vector3=sample["tangent"]
+        var sample_width:float=float(sample["width"])
+        var side:Vector3=Vector3(-sample_tangent.z,0,sample_tangent.x).normalized()
         for n in range(2):
             var sign:float=-1.0 if n==0 else 1.0
-            var offset:=sample.width*0.5+7.0+rng.randf_range(0.0,14.0)
-            var p:=sample.pos+side*sign*offset
+            var offset:float=sample_width*0.5+7.0+rng.randf_range(0.0,14.0)
+            var p:Vector3=sample_pos+side*sign*offset
 
             # Environment silhouette varies by biome without expensive runtime assets.
             var is_city:=env_id.find("city")>=0 or env_id.find("metro")>=0
@@ -1403,7 +1408,7 @@ func _spawn_scenery()->void:
                 pb.bottom_radius=0.08
                 pb.height=4.2
                 pole.mesh=pb
-                pole.position=sample.pos+side*sign*(sample.width*0.5+2.4)+Vector3.UP*2.1
+                pole.position=sample_pos+side*sign*(sample_width*0.5+2.4)+Vector3.UP*2.1
                 var pole_mat:=StandardMaterial3D.new()
                 pole_mat.albedo_color=Color("#394657")
                 pole_mat.metallic=0.55
@@ -1430,8 +1435,8 @@ func _spawn_scenery()->void:
                 var rb:=BoxMesh.new()
                 rb.size=Vector3(0.18,0.7,5.5)
                 rail.mesh=rb
-                rail.position=sample.pos+side*sign*(sample.width*0.5+1.5)+Vector3.UP*0.35
-                rail.rotation.y=atan2(sample.tangent.x,sample.tangent.z)
+                rail.position=sample_pos+side*sign*(sample_width*0.5+1.5)+Vector3.UP*0.35
+                rail.rotation.y=atan2(sample_tangent.x,sample_tangent.z)
                 var rm:=StandardMaterial3D.new()
                 rm.albedo_color=Color("#7C8799")
                 rm.metallic=0.65
