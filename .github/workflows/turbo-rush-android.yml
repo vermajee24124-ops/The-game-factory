@@ -30,7 +30,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK command-line tools
+      - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Install Android packages
