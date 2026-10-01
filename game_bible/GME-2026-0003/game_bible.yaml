@@ -18,7 +18,10 @@ target_race_seconds:
 progression:
   next_level_unlock_position_max: 5
   assist_after_failures: 2
-  car_count: 6
+  car_count: 54
+  wheel_count: 60
+  skin_count: 54
+  card_count: 48
   upgrade_levels: 10
 economy:
   currencies: [coins, diamonds]
