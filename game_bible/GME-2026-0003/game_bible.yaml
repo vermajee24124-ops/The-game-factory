@@ -37,9 +37,19 @@ save:
   backup: true
   migration: required
 monetization:
-  rewarded_ads: [revive, double_coins, bonus_coins]
+  startup_banners:
+    enabled_when_online_and_consented: true
+    ad_unit: Banner_Android
+    instances: [top, bottom]
+    visible_window: "logo/loading only; hidden before lobby"
+  rewarded_ads: [revive, daily_task_reward, double_coins, bonus_coins]
+  daily_task_reward:
+    ad_opportunities_per_day: 3
+    reward_bias: "coins_first; diamonds_uncommon"
+    reward_pool:
+      coins: [80, 120, 180, 250, 400]
+      diamonds: [1, 2, 3]
   interstitial: "results_to_menu only; max once per 5 minutes; first 10 minutes disabled"
-  banner_locations: [garage, shop, settings, cosmetics]
   iap_products: [diamond_small, diamond_medium, diamond_large, diamond_epic, remove_ads]
   pay_to_win: false
 release:
