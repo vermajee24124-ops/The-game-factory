@@ -2241,11 +2241,15 @@ func _finish_race(completed:bool)->void:
     _show_results(result,rewards)
 
 func _show_results(result:Dictionary,rewards:Dictionary)->void:
+    last_result=result.duplicate(true)
+    last_rewards=rewards.duplicate(true)
+    double_reward_claimed=false
     _show_only("results")
     results_label.text=_ordinal(int(result.finish_position))+" PLACE" if bool(result.completed) else "DNF"
     results_detail.text="Rank Coins: %d\nChest: %s • %d Coins • %d Diamonds\nRandom Bonus: %d Coins • %d Diamonds\nTrack Coins: %d\nFirst Clear Diamonds: %d\nStars: %d\nTOTAL: %d Coins • %d Diamonds" % [int(rewards.rank_coins),str(rewards.chest),int(rewards.chest_coins),int(rewards.chest_diamonds),int(rewards.bonus_coins),int(rewards.bonus_diamonds),int(rewards.track_coins),int(rewards.first_clear_diamonds),int(rewards.stars),int(rewards.total_coins),int(rewards.total_diamonds)]
     next_button.disabled=not bool(result.completed) or int(result.finish_position)>5
-    double_button.disabled=true
+    double_button.disabled=not bool(result.completed) or not AdsManager.can_show_rewarded("double_coins")
+    double_button.text="WATCH AD • DOUBLE REWARDS" if not double_button.disabled else "DOUBLE REWARDS • UNAVAILABLE"
     _refresh_currency_header()
 
 func _ordinal(pos:int)->String:
