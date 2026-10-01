@@ -1137,53 +1137,79 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
     shape.position.y=0.6
     car.add_child(shape)
 
-    var visual_path:="res://assets/production/cars/race.glb"
+    var body:=MeshInstance3D.new()
+    var bm:=BoxMesh.new()
+    bm.size=Vector3(2.2,0.82,4.0)
+    body.mesh=bm
+    body.position.y=0.68
+    var mat:=StandardMaterial3D.new()
+    var body_color:=color
     if car_name=="PLAYER":
-        var selected:=str(_car_id)
-        if selected=="circuit_phantom" or selected=="hyper_nova" or selected=="apex_ultra" or selected=="legend_rs":
-            visual_path="res://assets/production/cars/race-future.glb"
-    else:
-        var variants:Array=[
-            "res://assets/production/cars/raceCarGreen.glb",
-            "res://assets/production/cars/raceCarOrange.glb",
-            "res://assets/production/cars/raceCarRed.glb",
-            "res://assets/production/cars/raceCarWhite.glb"
-        ]
-        visual_path=variants[abs(hash(car_name))%variants.size()]
+        var skin_id:=str(SaveSystem.data["cosmetics"]["equipped"].get("skin","skin_01"))
+        var skin:=ContentCatalog.skin(skin_id)
+        if not skin.is_empty():
+            body_color=Color(str(skin.get("color","#FF6B2C")))
+    mat.albedo_color=body_color
+    mat.metallic=0.18
+    mat.roughness=0.32
+    body.material_override=mat
+    car.add_child(body)
 
-    var packed=load(visual_path)
-    if packed is PackedScene:
-        var visual:=packed.instantiate()
-        visual.name="ProductionVehicleVisual"
-        visual.scale=Vector3.ONE*(1.58 if "race-future" in visual_path or visual_path.ends_with("race.glb") else 2.75)
-        visual.position.y=0.08
-        car.add_child(visual)
-    else:
-        # Development-safe fallback keeps the game playable if an optional model is unavailable.
-        var body:=MeshInstance3D.new()
-        var bm:=BoxMesh.new()
-        bm.size=Vector3(2.2,0.9,4.0)
-        body.mesh=bm
-        body.position.y=0.6
-        var mat:=StandardMaterial3D.new()
-        mat.albedo_color=color
-        mat.roughness=0.45
-        body.material_override=mat
-        car.add_child(body)
-        for sx in [-0.9,0.9]:
-            for sz in [-1.35,1.35]:
-                var wheel:=MeshInstance3D.new()
-                var cm:=CylinderMesh.new()
-                cm.height=0.35
-                cm.top_radius=0.45
-                cm.bottom_radius=0.45
-                wheel.mesh=cm
-                wheel.position=Vector3(sx,0.35,sz)
-                wheel.rotation.z=PI/2
-                var wm:=StandardMaterial3D.new()
-                wm.albedo_color=Color("#14171E")
-                wheel.material_override=wm
-                car.add_child(wheel)
+    # Low-cost production-style details: cabin, spoiler and emissive headlights.
+    var cabin:=MeshInstance3D.new()
+    var cb:=BoxMesh.new()
+    cb.size=Vector3(1.35,0.48,1.75)
+    cabin.mesh=cb
+    cabin.position=Vector3(0,1.16,-0.15)
+    var glass:=StandardMaterial3D.new()
+    glass.albedo_color=Color("#16243A")
+    glass.metallic=0.55
+    glass.roughness=0.18
+    cabin.material_override=glass
+    car.add_child(cabin)
+
+    var spoiler:=MeshInstance3D.new()
+    var sb:=BoxMesh.new()
+    sb.size=Vector3(1.75,0.12,0.42)
+    spoiler.mesh=sb
+    spoiler.position=Vector3(0,1.02,1.72)
+    var sm:=StandardMaterial3D.new()
+    sm.albedo_color=Color("#10141D")
+    sm.metallic=0.45
+    spoiler.material_override=sm
+    car.add_child(spoiler)
+
+    for sx in [-0.82,0.82]:
+        for sz in [-1.35,1.35]:
+            var wheel:=MeshInstance3D.new()
+            var cm:=CylinderMesh.new()
+            cm.height=0.34
+            cm.top_radius=0.43
+            cm.bottom_radius=0.43
+            wheel.mesh=cm
+            wheel.position=Vector3(sx,0.38,sz)
+            wheel.rotation.z=PI/2
+            var wm:=StandardMaterial3D.new()
+            wm.albedo_color=Color("#101218")
+            wm.metallic=0.25
+            wm.roughness=0.55
+            wheel.material_override=wm
+            car.add_child(wheel)
+
+    for sx in [-0.62,0.62]:
+        var lamp:=MeshInstance3D.new()
+        var lm:=BoxMesh.new()
+        lm.size=Vector3(0.22,0.14,0.08)
+        lamp.mesh=lm
+        lamp.position=Vector3(sx,0.78,-2.02)
+        var led:=StandardMaterial3D.new()
+        led.albedo_color=Color("#DFF7FF")
+        led.emission_enabled=true
+        led.emission=Color("#7BDFFF")
+        led.emission_energy_multiplier=2.2
+        lamp.material_override=led
+        car.add_child(lamp)
+
     return car
 
 func _pickup_mesh(kind:String,color:Color)->MeshInstance3D:
