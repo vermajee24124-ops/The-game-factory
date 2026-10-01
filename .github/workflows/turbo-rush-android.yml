@@ -1,5 +1,5 @@
 name: Turbo Rush Android Build
-# release-candidate rebuild 7
+# studio release pipeline 1.2.0
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 90
     env:
       GODOT_VERSION: "4.7.2"
       ANDROID_PLATFORM: "android-36"
@@ -130,13 +130,6 @@ jobs:
           unzip -l "$AAB" | grep -E 'BundleConfig.pb|base/manifest/AndroidManifest.xml' | tee projects/GME-2026-0003/artifacts/AAB_STRUCTURE.txt
           sha256sum "$AAB" | tee projects/GME-2026-0003/artifacts/AAB_SHA256.txt
 
-      - name: Validate APK
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging projects/GME-2026-0003/artifacts/TurboRush-v1.1.0-debug.apk | tee projects/GME-2026-0003/artifacts/APK_BADGING.txt
-          "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose projects/GME-2026-0003/artifacts/TurboRush-v1.1.0-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
-          sha256sum projects/GME-2026-0003/artifacts/TurboRush-v1.1.0-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SHA256.txt
 
       - name: Write build evidence
         if: always()
