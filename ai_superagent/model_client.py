@@ -24,9 +24,6 @@ class LLMConfig:
     freellm_base_url: str
     freellm_api_key: str
     freellm_model: str
-    codecraft_api_key: str
-    codecraft_base_url: str
-    codecraft_model: str
     nara_api_key: str
     nara_base_url: str
     nara_model: str
@@ -50,9 +47,6 @@ class LLMConfig:
             _clean(os.getenv('FREELLMAPI_BASE_URL', '')),
             _clean(os.getenv('FREELLMAPI_API_KEY', '')),
             _clean(os.getenv('FREELLMAPI_MODEL', 'auto')) or 'auto',
-            _clean(os.getenv('CODECRAFT_API_KEY', '')),
-            _clean(os.getenv('CODECRAFT_BASE_URL', 'https://www.codecraftapi.com/v1')).rstrip('/'),
-            _clean(os.getenv('CODECRAFT_MODEL', 'claude-opus-5-5')) or 'claude-opus-5-5',
             _clean(os.getenv('NARAROUTER_API_KEY', '')),
             _clean(os.getenv('NARAROUTER_BASE_URL', 'https://router.bynara.id/v1')).rstrip('/'),
             _clean(os.getenv('NARA_MODEL', os.getenv('NARAROUTER_MODEL', 'auto/bynara'))) or 'auto/bynara',
@@ -79,7 +73,7 @@ class OpenAICompatibleClient:
         return any([
             c.local_base_url,
             c.freellm_base_url and c.freellm_api_key,
-            c.codecraft_api_key, c.nara_api_key, c.zai_api_key, c.nvidia_api_key, c.gemini_api_key, c.hf_token,
+            c.nara_api_key, c.zai_api_key, c.nvidia_api_key, c.gemini_api_key, c.hf_token,
         ])
 
     @staticmethod
@@ -130,7 +124,6 @@ class OpenAICompatibleClient:
             raise RuntimeError('Configure at least one external LLM provider secret')
         c=self.config
         providers=[
-            ('codecraft', c.codecraft_api_key, c.codecraft_base_url, c.codecraft_model),
             ('local', 'local', c.local_base_url, c.local_model),
             ('nvidia', c.nvidia_api_key, c.nvidia_base_url, c.nvidia_model),
             ('zai', c.zai_api_key, c.zai_base_url, c.zai_model),
