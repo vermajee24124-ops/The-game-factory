@@ -7,27 +7,56 @@ signal restore_completed
 
 var online := false
 var initialized := false
-
-var products: Dictionary = {
-    "diamond_small": {"diamonds":80,"price_usd":"$0.99"},
-    "diamond_medium": {"diamonds":400,"price_usd":"$4.99"},
-    "diamond_large": {"diamonds":900,"price_usd":"$9.99"},
-    "diamond_epic": {"diamonds":2000,"price_usd":"$19.99"},
-    "remove_ads": {"diamonds":0,"price_usd":"$2.99"}
-}
+var products: Dictionary = {}
 
 func init() -> void:
     initialized = true
+    _sync_catalog()
     products_loaded.emit(ReleaseConfig.APTOIDE_PRODUCT_IDS)
 
 func set_online(value: bool) -> void:
     online = value
 
 func request_products() -> void:
+    _sync_catalog()
     if not online:
         products_loaded.emit([])
         return
     products_loaded.emit(ReleaseConfig.APTOIDE_PRODUCT_IDS)
+
+func _sync_catalog() -> void:
+    products.clear()
+    for id in ReleaseConfig.APTOIDE_PRODUCT_IDS:
+        if str(id) == "remove_ads":
+            products[id] = {
+                "id":"remove_ads",
+                "name":"Remove Ads",
+                "type":"non_consumable",
+                "coins":0,
+                "diamonds":0,
+                "skins":[],
+                "cards":[],
+                "reference_price_usd":2.99
+            }
+        else:
+            var b:Dictionary=ContentCatalog.bundle(str(id))
+            if not b.is_empty():
+                products[id]=b
+
+func product_summary(product_id:String) -> String:
+    var item:Dictionary=products.get(product_id,{})
+    if item.is_empty(): return ""
+    var parts:Array=[]
+    var coins:=int(item.get("coins",0))
+    var diamonds:=int(item.get("diamonds",0))
+    if coins>0: parts.append("%d Coins"%coins)
+    if diamonds>0: parts.append("%d Diamonds"%diamonds)
+    var skins:Array=item.get("skins",[])
+    var cards:Array=item.get("cards",[])
+    if not skins.is_empty(): parts.append("%d Skins"%skins.size())
+    if not cards.is_empty(): parts.append("%d Cards"%cards.size())
+    if product_id=="remove_ads": return "Permanent ad removal"
+    return " • ".join(parts)
 
 func purchase(product_id: String) -> void:
     if not online:
@@ -55,15 +84,44 @@ func restore_purchases() -> void:
             bridge.restore_purchases()
     restore_completed.emit()
 
-func apply_verified_entitlement(product_id: String) -> void:
-    var owned: Array = SaveSystem.data["monetization"]["iap"]["owned_products"]
+func _record_transaction(transaction_id:String, product_id:String) -> bool:
+    if transaction_id.is_empty():
+        return true
+    var tx:Array=SaveSystem.data["monetization"]["iap"]["transactions"]
+    for row in tx:
+        if str(row.get("id",""))==transaction_id:
+            return false
+    tx.append({"id":transaction_id,"product_id":product_id,"unix":Time.get_unix_time_from_system()})
+    return true
+
+## Call only after the native layer has verified the purchase/receipt.
+func apply_verified_entitlement(product_id: String, transaction_id:String="") -> bool:
+    if not products.has(product_id):
+        return false
+    if not _record_transaction(transaction_id, product_id):
+        return true
+
+    if product_id=="remove_ads":
+        SaveSystem.data["monetization"]["iap"]["owned_products"].append(product_id) if not SaveSystem.data["monetization"]["iap"]["owned_products"].has(product_id) else null
+        SaveSystem.data["monetization"]["remove_ads"]=true
+        SaveSystem.save_now()
+        purchase_completed.emit(product_id)
+        return true
+
+    var item:Dictionary=products[product_id]
+    var coins:=int(item.get("coins",0))
+    var diamonds:=int(item.get("diamonds",0))
+    if coins>0: EconomyService.grant_coins(coins,"iap_bundle")
+    if diamonds>0: EconomyService.grant_diamonds(diamonds,"iap_bundle")
+
+    for skin_id in item.get("skins",[]):
+        ProgressionService.grant_skin(str(skin_id))
+    for card_id in item.get("cards",[]):
+        ProgressionService.grant_card(str(card_id))
+
+    var owned:Array=SaveSystem.data["monetization"]["iap"]["owned_products"]
     if not owned.has(product_id):
         owned.append(product_id)
-    if product_id == "remove_ads":
-        SaveSystem.data["monetization"]["remove_ads"] = true
-    elif products.has(product_id):
-        var diamonds := int(products[product_id].get("diamonds", 0))
-        if diamonds > 0:
-            EconomyService.grant_diamonds(diamonds, "iap_verified")
     SaveSystem.save_now()
     purchase_completed.emit(product_id)
+    return true
