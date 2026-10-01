@@ -27,10 +27,18 @@ Turbo Rush is a standalone, offline-first level-based racing game. CodeCraft is 
 - Unity Android Game ID: `6195679`
 - Unity iOS Game ID: `6195678`
 - Aptoide public key stored in `autoload/ReleaseConfig.gd`
-- Five stable Aptoide product IDs aligned with the current economy model
+- 54 fixed cosmetic skins and 48 collectible cards added to the content catalog
+- Aptoide catalog expanded to 10 fixed-content products: 9 mixed bundles plus Remove Ads
+- Mixed bundles can contain coins, diamonds, skins and cards; paid contents are disclosed, not randomized
+- Reference price anchors: $0.99 / $2.99 / $3.49 / $4.99 / $5.99 / $7.99 / $9.99 / $14.99, plus $2.99 Remove Ads
+- Final localized storefront prices must be configured and served by Aptoide Connect
 - Shared Banner_Android configuration is prepared for top and bottom banner instances during startup/loading only
+- Daily Rewards screen now exposes three optional rewarded-ad claims/day; 90% coin outcomes and 10% diamond outcomes in the game-side reward pool
+- Player can equip one owned skin and up to three owned cards; cards provide small passive modifiers
 
 ## Still not safe to mark live
+
+The content catalog and store mapping are implemented in the Godot client, but Aptoide purchases are not yet a live transaction path until the native billing bridge and verification flow are installed.
 
 The following require exact external values or native runtime wiring and therefore are not claimed as live:
 
