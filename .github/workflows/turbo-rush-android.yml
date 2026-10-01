@@ -39,10 +39,11 @@ jobs:
         run: |
           yes | sdkmanager --licenses >/dev/null
           sdkmanager "platform-tools" "platforms;android-34" "platforms;android-36" "build-tools;34.0.0" "build-tools;36.1.0"
-          adb version
-          aapt2 version
-          apksigner version
-          zipalign -h >/dev/null 2>&1 || true
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          "$ANDROID_SDK_ROOT/platform-tools/adb" version
+          "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" version
+          "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" version
+          "$ANDROID_SDK_ROOT/build-tools/36.1.0/zipalign" -h >/dev/null 2>&1 || true
 
       - name: Install Godot 4.7.2
         run: |
@@ -82,8 +83,8 @@ jobs:
 
       - name: Validate APK
         run: |
-          aapt2 dump badging projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk | tee projects/GME-2026-0003/artifacts/APK_BADGING.txt
-          apksigner verify --verbose projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
+          "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk | tee projects/GME-2026-0003/artifacts/APK_BADGING.txt
+          "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
           sha256sum projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SHA256.txt
 
       - name: Write build evidence
