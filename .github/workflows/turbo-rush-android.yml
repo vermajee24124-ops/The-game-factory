@@ -101,7 +101,7 @@ jobs:
         run: |
           set -euo pipefail
           KEYSTORE_PATH="$RUNNER_TEMP/turbo-rush-release.jks"
-          KEYSTORE_PASS=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)
+          KEYSTORE_PASS=$(openssl rand -hex 24)
           keytool -genkeypair -keystore "$KEYSTORE_PATH" -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS" -alias turbo_rush -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Turbo Rush, OU=Verma Game Studios, O=Verma Game Studios, L=India, C=IN"
           echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
           echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$KEYSTORE_PASS" >> "$GITHUB_ENV"
