@@ -58,7 +58,7 @@ func _init() -> void:
     _extend_wheels()
 
 func _extend_cars() -> void:
-    var ids := ["volt_striker","apex_runner","nitro_falcon","road_phantom","blaze_gt","iron_comet","storm_racer","neon_sprint","desert_x","coastal_gt","midnight_rs","thunder_bolt","silver_arrow","crimson_apex","blue_orbit","green_fury","violet_xr","solar_gt","arctic_rs","carbon_v","shadow_racer","rally_nova","drift_king","pulse_gt","meteor_rs","night_falcon","ocean_fury","firestorm_gt","glacier_x","vertex_pro","quantum_gt","aurora_racer","titan_rs","velocity_xr","phantom_x","zenith_gt","inferno_rs","cyclone_pro","eclipse_gt","prism_racer","hyperion_rs","galaxy_gt","nova_striker","legend_rs","apex_ultra","zenith_x","titan_ultra","rush_xr","finale_xr"]
+    var ids := ["volt_striker","apex_runner","nitro_falcon","road_phantom","blaze_gt","iron_comet","storm_racer","neon_sprint","desert_x","coastal_gt","midnight_rs","thunder_bolt","silver_arrow","crimson_apex","blue_orbit","green_fury","violet_xr","solar_gt","arctic_rs","carbon_v","shadow_racer","rally_nova","drift_king","pulse_gt","meteor_rs","night_falcon","ocean_fury","firestorm_gt","glacier_x","vertex_pro","quantum_gt","aurora_racer","titan_rs","velocity_xr","phantom_x","zenith_gt","inferno_rs","cyclone_pro","eclipse_gt","prism_racer","hyperion_rs","galaxy_gt","nova_striker","legend_rs","apex_ultra","zenith_x","titan_ultra","rush_xr"]
     for i in range(ids.size()):
         var n := i + 7
         var base := n - 7
