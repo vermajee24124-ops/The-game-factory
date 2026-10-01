@@ -1,10 +1,24 @@
 extends Node
 
+const UNITY_ANDROID_GAME_ID := "6195679"
+const UNITY_IOS_GAME_ID := "6195678"
+
+# These must be the dedicated Unity banner placement/ad-unit IDs from the
+# Unity Monetization dashboard. They are intentionally not guessed.
+const UNITY_ANDROID_TOP_BANNER_PLACEMENT := ""
+const UNITY_ANDROID_BOTTOM_BANNER_PLACEMENT := ""
+
 var online := false
 var initialized := false
+var loading_ads_visible := false
 
 func init() -> void:
     initialized = true
+    online = false
+    if Engine.has_singleton("UnityAdsBridge"):
+        var bridge = Engine.get_singleton("UnityAdsBridge")
+        if bridge.has_method("initialize"):
+            bridge.initialize(UNITY_ANDROID_GAME_ID, false)
 
 func set_online(value: bool) -> void:
     online = value
@@ -25,6 +39,30 @@ func _sync_daily() -> void:
         daily["bonus_coins_count"] = 0
         SaveSystem.save_now()
 
+func show_loading_banners() -> void:
+    if loading_ads_visible or bool(SaveSystem.data["monetization"].get("remove_ads", false)):
+        return
+    if not Engine.has_singleton("UnityAdsBridge"):
+        return
+    if UNITY_ANDROID_TOP_BANNER_PLACEMENT.is_empty() or UNITY_ANDROID_BOTTOM_BANNER_PLACEMENT.is_empty():
+        return
+    var bridge = Engine.get_singleton("UnityAdsBridge")
+    if bridge.has_method("show_loading_banners"):
+        bridge.show_loading_banners(
+            UNITY_ANDROID_TOP_BANNER_PLACEMENT,
+            UNITY_ANDROID_BOTTOM_BANNER_PLACEMENT
+        )
+        loading_ads_visible = true
+
+func hide_loading_banners() -> void:
+    if not loading_ads_visible:
+        return
+    if Engine.has_singleton("UnityAdsBridge"):
+        var bridge = Engine.get_singleton("UnityAdsBridge")
+        if bridge.has_method("hide_loading_banners"):
+            bridge.hide_loading_banners()
+    loading_ads_visible = false
+
 func can_show_rewarded(slot_id: String) -> bool:
     if not online:
         return false
@@ -39,5 +77,11 @@ func show_rewarded(slot_id: String, callback: Callable) -> void:
     if not can_show_rewarded(slot_id):
         callback.call(false)
         return
-    # Production adapter is intentionally not fabricated in the core build.
-    callback.call(false)
+    if not Engine.has_singleton("UnityAdsBridge"):
+        callback.call(false)
+        return
+    var bridge = Engine.get_singleton("UnityAdsBridge")
+    if not bridge.has_method("show_rewarded"):
+        callback.call(false)
+        return
+    bridge.show_rewarded(slot_id, callback)
