@@ -531,6 +531,11 @@ func _build_loading_screen()->void:
     loading_status.position=Vector2(520,815)
     loading_status.size=Vector2(880,50)
 
+    var studio_mark:=_label(loading_screen,"VERMA GAME STUDIOS • OFFLINE-READY",16,palette.muted)
+    studio_mark.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+    studio_mark.position=Vector2(620,930)
+    studio_mark.size=Vector2(680,34)
+
     loading_progress=ProgressBar.new()
     loading_progress.position=Vector2(620,875)
     loading_progress.size=Vector2(680,18)
@@ -574,8 +579,9 @@ func _run_startup_sequence()->void:
 
 func _show_main_menu()->void:
     AdsManager.hide_loading_banners()
+    var selected_id:=str(SaveSystem.data["progression"]["cars"]["selected"])
+    var selected_car:Dictionary=GameConfig.car(selected_id)
     if menu_car and is_instance_valid(menu_car):
-        var selected_id:=str(SaveSystem.data["progression"]["cars"]["selected"])
         var current_id:=str(menu_car.get_meta("car_id",""))
         if selected_id!=current_id and menu_stage:
             menu_car.queue_free()
@@ -583,6 +589,16 @@ func _show_main_menu()->void:
             menu_car.position=Vector3(0,0.40,0)
             menu_car.rotation_degrees=Vector3(0,-28,0)
             menu_stage.add_child(menu_car)
+    var hero_name:=screens["main_menu"].get_node_or_null("Panel/HeroInfo/HeroCarName")
+    if hero_name is Label:
+        hero_name.text=str(selected_car.get("name","Rookie GT"))
+    var hero_stats:=screens["main_menu"].get_node_or_null("Panel/HeroInfo/HeroCarStats")
+    if hero_stats is Label:
+        hero_stats.text="%d KM/H • %.1f ACCEL • +%d BOOST\nLevel-based finite racing • 1 player + 5 AI\nCoins • Diamonds • Boost • Chests • Stars" % [
+            int(float(selected_car.get("top_speed",140.0))),
+            float(selected_car.get("accel",8.0)),
+            int(float(selected_car.get("boost_power",25.0)))
+        ]
     _show_only("main_menu")
 
 func _show_onboarding()->void:
@@ -654,15 +670,24 @@ func _build_main_menu()->void:
     daily.position=Vector2(330,585)
     daily.pressed.connect(func():_show_only("daily_tasks"))
     var info:=Panel.new()
+    info.name="HeroInfo"
     info.position=Vector2(760,220)
     info.size=Vector2(1050,620)
     info.add_theme_stylebox_override("panel",_style(palette.panel,24))
     p.add_child(info)
     var h:=_label(info,"YOUR GARAGE",28,palette.muted)
     h.position=Vector2(45,35)
-    var car:=_label(info,"ROOKIE GT",68,palette.text)
+    var selected_menu_id:=str(SaveSystem.data["progression"]["cars"]["selected"])
+    var selected_menu_car:Dictionary=GameConfig.car(selected_menu_id)
+    var car:=_label(info,str(selected_menu_car.get("name","Rookie GT")),68,palette.text)
+    car.name="HeroCarName"
     car.position=Vector2(45,90)
-    var d:=_label(info,"1 player + 5 AI\nDeterministic finite races\n2–3 minute target\nCoins • Diamonds • Boost • Chests • Stars",26,palette.muted)
+    var d:=_label(info,"%d KM/H • %.1f ACCEL • +%d BOOST\nLevel-based finite racing • 1 player + 5 AI\nCoins • Diamonds • Boost • Chests • Stars" % [
+        int(float(selected_menu_car.get("top_speed",140.0))),
+        float(selected_menu_car.get("accel",8.0)),
+        int(float(selected_menu_car.get("boost_power",25.0)))
+    ],26,palette.muted)
+    d.name="HeroCarStats"
     d.position=Vector2(45,195)
 
 func _build_level_select()->void:
@@ -847,6 +872,10 @@ func _build_race_hud()->void:
     right.button_down.connect(func():right_held=true)
     right.button_up.connect(func():right_held=false)
 
+    var nitro_label:=_label(hud,"NITRO",18,palette.muted)
+    nitro_label.position=Vector2(1450,875)
+    nitro_label.size=Vector2(370,30)
+    nitro_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
     var boost:=_button(hud,"BOOST",Vector2(200,118),true)
     boost.position=Vector2(1600,735)
     boost.pressed.connect(func():_try_boost())
@@ -908,9 +937,26 @@ func _build_results()->void:
     var menu:=_button(p,"MENU",Vector2(200,75),false)
     menu.position=Vector2(820,765)
     menu.pressed.connect(func():_show_main_menu())
-    double_button=_button(p,"WATCH AD • DOUBLE RANK + CHEST",Vector2(560,70),false)
+    double_button=_button(p,"WATCH AD • DOUBLE REWARDS",Vector2(560,70),false)
     double_button.position=Vector2(1060,765)
     double_button.disabled=true
+    double_button.pressed.connect(func():
+        if double_reward_claimed or last_rewards.is_empty():
+            return
+        AdsManager.show_rewarded("double_coins",func(ok:bool):
+            if not ok:
+                _show_toast("Rewarded ad unavailable")
+                return
+            if double_reward_claimed:
+                return
+            double_reward_claimed=true
+            EconomyService.grant_coins(int(last_rewards.get("total_coins",0)),"rewarded_double")
+            EconomyService.grant_diamonds(int(last_rewards.get("total_diamonds",0)),"rewarded_double")
+            double_button.disabled=true
+            double_button.text="REWARDS DOUBLED"
+            _refresh_currency_header()
+            _show_toast("Rewards doubled")
+        ) )
 
 func _build_garage()->void:
     var c:=_new_screen("garage","GARAGE")
