@@ -589,11 +589,11 @@ func _show_main_menu()->void:
             menu_car.position=Vector3(0,0.40,0)
             menu_car.rotation_degrees=Vector3(0,-28,0)
             menu_stage.add_child(menu_car)
-    var hero_name:=screens["main_menu"].get_node_or_null("Panel/HeroInfo/HeroCarName")
-    if hero_name is Label:
+    var hero_name:Label=screens["main_menu"].get_node_or_null("Panel/HeroInfo/HeroCarName") as Label
+    if hero_name:
         hero_name.text=str(selected_car.get("name","Rookie GT"))
-    var hero_stats:=screens["main_menu"].get_node_or_null("Panel/HeroInfo/HeroCarStats")
-    if hero_stats is Label:
+    var hero_stats:Label=screens["main_menu"].get_node_or_null("Panel/HeroInfo/HeroCarStats") as Label
+    if hero_stats:
         hero_stats.text="%d KM/H • %.1f ACCEL • +%d BOOST\nLevel-based finite racing • 1 player + 5 AI\nCoins • Diamonds • Boost • Chests • Stars" % [
             int(float(selected_car.get("top_speed",140.0))),
             float(selected_car.get("accel",8.0)),
