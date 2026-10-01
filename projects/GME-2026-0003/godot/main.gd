@@ -15,6 +15,7 @@ var path_widths:Array[float] = []
 
 var world_root:Node3D
 var player_car:CharacterBody3D
+var race_camera:Camera3D
 var ai_racers:Array = []
 var traffic:Array = []
 var pickups:Array = []
@@ -95,6 +96,11 @@ func _setup_world()->void:
     e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
     e.ambient_light_color=Color("#59709E")
     e.ambient_light_energy=0.8
+    e.fog_enabled=true
+    e.fog_light_color=Color("#6E7892")
+    e.fog_light_energy=0.35
+    e.fog_density=0.006
+    e.fog_sky_affect=0.35
     env.environment=e
     world_root.add_child(env)
     var sun:=DirectionalLight3D.new()
@@ -862,11 +868,14 @@ func _build_race_world()->void:
     player_car=_make_car("PLAYER",str(SaveSystem.data["progression"]["cars"]["selected"]),palette.primary)
     world_root.add_child(player_car)
     _place_racer(player_car,0.0,0.0)
-    var cam:=Camera3D.new()
-    cam.current=true
-    cam.position=Vector3(0,4,-11)
-    cam.fov=70
-    player_car.add_child(cam)
+    race_camera=Camera3D.new()
+    race_camera.name="RaceCamera"
+    race_camera.current=true
+    race_camera.position=Vector3(0,4.1,-11.5)
+    race_camera.fov=70
+    race_camera.near=0.1
+    race_camera.far=420.0
+    player_car.add_child(race_camera)
 
 func _generate_path()->void:
     var pos:=Vector3.ZERO
@@ -960,21 +969,105 @@ func _add_finish_gate()->void:
 func _spawn_scenery()->void:
     var rng:=RandomNumberGenerator.new()
     rng.seed=int(level_def.seed)^991
+    var env_id:=str(level_def.environment_id)
+    var building_palette:Array=[
+        Color("#26344A"),Color("#34445C"),Color("#3A3F54"),
+        Color("#202A3D"),Color("#48536A"),Color("#2B3548")
+    ]
+    var ground_mat:=StandardMaterial3D.new()
+    ground_mat.albedo_color=Color("#111A22")
+    ground_mat.roughness=1.0
+
+    # One pooled-style ground strip keeps the procedural road from floating in an empty void.
+    if path_points.size()>2:
+        var gst:=SurfaceTool.new()
+        gst.begin(Mesh.PRIMITIVE_TRIANGLES)
+        gst.set_material(ground_mat)
+        for i in range(path_points.size()-1):
+            var p0:=path_points[i]
+            var p1:=path_points[i+1]
+            var tangent:Vector3=(p1-p0).normalized()
+            var side:=Vector3(-tangent.z,0,tangent.x).normalized()
+            var a:=p0+side*70.0-Vector3.UP*0.03
+            var b:=p0-side*70.0-Vector3.UP*0.03
+            var cc:=p1-side*70.0-Vector3.UP*0.03
+            var d:=p1+side*70.0-Vector3.UP*0.03
+            gst.add_vertex(a);gst.add_vertex(b);gst.add_vertex(cc)
+            gst.add_vertex(a);gst.add_vertex(cc);gst.add_vertex(d)
+        gst.generate_normals()
+        var ground:=MeshInstance3D.new()
+        ground.name="EnvironmentGround"
+        ground.mesh=gst.commit()
+        world_root.add_child(ground)
+
     for i in range(0,path_points.size(),6):
-        var s:=_sample_path(path_distances[i])
-        var side:=Vector3(-s.tangent.z,0,s.tangent.x).normalized()
+        var sample:=_sample_path(path_distances[i])
+        var side:=Vector3(-sample.tangent.z,0,sample.tangent.x).normalized()
         for n in range(2):
             var sign:float=-1.0 if n==0 else 1.0
-            var node:=MeshInstance3D.new()
-            var bm:=BoxMesh.new()
-            var h:=rng.randf_range(3.0,10.0)
-            bm.size=Vector3(rng.randf_range(2.0,6.0),h,rng.randf_range(2.0,6.0))
-            node.mesh=bm
-            node.position=s.pos+side*sign*(s.width*0.5+7.0+rng.randf_range(0.0,10.0))+Vector3.UP*h*0.5
-            var mat:=StandardMaterial3D.new()
-            mat.albedo_color=Color("#27324B")
-            node.material_override=mat
-            world_root.add_child(node)
+            var offset:=sample.width*0.5+7.0+rng.randf_range(0.0,14.0)
+            var p:=sample.pos+side*sign*offset
+
+            # Environment silhouette varies by biome without expensive runtime assets.
+            var is_city:=env_id.find("city")>=0 or env_id.find("metro")>=0
+            var is_industrial:=env_id.find("industrial")>=0
+            var is_nature:=env_id.find("mountain")>=0 or env_id.find("snow")>=0 or env_id.find("desert")>=0
+            if is_nature and rng.randf()<0.55:
+                var tree:=MeshInstance3D.new()
+                var cone:=CylinderMesh.new()
+                cone.top_radius=0.0
+                cone.bottom_radius=rng.randf_range(1.4,2.2)
+                cone.height=rng.randf_range(5.0,9.0)
+                tree.mesh=cone
+                tree.position=p+Vector3.UP*float(cone.height)*0.5
+                var tm:=StandardMaterial3D.new()
+                tm.albedo_color=Color("#2F6B4F") if env_id.find("snow")<0 else Color("#D7E6EF")
+                tm.roughness=0.9
+                tree.material_override=tm
+                world_root.add_child(tree)
+            else:
+                var building:=MeshInstance3D.new()
+                var bm:=BoxMesh.new()
+                var h:=rng.randf_range(4.0,12.0)
+                if is_city:h=rng.randf_range(8.0,22.0)
+                if is_industrial:h=rng.randf_range(5.0,15.0)
+                bm.size=Vector3(rng.randf_range(3.0,7.0),h,rng.randf_range(3.0,7.0))
+                building.mesh=bm
+                building.position=p+Vector3.UP*h*0.5
+                var mat:=StandardMaterial3D.new()
+                mat.albedo_color=building_palette[rng.randi_range(0,building_palette.size()-1)]
+                mat.roughness=0.8
+                building.material_override=mat
+                world_root.add_child(building)
+
+                if is_city and rng.randf()<0.45:
+                    var beacon:=MeshInstance3D.new()
+                    var lm:=BoxMesh.new()
+                    lm.size=Vector3(0.12,0.8,0.12)
+                    beacon.mesh=lm
+                    beacon.position=p+Vector3(0,h+0.5,0)
+                    var glow:=StandardMaterial3D.new()
+                    glow.albedo_color=palette.secondary
+                    glow.emission_enabled=true
+                    glow.emission=palette.secondary
+                    glow.emission_energy_multiplier=2.0
+                    beacon.material_override=glow
+                    world_root.add_child(beacon)
+
+            # Low-cost roadside safety rail gives the track a finished silhouette.
+            if i%2==0:
+                var rail:=MeshInstance3D.new()
+                var rb:=BoxMesh.new()
+                rb.size=Vector3(0.18,0.7,5.5)
+                rail.mesh=rb
+                rail.position=sample.pos+side*sign*(sample.width*0.5+1.5)+Vector3.UP*0.35
+                rail.rotation.y=atan2(sample.tangent.x,sample.tangent.z)
+                var rm:=StandardMaterial3D.new()
+                rm.albedo_color=Color("#7C8799")
+                rm.metallic=0.65
+                rm.roughness=0.35
+                rail.material_override=rm
+                world_root.add_child(rail)
 
 func _spawn_items()->void:
     var rng:=RandomNumberGenerator.new()
@@ -1036,42 +1129,61 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
     car.name=car_name
     car.collision_layer=2
     car.collision_mask=0
+
     var shape:=CollisionShape3D.new()
     var bs:=BoxShape3D.new()
     bs.size=Vector3(2.2,1.0,4.1)
     shape.shape=bs
     shape.position.y=0.6
     car.add_child(shape)
-    var body:=MeshInstance3D.new()
-    var bm:=BoxMesh.new()
-    bm.size=Vector3(2.2,0.9,4.0)
-    body.mesh=bm
-    body.position.y=0.6
-    var mat:=StandardMaterial3D.new()
-    var body_color:=color
+
+    var visual_path:="res://assets/production/cars/race.glb"
     if car_name=="PLAYER":
-        var skin_id:=str(SaveSystem.data["cosmetics"]["equipped"].get("skin","skin_01"))
-        var skin:=ContentCatalog.skin(skin_id)
-        if not skin.is_empty():
-            body_color=Color(str(skin.get("color","#FF6B2C")))
-    mat.albedo_color=body_color
-    mat.roughness=0.45
-    body.material_override=mat
-    car.add_child(body)
-    for sx in [-0.9,0.9]:
-        for sz in [-1.35,1.35]:
-            var wheel:=MeshInstance3D.new()
-            var cm:=CylinderMesh.new()
-            cm.height=0.35
-            cm.top_radius=0.45
-            cm.bottom_radius=0.45
-            wheel.mesh=cm
-            wheel.position=Vector3(sx,0.35,sz)
-            wheel.rotation.z=PI/2
-            var wm:=StandardMaterial3D.new()
-            wm.albedo_color=Color("#14171E")
-            wheel.material_override=wm
-            car.add_child(wheel)
+        var selected:=str(_car_id)
+        if selected=="circuit_phantom" or selected=="hyper_nova" or selected=="apex_ultra" or selected=="legend_rs":
+            visual_path="res://assets/production/cars/race-future.glb"
+    else:
+        var variants:Array=[
+            "res://assets/production/cars/raceCarGreen.glb",
+            "res://assets/production/cars/raceCarOrange.glb",
+            "res://assets/production/cars/raceCarRed.glb",
+            "res://assets/production/cars/raceCarWhite.glb"
+        ]
+        visual_path=variants[abs(hash(car_name))%variants.size()]
+
+    var packed=load(visual_path)
+    if packed is PackedScene:
+        var visual:=packed.instantiate()
+        visual.name="ProductionVehicleVisual"
+        visual.scale=Vector3.ONE*(1.58 if "race-future" in visual_path or visual_path.ends_with("race.glb") else 2.75)
+        visual.position.y=0.08
+        car.add_child(visual)
+    else:
+        # Development-safe fallback keeps the game playable if an optional model is unavailable.
+        var body:=MeshInstance3D.new()
+        var bm:=BoxMesh.new()
+        bm.size=Vector3(2.2,0.9,4.0)
+        body.mesh=bm
+        body.position.y=0.6
+        var mat:=StandardMaterial3D.new()
+        mat.albedo_color=color
+        mat.roughness=0.45
+        body.material_override=mat
+        car.add_child(body)
+        for sx in [-0.9,0.9]:
+            for sz in [-1.35,1.35]:
+                var wheel:=MeshInstance3D.new()
+                var cm:=CylinderMesh.new()
+                cm.height=0.35
+                cm.top_radius=0.45
+                cm.bottom_radius=0.45
+                wheel.mesh=cm
+                wheel.position=Vector3(sx,0.35,sz)
+                wheel.rotation.z=PI/2
+                var wm:=StandardMaterial3D.new()
+                wm.albedo_color=Color("#14171E")
+                wheel.material_override=wm
+                car.add_child(wheel)
     return car
 
 func _pickup_mesh(kind:String,color:Color)->MeshInstance3D:
@@ -1197,6 +1309,11 @@ func _update_race(delta:float)->void:
     player_speed=move_toward(player_speed,target_speed,accel*delta)
     player_progress=minf(player_progress+player_speed*delta,float(level_def.track_length_m))
     _place_racer(player_car,player_progress,player_lane)
+    if is_instance_valid(race_camera):
+        var speed_ratio:=clampf(player_speed/(GameConfig.car(car_id).get("top_speed",140.0)/3.6),0.0,1.25)
+        race_camera.fov=lerpf(68.0,78.0,speed_ratio)+(3.0 if boosting else 0.0)
+        race_camera.position.x=sin(race_clock*18.0)*0.035*(1.0 if boosting else 0.35)
+        race_camera.position.y=4.1+sin(race_clock*10.0)*0.04*(1.0 if boosting else 0.25)
     _update_ai(delta)
     _update_traffic(delta)
     _check_pickups()
