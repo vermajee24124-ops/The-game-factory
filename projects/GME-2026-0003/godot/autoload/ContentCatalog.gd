@@ -13,7 +13,7 @@ const SKIN_COLORS := ["#21A7FF","#FF3957","#86D72E","#343A46","#FFC83D","#D9F4FF
 const CARD_NAMES := ["Nitro Core","Launch Control","Aero Grip","Brake Matrix","Boost Cell","Stability Frame","Coin Route","Clean Lap","Slipstream Pro","Corner Master","Turbo Charge","Road Shield","Rapid Start","Track Sense","Pit Saver","Boost Tuning","Speed Link","Grip Link","Brake Link","Armor Link","Coin Magnet","Perfect Line","Draft Master","Rush Meter","Overtake Lab","Apex Hunter","Sprint Core","Endurance Core","Elite Focus","Traffic Reader","Precision Drive","Smooth Operator","Diamond Finder","Lucky Line","Combo Engine","Fuel Saver","Boost Guard","Impact Guard","Racing IQ","Finish Surge","Gold Hunter","Time Attack","Rally Instinct","Circuit Sense","Velocity Chip","Neon Reflex","Champion Core","Legend Matrix"]
 const CARD_TYPES := ["boost_power","acceleration","handling","braking","stability","coin_multiplier","damage_reduction","boost_duration","top_speed","acceleration","handling","damage_reduction"]
 
-func _ready() -> void:
+func _init() -> void:
     _build_skins()
     _build_cards()
     _build_bundles()
