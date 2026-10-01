@@ -131,6 +131,18 @@ jobs:
           mkdir -p projects/GME-2026-0003/artifacts
           "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.3.0-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
 
+      - name: Reset Gradle template before AAB
+        run: |
+          set -euo pipefail
+          rm -rf projects/GME-2026-0003/godot/android
+          mkdir -p projects/GME-2026-0003/godot/android/build
+          unzip -p /tmp/templates.tpz templates/android_source.zip > /tmp/android_source_aab.zip
+          test -s /tmp/android_source_aab.zip
+          unzip -q /tmp/android_source_aab.zip -d projects/GME-2026-0003/godot/android/build
+          printf '%s\n' "4.7.2.stable" > projects/GME-2026-0003/godot/android/.build_version
+          find projects/GME-2026-0003/godot/android -type f -name '*.import' -delete
+          test -f projects/GME-2026-0003/godot/android/build/build.gradle
+
       - name: Android release AAB
         run: |
           set -euo pipefail
