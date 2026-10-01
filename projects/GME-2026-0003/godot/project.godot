@@ -16,11 +16,6 @@ handheld/orientation=4
 stretch/aspect="expand"
 size/mode=3
 
-[android]
-splash_screen/background_color=Color(0.043, 0.063, 0.125, 1)
-splash_screen/branding_image="res://assets/turbo_rush_logo.svg"
-splash_screen/disable_godot_boot_splash=true
-splash_screen/icon="res://assets/turbo_rush_logo.svg"
 
 [rendering]
 renderer/rendering_method="mobile"
