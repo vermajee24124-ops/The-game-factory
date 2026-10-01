@@ -25,9 +25,14 @@ const APTOIDE_PUBLIC_KEY := "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs7BrfGb
 # Stable product IDs matching the existing Turbo Rush economy layer.
 # Register the same IDs in Aptoide Connect before enabling live purchases.
 const APTOIDE_PRODUCT_IDS := [
-    "diamond_small",
-    "diamond_medium",
-    "diamond_large",
-    "diamond_epic",
+    "starter_garage",
+    "racer_bundle",
+    "pro_garage",
+    "skin_vault_01",
+    "skin_vault_02",
+    "card_vault_01",
+    "card_vault_02",
+    "mega_rush",
+    "ultimate_garage",
     "remove_ads"
 ]
