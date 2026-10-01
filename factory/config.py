@@ -13,9 +13,6 @@ class ProviderConfig:
 
 
 PROVIDERS = (
-    # CodeCraft is the primary engineering route for long-running game builds.
-    # Keep the model ID configurable so availability can be checked at runtime.
-    ProviderConfig("codecraft", "CODECRAFT_API_KEY", 120, ("text", "code", "reasoning", "multimodal")),
     # OmniRoute is a gateway installed by the workflow. It can be available
     # without a provider secret when configured with no-auth/free providers.
     # If an authenticated OmniRoute endpoint is used later, its API key can be
