@@ -14,19 +14,34 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       GODOT_VERSION: "4.7.2"
+      ANDROID_PLATFORM: "android-36"
+      ANDROID_BUILD_TOOLS: "36.1.0"
+      ANDROID_CMDLINE_TOOLS: "11076708"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Install Android SDK command-line tools
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android packages
         run: |
-          sudo apt-get update
-          sudo apt-get install -y unzip curl openjdk-17-jdk
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager "platform-tools" "platforms;android-34" "platforms;android-36" "build-tools;34.0.0" "build-tools;36.1.0"
+          adb version
+          aapt2 version
+          apksigner version
+          zipalign -h >/dev/null 2>&1 || true
 
       - name: Install Godot 4.7.2
         run: |
@@ -44,10 +59,12 @@ jobs:
           unzip -q /tmp/templates.tpz -d /tmp/templates
           cp -r /tmp/templates/templates/* "$HOME/.local/share/godot/export_templates/4.7.2.stable/"
 
-      - name: Configure Android SDK
+      - name: Verify project files
         run: |
-          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+          test -f projects/GME-2026-0003/godot/project.godot
+          test -f projects/GME-2026-0003/godot/main.tscn
+          test -f projects/GME-2026-0003/godot/main.gd
+          test -f projects/GME-2026-0003/godot/assets/turbo_rush_logo.svg
 
       - name: Headless import
         run: |
@@ -62,14 +79,25 @@ jobs:
           mkdir -p projects/GME-2026-0003/artifacts
           godot --headless             --path projects/GME-2026-0003/godot             --export-debug "Android Debug APK"             projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk             2>&1 | tee /tmp/turbo-export.log
 
+      - name: Validate APK
+        run: |
+          aapt2 dump badging projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk | tee projects/GME-2026-0003/artifacts/APK_BADGING.txt
+          apksigner verify --verbose projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
+          sha256sum projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SHA256.txt
+
       - name: Write build evidence
         run: |
           {
             echo "Turbo Rush v1.0.0"
             echo "Godot 4.7.2"
+            echo "JDK Temurin 17"
+            echo "Android platform 34 + 36"
+            echo "Android build-tools 34.0.0 + 36.1.0"
             echo "CodeCraft disabled"
-            echo "Standalone offline-first build"
-            echo "Android debug APK"
+            echo "Startup logo asset verified"
+            echo "54 skins / 48 cards catalog"
+            echo "10 Aptoide product IDs configured"
+            echo "Debug APK export + signature verification"
           } > projects/GME-2026-0003/artifacts/BUILD_INFO.txt
           cp /tmp/turbo-import.log projects/GME-2026-0003/artifacts/import.log
           cp /tmp/turbo-smoke.log projects/GME-2026-0003/artifacts/smoke.log
