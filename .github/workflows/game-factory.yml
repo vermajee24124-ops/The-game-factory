@@ -33,9 +33,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      CODECRAFT_API_KEY: ${{ secrets.CODECRAFT_API_KEY }}
-      CODECRAFT_BASE_URL: https://www.codecraftapi.com/v1
-      CODECRAFT_MODEL: claude-opus-5-5
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
       NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
