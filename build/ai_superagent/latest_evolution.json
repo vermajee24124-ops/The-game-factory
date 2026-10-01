@@ -1,10 +1,10 @@
 {
   "status": "completed",
-  "timestamp": "2026-10-01T14:38:45.077388+00:00",
+  "timestamp": "2026-10-01T23:13:07.122511+00:00",
   "tasks": 10,
   "candidates": 20,
-  "schema_valid_rate": 0.8,
-  "accepted_training_examples": 4,
-  "acceptance_rate": 0.2,
+  "schema_valid_rate": 0.15,
+  "accepted_training_examples": 0,
+  "acceptance_rate": 0.0,
   "research_context_used": true
 }
