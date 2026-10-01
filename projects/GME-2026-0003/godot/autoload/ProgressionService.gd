@@ -142,3 +142,92 @@ func buy_paint(id: String) -> bool:
 
 func has_cosmetic(id: String) -> bool:
     return SaveSystem.data["cosmetics"]["owned"].has(id)
+
+
+func owns_skin(id: String) -> bool:
+    return SaveSystem.data["cosmetics"]["owned"].has(id)
+
+func equip_skin(id: String) -> bool:
+    if not owns_skin(id) or ContentCatalog.skin(id).is_empty():
+        return false
+    SaveSystem.data["cosmetics"]["equipped"]["skin"] = id
+    SaveSystem.save_now()
+    return true
+
+func grant_skin(id: String) -> bool:
+    if ContentCatalog.skin(id).is_empty():
+        return false
+    var owned:Array=SaveSystem.data["cosmetics"]["owned"]
+    if owned.has(id):
+        EconomyService.grant_coins(250, "duplicate_skin_conversion")
+        return false
+    owned.append(id)
+    SaveSystem.save_now()
+    return true
+
+func owns_card(id: String) -> bool:
+    return SaveSystem.data["progression"]["cards"]["owned"].has(id)
+
+func grant_card(id: String) -> bool:
+    if ContentCatalog.card(id).is_empty():
+        return false
+    var owned:Array=SaveSystem.data["progression"]["cards"]["owned"]
+    if owned.has(id):
+        EconomyService.grant_coins(120, "duplicate_card_conversion")
+        return false
+    owned.append(id)
+    SaveSystem.save_now()
+    return true
+
+func toggle_card_equip(id: String) -> bool:
+    if not owns_card(id):
+        return false
+    var equipped:Array=SaveSystem.data["progression"]["cards"]["equipped"]
+    if equipped.has(id):
+        if equipped.size()<=1:
+            return false
+        equipped.erase(id)
+    elif equipped.size()<3:
+        equipped.append(id)
+    else:
+        return false
+    SaveSystem.save_now()
+    return true
+
+func equipped_cards()->Array:
+    return SaveSystem.data["progression"]["cards"].get("equipped",["card_01"])
+
+func card_bonus(stat:String)->float:
+    var total:=0.0
+    for id in equipped_cards():
+        var c:Dictionary=ContentCatalog.card(str(id))
+        if str(c.get("type",""))==stat:
+            total+=float(c.get("value",0.0))
+    return total
+
+func coin_multiplier()->float:
+    return 1.0 + card_bonus("coin_multiplier")
+
+func damage_multiplier()->float:
+    return maxf(0.70, 1.0 - card_bonus("damage_reduction"))
+
+func top_speed_bonus()->float:
+    return card_bonus("top_speed")
+
+func acceleration_bonus()->float:
+    return card_bonus("acceleration")
+
+func handling_bonus()->float:
+    return card_bonus("handling")
+
+func braking_bonus()->float:
+    return card_bonus("braking")
+
+func boost_power_bonus()->float:
+    return card_bonus("boost_power")
+
+func boost_duration_bonus()->float:
+    return card_bonus("boost_duration")
+
+func stability_bonus()->float:
+    return card_bonus("stability")
