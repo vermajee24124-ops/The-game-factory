@@ -18,18 +18,18 @@ Turbo Rush keeps the same core toolchain family. Unlike the Skyloom build, Turbo
 
 Create these product IDs exactly in Aptoide Connect:
 
-| Product ID | Type | Reference price USD | Coins | Diamonds | Skins | Cards |
-|---|---|---:|---:|---:|---:|---:|
-| starter_garage | consumable | 0.99 | 1,200 | 60 | 2 | 3 |
-| racer_bundle | consumable | 2.99 | 5,000 | 180 | 4 | 6 |
-| pro_garage | consumable | 4.99 | 11,000 | 450 | 7 | 10 |
-| skin_vault_01 | consumable | 3.49 | 2,500 | 120 | 8 | 2 |
-| skin_vault_02 | consumable | 4.99 | 4,000 | 200 | 10 | 4 |
-| card_vault_01 | consumable | 5.99 | 5,000 | 220 | 4 | 10 |
-| card_vault_02 | consumable | 7.99 | 7,500 | 320 | 6 | 8 |
-| mega_rush | consumable | 9.99 | 15,000 | 700 | 6 | 3 |
-| ultimate_garage | consumable | 14.99 | 30,000 | 1,500 | 7 | 2 |
-| remove_ads | non_consumable | 2.99 | 0 | 0 | 0 | 0 |
+| Product ID | Type | Reference price USD | Coins | Diamonds | Skins | Cards | Cars | Wheels |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| starter_garage | consumable | 0.99 | 1,200 | 60 | 2 | 3 | 2 | 3 |
+| racer_bundle | consumable | 2.99 | 5,000 | 180 | 4 | 6 | 4 | 4 |
+| pro_garage | consumable | 4.99 | 11,000 | 450 | 7 | 10 | 6 | 6 |
+| skin_vault_01 | consumable | 3.49 | 2,500 | 120 | 8 | 2 | 6 | 6 |
+| skin_vault_02 | consumable | 4.99 | 4,000 | 200 | 10 | 4 | 7 | 8 |
+| card_vault_01 | consumable | 5.99 | 5,000 | 220 | 4 | 10 | 8 | 8 |
+| card_vault_02 | consumable | 7.99 | 7,500 | 320 | 6 | 8 | 8 | 8 |
+| mega_rush | consumable | 9.99 | 15,000 | 700 | 6 | 3 | 7 | 7 |
+| ultimate_garage | consumable | 14.99 | 30,000 | 1,500 | 7 | 2 | 5 | 8 |
+| remove_ads | non_consumable | 2.99 | 0 | 0 | 0 | 0 | 0 | 0 |
 
 All paid bundles are fixed-content. There are no paid random loot boxes.
 
@@ -37,6 +37,8 @@ Reference prices are configuration anchors only. The shipped store UI must use p
 
 ## 4. Content catalog
 
+- 54 cars: Rookie GT plus 53 additional vehicles, each with a gameplay ability
+- 60 wheels, each with a small gameplay ability
 - 54 cosmetic skins: skin_01 through skin_54
 - 48 collectible cards: card_01 through card_48
 - One skin can be equipped.
