@@ -90,7 +90,11 @@ jobs:
       - name: Headless import
         run: |
           set -euo pipefail
-          "$GODOT_BIN" --headless             --path projects/GME-2026-0003/godot             --editor --quit             2>&1 | tee /tmp/turbo-import.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --editor --quit 2>&1 | tee /tmp/turbo-import.log
+          if grep -qE 'SCRIPT ERROR:|Parse Error:|ERROR: Failed to load script' /tmp/turbo-import.log; then
+            echo "Godot import detected script errors."
+            exit 1
+          fi
 
       - name: Smoke test
         run: |
@@ -148,8 +152,8 @@ jobs:
           } > projects/GME-2026-0003/artifacts/BUILD_INFO.txt
           cp /tmp/turbo-import.log projects/GME-2026-0003/artifacts/import.log
           cp /tmp/turbo-smoke.log projects/GME-2026-0003/artifacts/smoke.log
-          cp /tmp/turbo-export-release-apk.log projects/GME-2026-0003/artifacts/export_release_apk.log
-          cp /tmp/turbo-export-release-aab.log projects/GME-2026-0003/artifacts/export_release_aab.log
+          test -f /tmp/turbo-export-release-apk.log && cp /tmp/turbo-export-release-apk.log projects/GME-2026-0003/artifacts/export_release_apk.log || true
+          test -f /tmp/turbo-export-release-aab.log && cp /tmp/turbo-export-release-aab.log projects/GME-2026-0003/artifacts/export_release_aab.log || true
 
       - name: Upload release artifacts
         if: success()
