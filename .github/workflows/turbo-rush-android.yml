@@ -101,21 +101,21 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p projects/GME-2026-0003/artifacts
-          "$GODOT_BIN" --headless             --path projects/GME-2026-0003/godot             --export-debug "Android Debug APK (Prebuilt)"             ../artifacts/TurboRush-v1.0.1-debug.apk             2>&1 | tee /tmp/turbo-export.log
+          "$GODOT_BIN" --headless             --path projects/GME-2026-0003/godot             --export-debug "Android Debug APK (Prebuilt)"             ../artifacts/TurboRush-v1.0.2-debug.apk             2>&1 | tee /tmp/turbo-export.log
 
       - name: Validate APK
         continue-on-error: true
         run: |
           set -euo pipefail
-          "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging projects/GME-2026-0003/artifacts/TurboRush-v1.0.1-debug.apk | tee projects/GME-2026-0003/artifacts/APK_BADGING.txt
-          "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose projects/GME-2026-0003/artifacts/TurboRush-v1.0.1-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
-          sha256sum projects/GME-2026-0003/artifacts/TurboRush-v1.0.1-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SHA256.txt
+          "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging projects/GME-2026-0003/artifacts/TurboRush-v1.0.2-debug.apk | tee projects/GME-2026-0003/artifacts/APK_BADGING.txt
+          "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose projects/GME-2026-0003/artifacts/TurboRush-v1.0.2-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
+          sha256sum projects/GME-2026-0003/artifacts/TurboRush-v1.0.2-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SHA256.txt
 
       - name: Write build evidence
         if: always()
         run: |
           {
-            echo "Turbo Rush v1.0.1"
+            echo "Turbo Rush v1.0.2"
             echo "Godot 4.7.2"
             echo "JDK Temurin 17"
             echo "Android platform 34 + 36"
@@ -134,6 +134,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Turbo-Rush-v1.0.1-debug-apk
+          name: Turbo-Rush-v1.0.2-debug-apk
           path: projects/GME-2026-0003/artifacts/
           if-no-files-found: error
