@@ -1,10 +1,11 @@
 # Turbo Rush Release Status
 
-## Standalone 1.0 target
+## Current 1.0 target
 
-The current 1.0 target is a standalone, offline-first racing game. CodeCraft is not required and is not used by the game runtime.
+Turbo Rush is a standalone, offline-first level-based racing game. CodeCraft is not required and is not used by the game runtime.
 
-## Core completed
+## Core game implemented
+
 - Godot 4.7.2 pinned
 - finite level-based racing
 - 1 player + 5 AI
@@ -12,27 +13,43 @@ The current 1.0 target is a standalone, offline-first racing game. CodeCraft is 
 - Standard / Sprint / Endurance / Elite races
 - traffic, obstacles, coins, diamonds and boost
 - damage, wreck and revive flow
-- rank/chest/bonus/star rewards
+- rank / chest / bonus / star rewards
 - level unlock and repeat-failure assist
 - six cars, seven upgrade stats, paints and wheels
 - local JSON save, backup and SHA-256 integrity check
 - landscape mobile UI and touch controls
-- 10,000-level smoke test coverage
+- 10,000-level smoke-test coverage
 
-## Deferred to future updates
-- Epic/online services and global leaderboards
-- Native Unity Ads integration
-- Native Aptoide billing and purchase validation
-- remote analytics/live services
-- additional online events
+## Release configuration now added
 
-These features are intentionally not required for the standalone core game.
+- Android package: `com.vermajeeverma.turborush`
+- Support email: `vermagamestudios@gmail.com`
+- Unity Android Game ID: `6195679`
+- Unity iOS Game ID: `6195678`
+- Aptoide public key stored in `autoload/ReleaseConfig.gd`
+- Five stable Aptoide product IDs aligned with the current economy model
+- Shared Banner_Android configuration is prepared for top and bottom banner instances during startup/loading only
 
-## Remaining release gates
-- Godot Android export completes successfully
-- install/test the APK on a real Android device
-- real-device performance check
-- final store metadata/compliance check
-- production signing key for the final release build
+## Still not safe to mark live
 
-The current repository includes an Android build workflow for a signed debug APK suitable for device testing. A production-store release must use the publisher's own release keystore and should not ship with the debug signing key.
+The following require exact external values or native runtime wiring and therefore are not claimed as live:
+
+- Native Unity Ads bridge and exact Android Ad Unit IDs
+- Native Aptoide Billing bridge and live product registration
+- Server-side purchase validation
+- Background Android notification scheduler
+- Production release signing key
+
+## Release gates
+
+- export the Android APK successfully
+- install and play on a real Android device
+- verify startup logo/loading/lobby flow
+- verify top and bottom banners only during startup/loading
+- verify rewarded and interstitial behavior after native bridge integration
+- verify Aptoide sandbox purchase, cancellation, failure, restore and entitlement delivery
+- verify notification permission/settings behavior
+- complete store metadata, privacy and compliance forms
+- sign the final production build with the publisher-controlled release keystore
+
+The repository's existing Android workflow is a debug build workflow. A debug-signed APK is suitable for device testing but is not the production-store signing credential.
