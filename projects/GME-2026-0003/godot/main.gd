@@ -199,7 +199,7 @@ func _build_loading_screen()->void:
     loading_logo.size=Vector2(600,600)
     loading_logo.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
     loading_logo.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-    var logo=load("res://assets/turbo_rush_logo.jpg")
+    var logo=load("res://assets/turbo_rush_logo.svg")
     if logo:
         loading_logo.texture=logo
     loading_screen.add_child(loading_logo)
