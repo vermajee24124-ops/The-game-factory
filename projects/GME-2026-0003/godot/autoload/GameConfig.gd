@@ -76,8 +76,9 @@ func _extend_cars() -> void:
         var a:String = ["launch_boost","boost_efficiency","damage_reduction","coin_multiplier","handling","boost_power","stability","speed"][base % 8]
         var av:float = float([0.05,0.07,0.06,0.05,0.04,0.06,0.05,0.025][base % 8])
         var an:String = ["Launch Burst","Nitro Saver","Impact Guard","Coin Rush","Apex Grip","Turbo Core","Stability Pro","Velocity Core"][base % 8]
+        var car_names:Array=["Street King","Turbo Viper","Canyon Falcon","Circuit Phantom","Hyper Nova","Volt Striker","Apex Runner","Nitro Falcon","Road Phantom","Blaze GT","Iron Comet","Storm Racer","Neon Sprint","Desert X","Coastal GT","Midnight RS","Thunder Bolt","Silver Arrow","Crimson Apex","Blue Orbit","Green Fury","Violet XR","Solar GT","Arctic RS","Carbon V","Shadow Racer","Rally Nova","Drift King","Pulse GT","Meteor RS","Night Falcon","Ocean Fury","Firestorm GT","Glacier X","Vertex Pro","Quantum GT","Aurora Racer","Titan RS","Velocity XR","Phantom X","Zenith GT","Inferno RS","Cyclone Pro","Eclipse GT","Prism Racer","Hyperion RS","Galaxy GT","Nova Striker","Legend RS","Apex Ultra","Finale XR","Titan Racer","Quantum Rush","World GT"]
         CARS[ids[i]] = {
-            "name": str(["Street King","Turbo Viper","Canyon Falcon","Circuit Phantom","Hyper Nova","Volt Striker","Apex Runner","Nitro Falcon","Road Phantom","Blaze GT","Iron Comet","Storm Racer","Neon Sprint","Desert X","Coastal GT","Midnight RS","Thunder Bolt","Silver Arrow","Crimson Apex","Blue Orbit","Green Fury","Violet XR","Solar GT","Arctic RS","Carbon V","Shadow Racer","Rally Nova","Drift King","Pulse GT","Meteor RS","Night Falcon","Ocean Fury","Firestorm GT","Glacier X","Vertex Pro","Quantum GT","Aurora Racer","Titan RS","Velocity XR","Phantom X","Zenith GT","Inferno RS","Cyclone Pro","Eclipse GT","Prism Racer","Hyperion RS","Galaxy GT","Nova Striker","Legend RS","Apex Ultra","Finale XR","Titan Racer","Quantum Rush","World GT"][n-1]),
+            "name": str(car_names[n-1]),
             "level": level,
             "cost": coins,
             "cost_coins": coins,
