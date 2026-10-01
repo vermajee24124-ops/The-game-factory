@@ -51,6 +51,9 @@ var boost_bar:ProgressBar
 var damage_bar:ProgressBar
 var coin_label:Label
 var speed_label:Label
+var timer_label:Label
+var target_label:Label
+var environment_label:Label
 var countdown_label:Label
 var coins_label:Label
 var diamonds_label:Label
@@ -92,21 +95,25 @@ func _setup_world()->void:
     var env:=WorldEnvironment.new()
     var e:=Environment.new()
     e.background_mode=Environment.BG_COLOR
-    e.background_color=palette.bg
+    e.background_color=Color("#10192B")
     e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
-    e.ambient_light_color=Color("#59709E")
-    e.ambient_light_energy=0.8
+    e.ambient_light_color=Color("#7896C8")
+    e.ambient_light_energy=1.05
+    e.reflected_light_source=Environment.REFLECTION_SOURCE_COLOR
+    e.tonemap_mode=Environment.TONE_MAPPER_FILMIC
+    e.tonemap_exposure=1.15
     e.fog_enabled=true
-    e.fog_light_color=Color("#6E7892")
-    e.fog_light_energy=0.35
-    e.fog_density=0.006
-    e.fog_sky_affect=0.35
+    e.fog_light_color=Color("#56657F")
+    e.fog_light_energy=0.20
+    e.fog_density=0.0025
+    e.fog_sky_affect=0.22
     env.environment=e
     world_root.add_child(env)
     var sun:=DirectionalLight3D.new()
-    sun.rotation_degrees=Vector3(-50.0,-30.0,0.0)
-    sun.light_energy=1.2
+    sun.rotation_degrees=Vector3(-48.0,-28.0,0.0)
+    sun.light_energy=1.45
     sun.shadow_enabled=true
+    sun.directional_shadow_max_distance=140.0
     world_root.add_child(sun)
 
 func _style(color:Color,radius:=16)->StyleBoxFlat:
@@ -424,55 +431,95 @@ func _build_race_hud()->void:
     hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     hud.visible=false
     ui_layer.add_child(hud)
-    position_label=_label(hud,"1/6",38,palette.text)
-    position_label.position=Vector2(54,42)
-    coin_label=_label(hud,"Coins 0",24,palette.coin)
-    coin_label.position=Vector2(1580,42)
-    speed_label=_label(hud,"0 km/h",24,palette.text)
-    speed_label.position=Vector2(1580,88)
+
+    var pos_panel:=Panel.new()
+    pos_panel.position=Vector2(28,28)
+    pos_panel.size=Vector2(160,78)
+    pos_panel.add_theme_stylebox_override("panel",_style(Color(0.05,0.07,0.12,0.88),16))
+    hud.add_child(pos_panel)
+    position_label=_label(pos_panel,"1/6",40,palette.text)
+    position_label.position=Vector2(24,13)
+
     progress_bar=ProgressBar.new()
-    progress_bar.position=Vector2(520,45)
-    progress_bar.size=Vector2(860,25)
+    progress_bar.position=Vector2(225,38)
+    progress_bar.size=Vector2(1010,24)
     progress_bar.max_value=1.0
     progress_bar.show_percentage=false
-    progress_bar.add_theme_stylebox_override("background",_style(palette.panel,10))
-    progress_bar.add_theme_stylebox_override("fill",_style(palette.secondary,10))
+    progress_bar.add_theme_stylebox_override("background",_style(Color(0.05,0.07,0.12,0.86),12))
+    progress_bar.add_theme_stylebox_override("fill",_style(palette.secondary,12))
     hud.add_child(progress_bar)
-    boost_bar=ProgressBar.new()
-    boost_bar.position=Vector2(1460,910)
-    boost_bar.size=Vector2(360,28)
-    boost_bar.max_value=100
-    boost_bar.show_percentage=false
-    boost_bar.add_theme_stylebox_override("background",_style(palette.panel,10))
-    boost_bar.add_theme_stylebox_override("fill",_style(palette.secondary,10))
-    hud.add_child(boost_bar)
+
+    environment_label=_label(hud,"",20,palette.text)
+    environment_label.position=Vector2(225,70)
+    environment_label.size=Vector2(650,35)
+
+    target_label=_label(hud,"TARGET 02:15",18,palette.muted)
+    target_label.position=Vector2(910,70)
+    target_label.size=Vector2(320,32)
+    target_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
+
+    timer_label=_label(hud,"00:00",28,palette.text)
+    timer_label.position=Vector2(1245,36)
+    timer_label.size=Vector2(220,42)
+    timer_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
+
+    coin_label=_label(hud,"COINS 0",22,palette.coin)
+    coin_label.position=Vector2(1515,38)
+    coin_label.size=Vector2(260,35)
+    coin_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
+    speed_label=_label(hud,"0 km/h",23,palette.text)
+    speed_label.position=Vector2(1515,72)
+    speed_label.size=Vector2(260,35)
+    speed_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
+
+    var damage_label:=_label(hud,"DAMAGE",18,palette.muted)
+    damage_label.position=Vector2(38,187)
+    damage_label.size=Vector2(170,28)
+
     damage_bar=ProgressBar.new()
-    damage_bar.position=Vector2(50,200)
-    damage_bar.size=Vector2(270,22)
+    damage_bar.position=Vector2(38,215)
+    damage_bar.size=Vector2(280,18)
     damage_bar.max_value=100
     damage_bar.show_percentage=false
-    damage_bar.add_theme_stylebox_override("background",_style(palette.panel,10))
-    damage_bar.add_theme_stylebox_override("fill",_style(palette.danger,10))
+    damage_bar.add_theme_stylebox_override("background",_style(Color(0.05,0.07,0.12,0.86),9))
+    damage_bar.add_theme_stylebox_override("fill",_style(palette.danger,9))
     hud.add_child(damage_bar)
-    countdown_label=_label(hud,"",96,palette.text)
-    countdown_label.position=Vector2(900,350)
-    var left:=_button(hud,"◀",Vector2(140,90),false)
-    left.position=Vector2(35,840)
+
+    boost_bar=ProgressBar.new()
+    boost_bar.position=Vector2(1450,910)
+    boost_bar.size=Vector2(370,28)
+    boost_bar.max_value=100
+    boost_bar.show_percentage=false
+    boost_bar.add_theme_stylebox_override("background",_style(Color(0.05,0.07,0.12,0.88),10))
+    boost_bar.add_theme_stylebox_override("fill",_style(palette.secondary,10))
+    hud.add_child(boost_bar)
+
+    countdown_label=_label(hud,"",98,palette.text)
+    countdown_label.position=Vector2(860,330)
+    countdown_label.size=Vector2(220,120)
+    countdown_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+
+    var left:=_button(hud,"◀",Vector2(150,96),false)
+    left.position=Vector2(34,845)
     left.button_down.connect(func():left_held=true)
     left.button_up.connect(func():left_held=false)
-    var brake:=_button(hud,"BRAKE",Vector2(150,90),false)
-    brake.position=Vector2(185,840)
+
+    var brake:=_button(hud,"BRAKE",Vector2(170,96),false)
+    brake.position=Vector2(195,845)
     brake.button_down.connect(func():brake_held=true)
     brake.button_up.connect(func():brake_held=false)
-    var right:=_button(hud,"▶",Vector2(140,90),false)
-    right.position=Vector2(325,840)
+
+    var right:=_button(hud,"▶",Vector2(150,96),false)
+    right.position=Vector2(386,845)
     right.button_down.connect(func():right_held=true)
     right.button_up.connect(func():right_held=false)
-    var boost:=_button(hud,"BOOST",Vector2(180,115),true)
-    boost.position=Vector2(1640,735)
+
+    var boost:=_button(hud,"BOOST",Vector2(200,118),true)
+    boost.position=Vector2(1600,735)
     boost.pressed.connect(func():_try_boost())
-    var pause:=_button(hud,"Ⅱ",Vector2(86,62),false)
-    pause.position=Vector2(45,120)
+
+    var pause:=_button(hud,"Ⅱ",Vector2(88,64),false)
+    pause.position=Vector2(38,122)
     pause.pressed.connect(func():_pause_race())
 
 func _build_pause()->void:
@@ -966,6 +1013,30 @@ func _add_finish_gate()->void:
         post.material_override=m
         world_root.add_child(post)
 
+    var top:=MeshInstance3D.new()
+    var tb:=BoxMesh.new()
+    tb.size=Vector3(14.0,0.55,0.55)
+    top.mesh=tb
+    top.position=p+Vector3.UP*4.95
+    top.rotation.y=atan2(tangent.x,tangent.z)
+    var top_mat:=StandardMaterial3D.new()
+    top_mat.albedo_color=Color("#20283A")
+    top_mat.metallic=0.45
+    top.material_override=top_mat
+    world_root.add_child(top)
+
+    for j in range(-6,6):
+        var tile:=MeshInstance3D.new()
+        var cb:=BoxMesh.new()
+        cb.size=Vector3(1.15,0.05,4.5)
+        tile.mesh=cb
+        tile.position=p+side*(float(j)*1.15+0.575)+Vector3.UP*0.11
+        tile.rotation.y=atan2(tangent.x,tangent.z)
+        var cm:=StandardMaterial3D.new()
+        cm.albedo_color=Color("#F4F6FF") if (j%2==0) else Color("#1A1E29")
+        tile.material_override=cm
+        world_root.add_child(tile)
+
 func _spawn_scenery()->void:
     var rng:=RandomNumberGenerator.new()
     rng.seed=int(level_def.seed)^991
@@ -1054,6 +1125,34 @@ func _spawn_scenery()->void:
                     beacon.material_override=glow
                     world_root.add_child(beacon)
 
+            if (is_city or is_industrial) and i%3==0:
+                var pole:=MeshInstance3D.new()
+                var pb:=CylinderMesh.new()
+                pb.top_radius=0.06
+                pb.bottom_radius=0.08
+                pb.height=4.2
+                pole.mesh=pb
+                pole.position=sample.pos+side*sign*(sample.width*0.5+2.4)+Vector3.UP*2.1
+                var pole_mat:=StandardMaterial3D.new()
+                pole_mat.albedo_color=Color("#394657")
+                pole_mat.metallic=0.55
+                pole.material_override=pole_mat
+                world_root.add_child(pole)
+
+                var lamp:=MeshInstance3D.new()
+                var lb:=SphereMesh.new()
+                lb.radius=0.18
+                lb.height=0.36
+                lamp.mesh=lb
+                lamp.position=pole.position+Vector3(0,2.1,0)
+                var lm:=StandardMaterial3D.new()
+                lm.albedo_color=Color("#FFF1B5")
+                lm.emission_enabled=true
+                lm.emission=Color("#FFD978")
+                lm.emission_energy_multiplier=2.0
+                lamp.material_override=lm
+                world_root.add_child(lamp)
+
             # Low-cost roadside safety rail gives the track a finished silhouette.
             if i%2==0:
                 var rail:=MeshInstance3D.new()
@@ -1122,7 +1221,7 @@ func _spawn_racers()->void:
         var d:float=-float(i+1)*3.0
         var lane:float=float(i-2)*2.0
         _place_racer(n,d,lane)
-        ai_racers.append({"progress":d,"lane":lane,"speed_factor":0.93+0.12*float(level_def.difficulty)+rng.randf_range(-0.02,0.02),"role":str(roles[i]),"node":n})
+        ai_racers.append({"progress":d,"lane":lane,"speed_factor":0.93+0.12*float(level_def.difficulty)+rng.randf_range(-0.02,0.02),"role":str(roles[i]),"node":n,"target_lane":lane})
 
 func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
     var car:=CharacterBody3D.new()
@@ -1132,51 +1231,94 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
 
     var shape:=CollisionShape3D.new()
     var bs:=BoxShape3D.new()
-    bs.size=Vector3(2.2,1.0,4.1)
+    bs.size=Vector3(2.25,1.0,4.2)
     shape.shape=bs
-    shape.position.y=0.6
+    shape.position.y=0.58
     car.add_child(shape)
 
-    var body:=MeshInstance3D.new()
-    var bm:=BoxMesh.new()
-    bm.size=Vector3(2.2,0.82,4.0)
-    body.mesh=bm
-    body.position.y=0.68
-    var mat:=StandardMaterial3D.new()
     var body_color:=color
     if car_name=="PLAYER":
         var skin_id:=str(SaveSystem.data["cosmetics"]["equipped"].get("skin","skin_01"))
         var skin:=ContentCatalog.skin(skin_id)
         if not skin.is_empty():
             body_color=Color(str(skin.get("color","#FF6B2C")))
+
+    var lower:=MeshInstance3D.new()
+    var lower_mesh:=BoxMesh.new()
+    lower_mesh.size=Vector3(2.24,0.46,4.12)
+    lower.mesh=lower_mesh
+    lower.position.y=0.52
+    var lower_mat:=StandardMaterial3D.new()
+    lower_mat.albedo_color=body_color.darkened(0.16)
+    lower_mat.metallic=0.28
+    lower_mat.roughness=0.28
+    lower.material_override=lower_mat
+    car.add_child(lower)
+
+    var body:=MeshInstance3D.new()
+    var bm:=BoxMesh.new()
+    bm.size=Vector3(2.08,0.52,3.42)
+    body.mesh=bm
+    body.position=Vector3(0,0.82,-0.15)
+    body.rotation_degrees.x=-2.5
+    var mat:=StandardMaterial3D.new()
     mat.albedo_color=body_color
-    mat.metallic=0.18
-    mat.roughness=0.32
+    mat.metallic=0.22
+    mat.roughness=0.24
     body.material_override=mat
     car.add_child(body)
 
-    # Low-cost production-style details: cabin, spoiler and emissive headlights.
+    var hood:=MeshInstance3D.new()
+    var hm:=BoxMesh.new()
+    hm.size=Vector3(1.88,0.20,1.18)
+    hood.mesh=hm
+    hood.position=Vector3(0,1.03,-1.38)
+    hood.rotation_degrees.x=-4.0
+    hood.material_override=mat
+    car.add_child(hood)
+
     var cabin:=MeshInstance3D.new()
     var cb:=BoxMesh.new()
-    cb.size=Vector3(1.35,0.48,1.75)
+    cb.size=Vector3(1.34,0.52,1.70)
     cabin.mesh=cb
-    cabin.position=Vector3(0,1.16,-0.15)
+    cabin.position=Vector3(0,1.25,0.05)
+    cabin.rotation_degrees.x=7.0
     var glass:=StandardMaterial3D.new()
-    glass.albedo_color=Color("#16243A")
-    glass.metallic=0.55
-    glass.roughness=0.18
+    glass.albedo_color=Color("#12243B")
+    glass.metallic=0.75
+    glass.roughness=0.12
     cabin.material_override=glass
     car.add_child(cabin)
 
+    var roof:=MeshInstance3D.new()
+    var rb:=BoxMesh.new()
+    rb.size=Vector3(1.08,0.08,1.15)
+    roof.mesh=rb
+    roof.position=Vector3(0,1.57,0.05)
+    var roof_mat:=StandardMaterial3D.new()
+    roof_mat.albedo_color=Color("#0E1420")
+    roof_mat.metallic=0.55
+    roof_mat.roughness=0.2
+    roof.material_override=roof_mat
+    car.add_child(roof)
+
+    var splitter:=MeshInstance3D.new()
+    var spb:=BoxMesh.new()
+    spb.size=Vector3(1.86,0.10,0.32)
+    splitter.mesh=spb
+    splitter.position=Vector3(0,0.50,-2.02)
+    var split_mat:=StandardMaterial3D.new()
+    split_mat.albedo_color=Color("#0B0E15")
+    split_mat.metallic=0.45
+    splitter.material_override=split_mat
+    car.add_child(splitter)
+
     var spoiler:=MeshInstance3D.new()
     var sb:=BoxMesh.new()
-    sb.size=Vector3(1.75,0.12,0.42)
+    sb.size=Vector3(1.76,0.12,0.36)
     spoiler.mesh=sb
-    spoiler.position=Vector3(0,1.02,1.72)
-    var sm:=StandardMaterial3D.new()
-    sm.albedo_color=Color("#10141D")
-    sm.metallic=0.45
-    spoiler.material_override=sm
+    spoiler.position=Vector3(0,1.23,1.72)
+    spoiler.material_override=roof_mat
     car.add_child(spoiler)
 
     for sx in [-0.82,0.82]:
@@ -1184,33 +1326,68 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
             var wheel:=MeshInstance3D.new()
             var cm:=CylinderMesh.new()
             cm.height=0.34
-            cm.top_radius=0.43
-            cm.bottom_radius=0.43
+            cm.top_radius=0.44
+            cm.bottom_radius=0.44
             wheel.mesh=cm
+            wheel.name="Wheel%s%s" % ["L" if sx<0 else "R","F" if sz<0 else "R"]
             wheel.position=Vector3(sx,0.38,sz)
             wheel.rotation.z=PI/2
             var wm:=StandardMaterial3D.new()
-            wm.albedo_color=Color("#101218")
-            wm.metallic=0.25
-            wm.roughness=0.55
+            wm.albedo_color=Color("#0B0E13")
+            wm.metallic=0.32
+            wm.roughness=0.48
             wheel.material_override=wm
             car.add_child(wheel)
+            var hub:=MeshInstance3D.new()
+            var hubm:=CylinderMesh.new()
+            hubm.height=0.10
+            hubm.top_radius=0.18
+            hubm.bottom_radius=0.18
+            hub.mesh=hubm
+            hub.position=Vector3(sx + (0.18 if sx<0 else -0.18),0.38,sz)
+            hub.rotation.z=PI/2
+            var hub_mat:=StandardMaterial3D.new()
+            hub_mat.albedo_color=Color("#C5CEDF")
+            hub_mat.metallic=0.75
+            hub.material_override=hub_mat
+            car.add_child(hub)
 
     for sx in [-0.62,0.62]:
         var lamp:=MeshInstance3D.new()
         var lm:=BoxMesh.new()
-        lm.size=Vector3(0.22,0.14,0.08)
+        lm.size=Vector3(0.26,0.14,0.10)
         lamp.mesh=lm
-        lamp.position=Vector3(sx,0.78,-2.02)
+        lamp.position=Vector3(sx,0.88,-2.05)
         var led:=StandardMaterial3D.new()
-        led.albedo_color=Color("#DFF7FF")
+        led.albedo_color=Color("#E9FCFF")
         led.emission_enabled=true
-        led.emission=Color("#7BDFFF")
-        led.emission_energy_multiplier=2.2
+        led.emission=Color("#83E6FF")
+        led.emission_energy_multiplier=3.0
         lamp.material_override=led
         car.add_child(lamp)
 
+        var tail:=MeshInstance3D.new()
+        var tm:=BoxMesh.new()
+        tm.size=Vector3(0.26,0.12,0.08)
+        tail.mesh=tm
+        tail.position=Vector3(sx,0.82,2.07)
+        var tail_mat:=StandardMaterial3D.new()
+        tail_mat.albedo_color=Color("#FF3D52")
+        tail_mat.emission_enabled=true
+        tail_mat.emission=Color("#FF3147")
+        tail_mat.emission_energy_multiplier=1.7
+        tail.material_override=tail_mat
+        car.add_child(tail)
+
     return car
+
+func _animate_vehicle_wheels(vehicle:Node3D,speed:float,delta:float)->void:
+    if not is_instance_valid(vehicle):return
+    var spin:=speed*delta*0.95
+    for wheel_name in ["WheelLF","WheelRF","WheelLR","WheelRR"]:
+        var wheel:=vehicle.get_node_or_null(wheel_name)
+        if wheel is Node3D:
+            wheel.rotate_x(spin)
 
 func _pickup_mesh(kind:String,color:Color)->MeshInstance3D:
     var n:=MeshInstance3D.new()
@@ -1335,6 +1512,7 @@ func _update_race(delta:float)->void:
     player_speed=move_toward(player_speed,target_speed,accel*delta)
     player_progress=minf(player_progress+player_speed*delta,float(level_def.track_length_m))
     _place_racer(player_car,player_progress,player_lane)
+    _animate_vehicle_wheels(player_car,player_speed,delta)
     if is_instance_valid(race_camera):
         var speed_ratio:=clampf(player_speed/(GameConfig.car(car_id).get("top_speed",140.0)/3.6),0.0,1.25)
         race_camera.fov=lerpf(68.0,78.0,speed_ratio)+(3.0 if boosting else 0.0)
@@ -1348,8 +1526,13 @@ func _update_race(delta:float)->void:
     progress_bar.value=player_progress/float(level_def.track_length_m)
     boost_bar.value=boost_energy
     damage_bar.value=damage
-    coin_label.text="Coins %d" % RaceSession.track_coins_collected
+    coin_label.text="COINS %d" % RaceSession.track_coins_collected
     speed_label.text="%d km/h" % int(player_speed*3.6)
+    var total_seconds:=int(race_clock)
+    timer_label.text="%02d:%02d" % [int(total_seconds/60),total_seconds%60]
+    var target_seconds:=int(float(level_def.target_time_sec))
+    target_label.text="TARGET %02d:%02d" % [int(target_seconds/60),target_seconds%60]
+    environment_label.text="%s  •  %s" % [_environment_name(str(level_def.environment_id)),str(level_def.race_type).to_upper()]
     if player_progress>=float(level_def.track_length_m)-1.0:
         _finish_race(true)
     elif damage>=100.0:
@@ -1367,19 +1550,42 @@ func _update_ai(delta:float)->void:
         var ai:Dictionary=ai_racers[i]
         var factor:=float(ai.speed_factor)*base
         if str(ai.role)=="mistake" and sin(race_clock*0.35)>0.92:factor*=0.82
+
+        var target_lane:=float(ai.target_lane)
+        var gap:=player_progress-float(ai.progress)
+        if gap>0.0 and gap<28.0:
+            var side:=1.0 if fmod(float(i),2.0)==0.0 else -1.0
+            target_lane=clampf(player_lane+side*2.2,-5.5,5.5)
+        elif gap< -8.0:
+            target_lane=clampf(float(ai.lane)*0.75+sin(race_clock*(0.7+0.08*i)+i)*1.1,-5.5,5.5)
+        if str(ai.role)=="aggressive":
+            target_lane=clampf(target_lane+sin(race_clock*0.55+i)*0.6,-5.5,5.5)
+        elif str(ai.role)=="front":
+            target_lane=clampf(target_lane*0.85,-5.5,5.5)
+        ai.target_lane=target_lane
+        ai.lane=move_toward(float(ai.lane),target_lane,3.4*delta)
+
+        var player_pressure:=clampf((player_progress-float(ai.progress))/55.0,0.0,0.06)
+        factor+=player_pressure
         ai.progress=minf(float(ai.progress)+maxf(5.0,player_speed)*factor*delta,float(level_def.track_length_m)+50.0)
-        ai.lane=clampf(float(ai.lane)+sin(race_clock*(0.5+0.1*i)+i)*0.25*delta,-5.6,5.6)
+
         ai_racers[i]=ai
         _place_racer(ai.node,float(ai.progress),float(ai.lane))
+        _animate_vehicle_wheels(ai.node,player_speed*float(ai.speed_factor),delta)
+
 
 func _update_traffic(delta:float)->void:
     for i in range(traffic.size()):
         var t:Dictionary=traffic[i]
         t.progress+=player_speed*float(t.speed_factor)*delta
         if t.progress>float(level_def.track_length_m)+35.0:t.progress=35.0+float(i)*8.0
-        t.lane=clampf(float(t.lane)+sin(race_clock*0.35+i)*0.12*delta,-5.0,5.0)
+        var desired_lane:=float(t.lane)+sin(race_clock*0.35+i)*0.45*delta
+        if absf(player_progress-float(t.progress))<20.0:
+            desired_lane=clampf(player_lane + (2.8 if player_lane<=0.0 else -2.8),-5.0,5.0)
+        t.lane=move_toward(float(t.lane),clampf(desired_lane,-5.0,5.0),1.8*delta)
         traffic[i]=t
         _place_racer(t.node,float(t.progress),float(t.lane))
+        _animate_vehicle_wheels(t.node,player_speed*float(t.speed_factor),delta)
 
 func _check_pickups()->void:
     for i in range(pickups.size()):
