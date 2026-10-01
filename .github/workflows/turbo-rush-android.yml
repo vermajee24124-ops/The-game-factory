@@ -87,14 +87,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p projects/GME-2026-0003/artifacts
-          "$GODOT_BIN" --headless             --path projects/GME-2026-0003/godot             --export-debug "Android Debug APK (Prebuilt)"             artifacts/TurboRush-v1.0.1-debug.apk             2>&1 | tee /tmp/turbo-export.log
+          "$GODOT_BIN" --headless             --path projects/GME-2026-0003/godot             --export-debug "Android Debug APK (Prebuilt)"             ../artifacts/TurboRush-v1.0.1-debug.apk             2>&1 | tee /tmp/turbo-export.log
 
       - name: Validate APK
         run: |
           set -euo pipefail
-          "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging $GITHUB_WORKSPACE/projects/GME-2026-0003/artifacts/TurboRush-v1.0.1-debug.apk | tee artifacts/APK_BADGING.txt
+          "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging projects/GME-2026-0003/artifacts/TurboRush-v1.0.1-debug.apk | tee artifacts/APK_BADGING.txt
           "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose projects/GME-2026-0003/artifacts/TurboRush-v1.0.1-debug.apk | tee artifacts/APK_SIGNING.txt
-          sha256sum projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk | tee artifacts/APK_SHA256.txt
+          sha256sum projects/GME-2026-0003/artifacts/TurboRush-v1.0.1-debug.apk | tee artifacts/APK_SHA256.txt
 
       - name: Write build evidence
         run: |
@@ -117,6 +117,6 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Turbo-Rush-v1.0.0-debug-apk
+          name: Turbo-Rush-v1.0.1-debug-apk
           path: projects/GME-2026-0003/artifacts/
           if-no-files-found: error
