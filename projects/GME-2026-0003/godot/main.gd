@@ -526,43 +526,59 @@ func _build_garage()->void:
     var back:=_button(p,"BACK",Vector2(160,60),false)
     back.position=Vector2(1650,35)
     back.pressed.connect(func():_show_main_menu())
+    var cars_scroll:=ScrollContainer.new()
+    cars_scroll.name="CarsScroll"
+    cars_scroll.position=Vector2(55,130)
+    cars_scroll.size=Vector2(520,730)
+    p.add_child(cars_scroll)
     var cars:=VBoxContainer.new()
     cars.name="Cars"
-    cars.position=Vector2(55,130)
-    cars.size=Vector2(520,520)
+    cars.custom_minimum_size=Vector2(500,900)
     cars.add_theme_constant_override("separation",8)
-    p.add_child(cars)
+    cars_scroll.add_child(cars)
+
+    var upgrades_scroll:=ScrollContainer.new()
+    upgrades_scroll.name="UpgradesScroll"
+    upgrades_scroll.position=Vector2(610,130)
+    upgrades_scroll.size=Vector2(570,730)
+    p.add_child(upgrades_scroll)
     var upgrades:=VBoxContainer.new()
     upgrades.name="Upgrades"
-    upgrades.position=Vector2(610,130)
-    upgrades.size=Vector2(570,520)
+    upgrades.custom_minimum_size=Vector2(550,800)
     upgrades.add_theme_constant_override("separation",8)
-    p.add_child(upgrades)
+    upgrades_scroll.add_child(upgrades)
+
+    var cosmetics_scroll:=ScrollContainer.new()
+    cosmetics_scroll.name="CosmeticsScroll"
+    cosmetics_scroll.position=Vector2(1210,130)
+    cosmetics_scroll.size=Vector2(610,630)
+    p.add_child(cosmetics_scroll)
     var cosmetics:=VBoxContainer.new()
     cosmetics.name="Cosmetics"
-    cosmetics.position=Vector2(1210,130)
-    cosmetics.size=Vector2(610,620)
+    cosmetics.custom_minimum_size=Vector2(590,900)
     cosmetics.add_theme_constant_override("separation",8)
-    p.add_child(cosmetics)
+    cosmetics_scroll.add_child(cosmetics)
     var collection:=_button(p,"COLLECTION • 54 SKINS / 48 CARDS",Vector2(610,76),true)
     collection.position=Vector2(1210,780)
     collection.pressed.connect(func():_refresh_collection("skins");_show_only("collection"))
 
 func _refresh_garage()->void:
-    var cars:VBoxContainer=screens["garage"].get_node("Panel/Cars")
-    var upgrades:VBoxContainer=screens["garage"].get_node("Panel/Upgrades")
-    var cosmetics:VBoxContainer=screens["garage"].get_node("Panel/Cosmetics")
+    var cars:VBoxContainer=screens["garage"].get_node("Panel/CarsScroll/Cars")
+    var upgrades:VBoxContainer=screens["garage"].get_node("Panel/UpgradesScroll/Upgrades")
+    var cosmetics:VBoxContainer=screens["garage"].get_node("Panel/CosmeticsScroll/Cosmetics")
     for n in cars.get_children():n.queue_free()
     for n in upgrades.get_children():n.queue_free()
     for n in cosmetics.get_children():n.queue_free()
     var owned:Array=SaveSystem.data["progression"]["cars"]["owned"]
-    _label(cars,"CARS",28,palette.muted)
+    _label(cars,"CARS • %d TOTAL" % GameConfig.CARS.size(),28,palette.muted)
     for id in GameConfig.CARS.keys():
         var cd:Dictionary=GameConfig.car(str(id))
         var owned_now:=owned.has(id)
         var can_buy:=ProgressionService.can_buy_car(str(id))
         var title:=str(cd.get("name",""))+" • L"+str(cd.get("level",1))
-        if not owned_now:title+=" • "+str(cd.get("cost",0))+" Coins"
+        title+=" • "+str(cd.get("ability","Balanced"))
+        if not owned_now:
+            title+=" • "+str(cd.get("cost_coins",cd.get("cost",0)))+" Coins + "+str(cd.get("cost_diamonds",0))+" Diamonds"
         var b:=_button(cars,title,Vector2(500,60),owned_now or can_buy)
         b.disabled=not (owned_now or can_buy)
         b.pressed.connect(func(car_id=str(id)):
@@ -613,8 +629,8 @@ func _refresh_garage()->void:
         var item:Dictionary=GameConfig.wheel(str(id))
         var owned_w:=ProgressionService.has_cosmetic(str(id))
         var cur_w:=str(SaveSystem.data["cosmetics"]["equipped"].get("wheel","wheel_stock"))==str(id)
-        var wtxt:=str(item.get("name",""))+" • L"+str(item.get("level",1))
-        if not owned_w:wtxt+=" • "+str(item.get("cost",0))+" "+("Diamonds" if bool(item.get("premium",false)) else "Coins")
+        var wtxt:=str(item.get("name",""))+" • L"+str(item.get("level",1))+" • "+str(item.get("ability","Balanced Wheels"))
+        if not owned_w:wtxt+=" • "+str(item.get("cost_coins",item.get("cost",0)))+" Coins + "+str(item.get("cost_diamonds",0))+" Diamonds"
         var b:=_button(cosmetics,("✓ " if cur_w else "")+wtxt,Vector2(590,54),owned_w or ProgressionService.player_level()>=int(item.get("level",1)))
         b.disabled=not (owned_w or ProgressionService.player_level()>=int(item.get("level",1)))
         b.pressed.connect(func(wheel_id=str(id)):
@@ -789,7 +805,7 @@ func _build_settings()->void:
         SaveSystem.data["settings"]["controls"]["auto_acceleration"]=v
         SaveSystem.save_now()
     )
-    var txt:=_label(p,"Landscape locked • Safe area • Offline-first\nUpgrade, car and cosmetic progress is stored locally.",24,palette.muted)
+    var txt:=_label(p,"54 cars • 60 wheels • 54 skins • 48 cards\nCars and wheels use Coins + Diamonds. Abilities are gameplay-affecting but balanced.\nLandscape locked • Safe area • Offline-first",24,palette.muted)
     txt.position=Vector2(70,350)
     var support:=_label(p,"Support: %s\nPackage: %s" % [ReleaseConfig.SUPPORT_EMAIL,ReleaseConfig.PACKAGE_NAME],20,palette.muted)
     support.position=Vector2(70,465)
@@ -1152,10 +1168,14 @@ func _update_race(delta:float)->void:
     var boost_power:=float(cd.get("boost_power",25.0))+2.0*int(up.get("boost_power",0))+ProgressionService.boost_power_bonus()
     var handling:=float(cd.get("grip",1.0))*(1.0+0.025*int(up.get("handling",0))+ProgressionService.handling_bonus())
     var stability:=float(cd.get("stability",1.0))*(1.0+0.02*int(up.get("stability",0))+ProgressionService.stability_bonus())
+    var launch_bonus:=ProgressionService.launch_bonus()
+    if race_clock<5.0:
+        accel*=1.0+launch_bonus
     var target_speed:=top_speed/3.6*GameConfig.EXPECTED_SPEED_FACTOR
     if boosting:
         target_speed+=boost_power/3.6
-        boost_energy=maxf(0.0,boost_energy-(50.0-2.78*int(up.get("boost_duration",0))-ProgressionService.boost_duration_bonus()*10.0)*delta)
+        var drain_factor:=1.0-ProgressionService.boost_efficiency_bonus()
+        boost_energy=maxf(0.0,boost_energy-(50.0-2.78*int(up.get("boost_duration",0))-ProgressionService.boost_duration_bonus()*10.0)*drain_factor*delta)
         if boost_energy<=0.0:boosting=false
     else:
         boost_energy=minf(100.0,boost_energy+4.0*delta)
