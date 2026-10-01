@@ -1330,6 +1330,39 @@ func _build_track_surface()->void:
         marker.rotation.y=atan2(_tangent_at_index(i).x,_tangent_at_index(i).z)
         marker.material_override=line_mat
         world_root.add_child(marker)
+
+    var lane_mat:=StandardMaterial3D.new()
+    lane_mat.albedo_color=Color("#AEB8C8")
+    lane_mat.roughness=0.70
+    var edge_mat:=StandardMaterial3D.new()
+    edge_mat.albedo_color=Color("#D5DFEA")
+    edge_mat.metallic=0.18
+    edge_mat.roughness=0.45
+    for i in range(0,path_points.size()-1,5):
+        var sample:Dictionary=_sample_path(path_distances[i])
+        var tangent:Vector3=sample["tangent"]
+        var side:Vector3=Vector3(-tangent.z,0,tangent.x).normalized()
+        var width:float=float(sample["width"])
+        var yaw:=atan2(tangent.x,tangent.z)
+        for lane_offset in [-2.65,2.65]:
+            var dash:=MeshInstance3D.new()
+            var db:=BoxMesh.new()
+            db.size=Vector3(0.12,0.045,3.2)
+            dash.mesh=db
+            dash.position=sample["pos"]+side*lane_offset+Vector3.UP*0.115
+            dash.rotation.y=yaw
+            dash.material_override=lane_mat
+            world_root.add_child(dash)
+        for side_sign in [-1.0,1.0]:
+            var edge:=MeshInstance3D.new()
+            var eb:=BoxMesh.new()
+            eb.size=Vector3(0.16,0.05,5.0)
+            edge.mesh=eb
+            edge.position=sample["pos"]+side*side_sign*(width*0.5-0.18)+Vector3.UP*0.13
+            edge.rotation.y=yaw
+            edge.material_override=edge_mat
+            world_root.add_child(edge)
+
     _add_finish_gate()
     _add_road_details()
     _add_start_grid()
@@ -1462,7 +1495,21 @@ func _spawn_scenery()->void:
                     glow.emission=palette.secondary
                     glow.emission_energy_multiplier=2.0
                     beacon.material_override=glow
-                    world_root.add_child(beacon)
+                    world_root.add_child(beacon
+
+                    if rng.randf()<0.65:
+                        var window_strip:=MeshInstance3D.new()
+                        var wsm:=BoxMesh.new()
+                        wsm.size=Vector3(0.18,0.70,1.10)
+                        window_strip.mesh=wsm
+                        window_strip.position=p+Vector3(rng.randf_range(-1.8,1.8),h*rng.randf_range(0.35,0.75),rng.randf_range(-2.5,2.5))
+                        var window_mat:=StandardMaterial3D.new()
+                        window_mat.albedo_color=Color("#B9D8FF")
+                        window_mat.emission_enabled=true
+                        window_mat.emission=Color("#4EB8FF")
+                        window_mat.emission_energy_multiplier=0.85
+                        window_strip.material_override=window_mat
+                        world_root.add_child(window_strip)
 
             if (is_city or is_industrial) and i%3==0:
                 var pole:=MeshInstance3D.new()
@@ -1518,21 +1565,21 @@ func _spawn_items()->void:
         var n:=_pickup_mesh("coin",palette.coin)
         world_root.add_child(n)
         _place_node(n,d,lane,0.55)
-        pickups.append({"kind":"coin","distance":d,"lane":lane,"node":n,"collected":false})
+        pickups.append({"kind":"coin","distance":d,"lane":lane,"node":n,"base_y":float(n.position.y),"collected":false})
     for i in range(int(level_def.boost_pickup_count)):
         var d:=rng.randf_range(100.0,float(level_def.track_length_m)-100.0)
         var lane:=rng.randf_range(-4.0,4.0)
         var n:=_pickup_mesh("boost",palette.secondary)
         world_root.add_child(n)
         _place_node(n,d,lane,0.8)
-        pickups.append({"kind":"boost","distance":d,"lane":lane,"node":n,"collected":false})
+        pickups.append({"kind":"boost","distance":d,"lane":lane,"node":n,"base_y":float(n.position.y),"collected":false})
     if bool(level_def.has_diamond_pickup):
         var d:=rng.randf_range(180.0,float(level_def.track_length_m)-180.0)
         var lane:=rng.randf_range(-4.0,4.0)
         var n:=_pickup_mesh("diamond",palette.diamond)
         world_root.add_child(n)
         _place_node(n,d,lane,1.0)
-        pickups.append({"kind":"diamond","distance":d,"lane":lane,"node":n,"collected":false})
+        pickups.append({"kind":"diamond","distance":d,"lane":lane,"node":n,"base_y":float(n.position.y),"collected":false})
     for i in range(int(level_def.obstacle_count)):
         var d:=rng.randf_range(90.0,float(level_def.track_length_m)-100.0)
         var lane:=rng.randf_range(-5.0,5.0)
@@ -1867,11 +1914,25 @@ func _tangent_at_index(i:int)->Vector3:
     return (b-a).normalized()
 
 func _process(delta:float)->void:
+    pickup_time+=delta
     if menu_car and is_instance_valid(menu_car) and current_screen!="race":
         menu_spin+=delta
         menu_car.rotation.y=deg_to_rad(-28.0)+sin(menu_spin*0.32)*0.12
     if impact_shake>0.0:
         impact_shake=maxf(0.0,impact_shake-delta*4.0)
+    for i in range(pickups.size()):
+        var pickup:Dictionary=pickups[i]
+        if bool(pickup.get("collected",false)):
+            continue
+        var pickup_node:=pickup.get("node") as Node3D
+        if not is_instance_valid(pickup_node):
+            continue
+        var kind:=str(pickup.get("kind","coin"))
+        pickup_node.rotation.y+=delta*(2.6 if kind=="coin" else 1.8)
+        pickup_node.position.y=float(pickup.get("base_y",pickup_node.position.y))+sin(pickup_time*3.2+float(i))*0.12
+        if kind=="boost":
+            var pulse:=0.92+sin(pickup_time*5.0+float(i))*0.08
+            pickup_node.scale=Vector3.ONE*pulse
     if state=="COUNTDOWN":
         _update_countdown(delta)
     elif state=="RACING":
@@ -1939,7 +2000,9 @@ func _update_race(delta:float)->void:
     _update_traffic(delta)
     _check_pickups()
     _check_collisions()
-    position_label.text="%d/6" % _player_position()
+    var live_position:=_player_position()
+    position_label.text="%d/6" % live_position
+    position_label.add_theme_color_override("font_color",palette.success if live_position==1 else (palette.warning if live_position>=5 else palette.text))
     progress_bar.value=player_progress/float(level_def.track_length_m)
     boost_bar.value=boost_energy
     damage_bar.value=damage
@@ -1973,6 +2036,14 @@ func _update_ai(delta:float)->void:
         if gap>0.0 and gap<28.0:
             var side:=1.0 if fmod(float(i),2.0)==0.0 else -1.0
             target_lane=clampf(player_lane+side*2.2,-5.5,5.5)
+        for obstacle in obstacles:
+            if bool(obstacle.get("hit",false)):
+                continue
+            var obstacle_gap:=float(obstacle.get("distance",99999.0))-float(ai.progress)
+            if obstacle_gap>0.0 and obstacle_gap<14.0 and absf(float(obstacle.get("lane",0.0))-float(ai.lane))<2.6:
+                var avoid_dir:=1.0 if float(ai.lane)<=float(obstacle.get("lane",0.0)) else -1.0
+                target_lane=clampf(float(ai.lane)+avoid_dir*3.0,-5.5,5.5)
+                break
         elif gap< -8.0:
             target_lane=clampf(float(ai.lane)*0.75+sin(race_clock*(0.7+0.08*i)+i)*1.1,-5.5,5.5)
         if str(ai.role)=="aggressive":
