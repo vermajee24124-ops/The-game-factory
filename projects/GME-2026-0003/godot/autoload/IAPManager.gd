@@ -36,6 +36,8 @@ func _sync_catalog() -> void:
                 "diamonds":0,
                 "skins":[],
                 "cards":[],
+                "cars":[],
+                "wheels":[],
                 "reference_price_usd":2.99
             }
         else:
@@ -55,6 +57,10 @@ func product_summary(product_id:String) -> String:
     var cards:Array=item.get("cards",[])
     if not skins.is_empty(): parts.append("%d Skins"%skins.size())
     if not cards.is_empty(): parts.append("%d Cards"%cards.size())
+    var cars:Array=item.get("cars",[])
+    var wheels:Array=item.get("wheels",[])
+    if not cars.is_empty(): parts.append("%d Cars"%cars.size())
+    if not wheels.is_empty(): parts.append("%d Wheels"%wheels.size())
     if product_id=="remove_ads": return "Permanent ad removal"
     return " • ".join(parts)
 
@@ -119,6 +125,10 @@ func apply_verified_entitlement(product_id: String, transaction_id:String="") ->
         ProgressionService.grant_skin(str(skin_id))
     for card_id in item.get("cards",[]):
         ProgressionService.grant_card(str(card_id))
+    for car_id in item.get("cars",[]):
+        ProgressionService.grant_car(str(car_id))
+    for wheel_id in item.get("wheels",[]):
+        ProgressionService.grant_wheel(str(wheel_id))
 
     var owned:Array=SaveSystem.data["monetization"]["iap"]["owned_products"]
     if not owned.has(product_id):
