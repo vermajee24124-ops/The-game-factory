@@ -93,8 +93,8 @@ jobs:
         run: |
           set -euo pipefail
           "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging projects/GME-2026-0003/artifacts/TurboRush-v1.0.1-debug.apk | tee artifacts/APK_BADGING.txt
-          "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose projects/GME-2026-0003/artifacts/TurboRush-v1.0.1-debug.apk | tee artifacts/APK_SIGNING.txt
-          sha256sum projects/GME-2026-0003/artifacts/TurboRush-v1.0.1-debug.apk | tee artifacts/APK_SHA256.txt
+          "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose projects/GME-2026-0003/artifacts/TurboRush-v1.0.1-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
+          sha256sum projects/GME-2026-0003/artifacts/TurboRush-v1.0.1-debug.apk | tee projects/GME-2026-0003/artifacts/APK_SHA256.txt
 
       - name: Write build evidence
         run: |
