@@ -79,6 +79,18 @@ jobs:
           unzip -q /tmp/templates.tpz -d /tmp/templates
           cp -r /tmp/templates/templates/* "$HOME/.local/share/godot/export_templates/4.7.2.stable/"
 
+      - name: Install project Gradle Android template
+        run: |
+          set -euo pipefail
+          test -f /tmp/templates.tpz
+          rm -rf projects/GME-2026-0003/godot/android
+          mkdir -p projects/GME-2026-0003/godot/android/build
+          unzip -p /tmp/templates.tpz templates/android_source.zip > /tmp/android_source.zip
+          test -s /tmp/android_source.zip
+          unzip -q /tmp/android_source.zip -d projects/GME-2026-0003/godot/android/build
+          test -f projects/GME-2026-0003/godot/android/build/build.gradle
+          test -f projects/GME-2026-0003/godot/android/build/gradlew
+
       - name: Verify project files
         run: |
           set -euo pipefail
