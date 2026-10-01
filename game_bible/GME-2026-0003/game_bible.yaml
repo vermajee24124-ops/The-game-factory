@@ -50,7 +50,12 @@ monetization:
       coins: [80, 120, 180, 250, 400]
       diamonds: [1, 2, 3]
   interstitial: "results_to_menu only; max once per 5 minutes; first 10 minutes disabled"
-  iap_products: [diamond_small, diamond_medium, diamond_large, diamond_epic, remove_ads]
+  iap_products: [starter_garage, racer_bundle, pro_garage, skin_vault_01, skin_vault_02, card_vault_01, card_vault_02, mega_rush, ultimate_garage, remove_ads]
+  content_catalog: {skins: 54, cards: 48}
+  paid_content_is_fixed: true
+  paid_random_loot: false
+  duplicate_skin_compensation_coins: 250
+  duplicate_card_compensation_coins: 120
   pay_to_win: false
 release:
   requires_build: true
