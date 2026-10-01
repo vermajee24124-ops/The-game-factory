@@ -77,7 +77,7 @@ jobs:
       - name: Android debug APK
         run: |
           mkdir -p projects/GME-2026-0003/artifacts
-          godot --headless             --path projects/GME-2026-0003/godot             --export-debug "Android Debug APK"             projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk             2>&1 | tee /tmp/turbo-export.log
+          godot --headless             --path projects/GME-2026-0003/godot             --export-debug "Android Debug APK (Prebuilt)"             projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk             2>&1 | tee /tmp/turbo-export.log
 
       - name: Validate APK
         run: |
