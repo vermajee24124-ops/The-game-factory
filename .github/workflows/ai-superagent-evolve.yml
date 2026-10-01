@@ -26,9 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      CODECRAFT_API_KEY: ${{ secrets.CODECRAFT_API_KEY }}
-      CODECRAFT_BASE_URL: https://www.codecraftapi.com/v1
-      CODECRAFT_MODEL: claude-opus-5-5
       FREELLMAPI_BASE_URL: ${{ secrets.FREELLMAPI_BASE_URL }}
       FREELLMAPI_API_KEY: ${{ secrets.FREELLMAPI_API_KEY }}
       FREELLMAPI_MODEL: ${{ secrets.FREELLMAPI_MODEL }}
