@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project_id": "GME-2026-0003",
   "name": "Turbo Rush",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "engine": "Godot",
   "engine_version": "4.7.2",
   "platforms": ["android", "ios"],
