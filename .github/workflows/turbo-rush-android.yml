@@ -1,0 +1,83 @@
+name: Turbo Rush Android Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'projects/GME-2026-0003/godot/**'
+      - '.github/workflows/turbo-rush-android.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GODOT_VERSION: "4.7.2"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip curl openjdk-17-jdk
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Install Godot 4.7.2
+        run: |
+          mkdir -p /tmp/godot
+          curl -L --fail --retry 3 -o /tmp/godot/godot.zip             "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot/godot.zip -d /tmp/godot
+          chmod +x /tmp/godot/Godot_v4.7.2-stable_linux.x86_64
+          echo "/tmp/godot" >> "$GITHUB_PATH"
+
+      - name: Install export templates
+        run: |
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          curl -L --fail --retry 3 -o /tmp/templates.tpz             "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz"
+          mkdir -p /tmp/templates
+          unzip -q /tmp/templates.tpz -d /tmp/templates
+          cp -r /tmp/templates/templates/* "$HOME/.local/share/godot/export_templates/4.7.2.stable/"
+
+      - name: Configure Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+
+      - name: Headless import
+        run: |
+          godot --headless             --path projects/GME-2026-0003/godot             --editor --quit             2>&1 | tee /tmp/turbo-import.log
+
+      - name: Smoke test
+        run: |
+          godot --headless             --path projects/GME-2026-0003/godot             --script res://tests/smoke_test.gd             2>&1 | tee /tmp/turbo-smoke.log
+
+      - name: Android debug APK
+        run: |
+          mkdir -p projects/GME-2026-0003/artifacts
+          godot --headless             --path projects/GME-2026-0003/godot             --export-debug "Android Debug APK"             projects/GME-2026-0003/artifacts/TurboRush-v1.0.0-debug.apk             2>&1 | tee /tmp/turbo-export.log
+
+      - name: Write build evidence
+        run: |
+          {
+            echo "Turbo Rush v1.0.0"
+            echo "Godot 4.7.2"
+            echo "CodeCraft disabled"
+            echo "Standalone offline-first build"
+            echo "Android debug APK"
+          } > projects/GME-2026-0003/artifacts/BUILD_INFO.txt
+          cp /tmp/turbo-import.log projects/GME-2026-0003/artifacts/import.log
+          cp /tmp/turbo-smoke.log projects/GME-2026-0003/artifacts/smoke.log
+          cp /tmp/turbo-export.log projects/GME-2026-0003/artifacts/export.log
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Turbo-Rush-v1.0.0-debug-apk
+          path: projects/GME-2026-0003/artifacts/
+          if-no-files-found: error
