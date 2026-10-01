@@ -1495,7 +1495,7 @@ func _spawn_scenery()->void:
                     glow.emission=palette.secondary
                     glow.emission_energy_multiplier=2.0
                     beacon.material_override=glow
-                    world_root.add_child(beacon
+                    world_root.add_child(beacon)
 
                     if rng.randf()<0.65:
                         var window_strip:=MeshInstance3D.new()
