@@ -1,6 +1,15 @@
 name: The Game Factory
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projects/**'
+      - 'game_bible/**'
+      - 'factory/**'
+      - 'agents/**'
+      - 'main.py'
+      - '.github/workflows/game-factory.yml'
   workflow_dispatch:
     inputs:
       instruction:
