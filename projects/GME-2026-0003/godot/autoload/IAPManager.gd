@@ -102,7 +102,8 @@ func apply_verified_entitlement(product_id: String, transaction_id:String="") ->
         return true
 
     if product_id=="remove_ads":
-        SaveSystem.data["monetization"]["iap"]["owned_products"].append(product_id) if not SaveSystem.data["monetization"]["iap"]["owned_products"].has(product_id) else null
+        if not SaveSystem.data["monetization"]["iap"]["owned_products"].has(product_id):
+            SaveSystem.data["monetization"]["iap"]["owned_products"].append(product_id)
         SaveSystem.data["monetization"]["remove_ads"]=true
         SaveSystem.save_now()
         purchase_completed.emit(product_id)
