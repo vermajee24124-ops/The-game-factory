@@ -162,6 +162,8 @@ func _setup_ui()->void:
     _build_results()
     _build_garage()
     _build_shop()
+    _build_collection()
+    _build_daily_tasks()
     _build_settings()
     _build_loading_screen()
     toast=_label(ui_root,"",22,palette.text)
@@ -536,9 +538,12 @@ func _build_garage()->void:
     var cosmetics:=VBoxContainer.new()
     cosmetics.name="Cosmetics"
     cosmetics.position=Vector2(1210,130)
-    cosmetics.size=Vector2(610,730)
+    cosmetics.size=Vector2(610,620)
     cosmetics.add_theme_constant_override("separation",8)
     p.add_child(cosmetics)
+    var collection:=_button(p,"COLLECTION • 54 SKINS / 48 CARDS",Vector2(610,76),true)
+    collection.position=Vector2(1210,780)
+    collection.pressed.connect(func():_refresh_collection("skins");_show_only("collection"))
 
 func _refresh_garage()->void:
     var cars:VBoxContainer=screens["garage"].get_node("Panel/Cars")
@@ -616,22 +621,143 @@ func _refresh_garage()->void:
             _refresh_currency_header()
         )
 
+func _build_collection()->void:
+    var c:=_new_screen("collection","COLLECTION")
+    var p:Control=c.get_node("Panel")
+    var back:=_button(p,"BACK",Vector2(160,60),false)
+    back.position=Vector2(1650,35)
+    back.pressed.connect(func():_show_only("garage"))
+    var skins_tab:=_button(p,"SKINS 54",Vector2(220,65),true)
+    skins_tab.position=Vector2(70,105)
+    skins_tab.pressed.connect(func():_refresh_collection("skins"))
+    var cards_tab:=_button(p,"CARDS 48",Vector2(220,65),false)
+    cards_tab.position=Vector2(310,105)
+    cards_tab.pressed.connect(func():_refresh_collection("cards"))
+    var hint:=_label(p,"Equip one skin. Equip up to three cards for small passive bonuses.",20,palette.muted)
+    hint.position=Vector2(560,120)
+    var scroll:=ScrollContainer.new()
+    scroll.name="Scroll"
+    scroll.position=Vector2(70,195)
+    scroll.size=Vector2(1740,760)
+    p.add_child(scroll)
+    var list:=VBoxContainer.new()
+    list.name="List"
+    list.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+    list.add_theme_constant_override("separation",8)
+    scroll.add_child(list)
+
+func _refresh_collection(category:String)->void:
+    var list:VBoxContainer=screens["collection"].get_node("Panel/Scroll/List")
+    for n in list.get_children(): n.queue_free()
+    if category=="skins":
+        _label(list,"SKINS • %d/54 OWNED" % _count_owned_skins(),28,palette.muted)
+        for id in ContentCatalog.SKINS.keys():
+            var item:Dictionary=ContentCatalog.skin(str(id))
+            var owned:=ProgressionService.owns_skin(str(id))
+            var equipped:=str(SaveSystem.data["cosmetics"]["equipped"].get("skin","skin_01"))==str(id)
+            var text_value:=("%s • %s" % [str(item.get("name","")),str(item.get("rarity","common")).capitalize()])
+            if equipped: text_value="✓ "+text_value+" • EQUIPPED"
+            elif not owned: text_value+= " • LOCKED"
+            var b:=_button(list,text_value,Vector2(1620,58),owned)
+            b.disabled=not owned
+            b.pressed.connect(func(skin_id=str(id)):
+                if ProgressionService.equip_skin(skin_id): _show_toast("Skin equipped")
+                _refresh_collection("skins")
+            )
+    else:
+        _label(list,"CARDS • %d/48 OWNED • EQUIPPED %d/3" % [_count_owned_cards(),ProgressionService.equipped_cards().size()],28,palette.muted)
+        for id in ContentCatalog.CARDS.keys():
+            var item:Dictionary=ContentCatalog.card(str(id))
+            var owned:=ProgressionService.owns_card(str(id))
+            var equipped:=ProgressionService.equipped_cards().has(str(id))
+            var text_value:=("%s • %s • %s" % [str(item.get("name","")),str(item.get("rarity","common")).capitalize(),str(item.get("type","")).replace("_"," ").capitalize()])
+            if owned:
+                text_value+=" • "+("EQUIPPED" if equipped else "OWNED")
+            else:
+                text_value+=" • LOCKED"
+            var b:=_button(list,text_value,Vector2(1620,58),owned)
+            b.disabled=not owned
+            b.pressed.connect(func(card_id=str(id)):
+                if not ProgressionService.toggle_card_equip(card_id): _show_toast("Keep 1–3 cards equipped")
+                _refresh_collection("cards")
+            )
+
+func _count_owned_skins()->int:
+    var count:=0
+    for id in ContentCatalog.SKINS.keys():
+        if ProgressionService.owns_skin(str(id)): count+=1
+    return count
+
+func _count_owned_cards()->int:
+    var count:=0
+    for id in ContentCatalog.CARDS.keys():
+        if ProgressionService.owns_card(str(id)): count+=1
+    return count
+
+func _build_daily_tasks()->void:
+    var c:=_new_screen("daily_tasks","DAILY REWARDS")
+    var p:Control=c.get_node("Panel")
+    var back:=_button(p,"BACK",Vector2(160,60),false)
+    back.position=Vector2(1650,35)
+    back.pressed.connect(func():_show_main_menu())
+    var intro:=_label(p,"Three optional rewarded-ad claims per day. Rewards are mostly Coins; Diamonds are uncommon.",24,palette.muted)
+    intro.position=Vector2(70,130)
+    for i in range(3):
+        var id:="bonus_coins"
+        var b:=_button(p,"WATCH AD • DAILY BONUS %d" % (i+1),Vector2(620,82),true)
+        b.position=Vector2(70,220+i*120)
+        b.pressed.connect(func():_claim_daily_reward())
+    var info:=_label(p,"Reward pool: 80 / 120 / 180 / 250 / 400 Coins\nRare reward: 1 / 2 / 3 Diamonds\nMaximum: 3 rewarded claims each day.",26,palette.text)
+    info.position=Vector2(760,235)
+
+func _claim_daily_reward()->void:
+    AdsManager.show_rewarded("bonus_coins",func(ok:bool):
+        if not ok:
+            _show_toast("Rewarded ad unavailable")
+            return
+        var roll:=RandomNumberGenerator.new()
+        roll.randomize()
+        if roll.randf()<0.10:
+            var diamonds:=roll.randi_range(1,3)
+            EconomyService.grant_diamonds(diamonds,"daily_reward_ad")
+            _show_toast("Daily reward • %d Diamonds" % diamonds)
+        else:
+            var pool:Array=[80,120,180,250,400]
+            var coins:=int(pool[roll.randi_range(0,pool.size()-1)])
+            EconomyService.grant_coins(coins,"daily_reward_ad")
+            _show_toast("Daily reward • %d Coins" % coins)
+        _refresh_currency_header()
+    )
+
 func _build_shop()->void:
     var c:=_new_screen("shop","SHOP")
     var p:Control=c.get_node("Panel")
     var back:=_button(p,"BACK",Vector2(160,60),false)
     back.position=Vector2(1650,35)
     back.pressed.connect(func():_show_main_menu())
-    var note:=_label(p,"IAP is network-dependent. Offline mode keeps the store safe and non-blocking.",24,palette.muted)
-    note.position=Vector2(60,115)
-    var y:=205
+    var note:=_label(p,"Fixed-content bundles: Coins + Diamonds + Skins + Cards. No paid random loot boxes.",22,palette.muted)
+    note.position=Vector2(60,105)
+    var restore:=_button(p,"RESTORE PURCHASES",Vector2(280,58),false)
+    restore.position=Vector2(1370,100)
+    restore.pressed.connect(func():IAPManager.restore_purchases())
+    var scroll:=ScrollContainer.new()
+    scroll.position=Vector2(60,180)
+    scroll.size=Vector2(1740,760)
+    p.add_child(scroll)
+    var list:=VBoxContainer.new()
+    list.name="IAPList"
+    list.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+    list.add_theme_constant_override("separation",10)
+    scroll.add_child(list)
     for id in IAPManager.products.keys():
         var item:Dictionary=IAPManager.products[id]
-        var b:=_button(p,"%s • %s" % [str(id).replace("_"," ").capitalize(),str(item.get("price",""))],Vector2(520,70),true)
-        b.position=Vector2(70,y)
+        var title:=str(item.get("name",id))
+        var content:=IAPManager.product_summary(str(id))
+        var price:=float(item.get("reference_price_usd",0.0))
+        var text_value:="​%s\n%s\nReference: $%.2f" % [title,content,price]
+        var b:=_button(list,text_value,Vector2(1620,86),true)
         b.disabled=not IAPManager.online
         b.pressed.connect(func(pid=str(id)):IAPManager.purchase(pid))
-        y+=95
 
 func _build_settings()->void:
     var c:=_new_screen("settings","SETTINGS")
@@ -897,7 +1023,13 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
     body.mesh=bm
     body.position.y=0.6
     var mat:=StandardMaterial3D.new()
-    mat.albedo_color=color
+    var body_color:=color
+    if car_name=="PLAYER":
+        var skin_id:=str(SaveSystem.data["cosmetics"]["equipped"].get("skin","skin_01"))
+        var skin:=ContentCatalog.skin(skin_id)
+        if not skin.is_empty():
+            body_color=Color(str(skin.get("color","#FF6B2C")))
+    mat.albedo_color=body_color
     mat.roughness=0.45
     body.material_override=mat
     car.add_child(body)
@@ -1011,16 +1143,16 @@ func _update_race(delta:float)->void:
     var car_id:=str(SaveSystem.data["progression"]["cars"]["selected"])
     var cd:=GameConfig.car(car_id)
     var up:Dictionary=SaveSystem.data["progression"]["upgrades"]
-    var top_speed:=float(cd.get("top_speed",140.0))+2.5*int(up.get("top_speed",0))
-    var accel:=float(cd.get("accel",8.0))+0.35*int(up.get("acceleration",0))
-    var braking:=float(cd.get("brake",12.0))+0.7*int(up.get("braking",0))
-    var boost_power:=float(cd.get("boost_power",25.0))+2.0*int(up.get("boost_power",0))
-    var handling:=float(cd.get("grip",1.0))*(1.0+0.025*int(up.get("handling",0)))
-    var stability:=float(cd.get("stability",1.0))*(1.0+0.02*int(up.get("stability",0)))
+    var top_speed:=float(cd.get("top_speed",140.0))+2.5*int(up.get("top_speed",0))+ProgressionService.top_speed_bonus()
+    var accel:=float(cd.get("accel",8.0))+0.35*int(up.get("acceleration",0))+ProgressionService.acceleration_bonus()
+    var braking:=float(cd.get("brake",12.0))+0.7*int(up.get("braking",0))+ProgressionService.braking_bonus()
+    var boost_power:=float(cd.get("boost_power",25.0))+2.0*int(up.get("boost_power",0))+ProgressionService.boost_power_bonus()
+    var handling:=float(cd.get("grip",1.0))*(1.0+0.025*int(up.get("handling",0))+ProgressionService.handling_bonus())
+    var stability:=float(cd.get("stability",1.0))*(1.0+0.02*int(up.get("stability",0))+ProgressionService.stability_bonus())
     var target_speed:=top_speed/3.6*GameConfig.EXPECTED_SPEED_FACTOR
     if boosting:
         target_speed+=boost_power/3.6
-        boost_energy=maxf(0.0,boost_energy-(50.0-2.78*int(up.get("boost_duration",0)))*delta)
+        boost_energy=maxf(0.0,boost_energy-(50.0-2.78*int(up.get("boost_duration",0))-ProgressionService.boost_duration_bonus()*10.0)*delta)
         if boost_energy<=0.0:boosting=false
     else:
         boost_energy=minf(100.0,boost_energy+4.0*delta)
@@ -1108,13 +1240,15 @@ func _check_collisions()->void:
             else:
                 var dmg:=25.0 if kind=="barrier" else 10.0
                 if RaceSession.assist_used:dmg*=0.8
+                dmg*=ProgressionService.damage_multiplier()
                 damage=minf(100.0,damage+dmg)
                 clean_score=maxf(0.0,clean_score-(15.0 if dmg>20.0 else 5.0))
             collision_cooldown=0.8
             HapticsSystem.pulse(0.7)
     for t in traffic:
         if absf(player_progress-float(t.progress))<3.5 and absf(player_lane-float(t.lane))<1.8:
-            damage=minf(100.0,damage+12.0*(0.8 if RaceSession.assist_used else 1.0))
+            var traffic_damage:=12.0*(0.8 if RaceSession.assist_used else 1.0)*ProgressionService.damage_multiplier()
+            damage=minf(100.0,damage+traffic_damage)
             clean_score=maxf(0.0,clean_score-5.0)
             collision_cooldown=1.0
             HapticsSystem.pulse(0.5)
