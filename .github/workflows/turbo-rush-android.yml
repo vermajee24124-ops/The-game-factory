@@ -1,5 +1,5 @@
 name: Turbo Rush Android Build
-# release-candidate rebuild
+# release-candidate rebuild 2
 
 on:
   workflow_dispatch:
