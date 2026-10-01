@@ -51,7 +51,8 @@ func resolve_result(r:Dictionary)->Dictionary:
     var rank:=rank_reward(int(r.level_number),int(r.finish_position),elite)
     var track:=int(r.track_coins_collected)
     var pickup:=1 if bool(r.diamond_pickup_collected) else 0
-    var tc:=rank+int(ch.coins)+int(bonus.coins)+int(first.coins)+track
+    var raw_coins:=rank+int(ch.coins)+int(bonus.coins)+int(first.coins)+track
+    var tc:=int(round(float(raw_coins)*ProgressionService.coin_multiplier()))
     var td:=int(ch.diamonds)+int(bonus.diamonds)+int(first.diamonds)+pickup
     EconomyService.grant_coins(tc,"race_reward")
     if td>0:EconomyService.grant_diamonds(td,"race_reward")
