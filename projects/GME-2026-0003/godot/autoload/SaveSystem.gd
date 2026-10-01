@@ -14,8 +14,8 @@ func _defaults()->Dictionary:
         "profile":{"player_level":0,"highest_completed_level":0,"highest_unlocked_level":1,"selected_level":1,"selected_car_id":"rookie_gt","onboarding_completed":false,"total_races_completed":0,"total_races_failed":0},
         "currencies":{"coins":0,"diamonds":0},
         "campaign":{"total_stars":0,"star_milestones_claimed":[],"levels":{}},
-        "progression":{"upgrades":{"top_speed":0,"acceleration":0,"handling":0,"braking":0,"boost_power":0,"boost_duration":0,"stability":0},"cars":{"owned":["rookie_gt"],"selected":"rookie_gt"},"abilities":{"slipstream_boost":false,"clean_run_bonus":false,"perfect_landing_boost":false}},
-        "cosmetics":{"owned":["wheel_stock","paint_red","material_basic"],"equipped":{"wheel":"wheel_stock","paint":"paint_red","material":"material_basic","decal":"none","underglow":"none","skin":"none"}},
+        "progression":{"upgrades":{"top_speed":0,"acceleration":0,"handling":0,"braking":0,"boost_power":0,"boost_duration":0,"stability":0},"cars":{"owned":["rookie_gt"],"selected":"rookie_gt"},"abilities":{"slipstream_boost":false,"clean_run_bonus":false,"perfect_landing_boost":false},"cards":{"owned":["card_01"],"equipped":["card_01"]}},
+        "cosmetics":{"owned":["wheel_stock","paint_red","material_basic","skin_01"],"equipped":{"wheel":"wheel_stock","paint":"paint_red","material":"material_basic","decal":"none","underglow":"none","skin":"skin_01"}},
         "settings":{"audio":{"master_volume":1.0,"music_volume":1.0,"sfx_volume":1.0,"engine_volume":1.0},"controls":{"steering_sensitivity":0.5,"auto_acceleration":true,"manual_brake_enabled":false,"boost_tap_mode":false,"large_controls":false},"graphics":{"quality":"medium","target_fps":60,"reduce_motion":false},"haptics_enabled":true,"language":"en"},
         "monetization":{"remove_ads":false,"ads":{"daily":{"date":"1970-01-01","revive_count":0,"double_coins_count":0,"bonus_coins_count":0},"interstitial":{"first_launch_unix":0,"last_shown_unix":0}},"iap":{"owned_products":[],"pending_purchase_grants":[],"transactions":[],"last_restore_unix":0}},
         "privacy":{"consent_version":1,"consent_status":"unknown","personalized_ads":false,"analytics_allowed":false,"att_status":"not_required","consent_timestamp_unix":0},
@@ -64,6 +64,25 @@ func _repair_invariants()->void:
     if not owned.has(data["progression"]["cars"].get("selected","rookie_gt")):
         data["progression"]["cars"]["selected"]="rookie_gt"
     data["profile"]["selected_car_id"]=data["progression"]["cars"]["selected"]
+
+    if not data["progression"].has("cards"):
+        data["progression"]["cards"]={"owned":["card_01"],"equipped":["card_01"]}
+    var owned_cards:Array=data["progression"]["cards"].get("owned",["card_01"])
+    if not owned_cards.has("card_01"): owned_cards.append("card_01")
+    data["progression"]["cards"]["owned"]=owned_cards
+    if not data["progression"]["cards"].has("equipped"): data["progression"]["cards"]["equipped"]=["card_01"]
+    var equipped_cards:Array=data["progression"]["cards"]["equipped"]
+    var repaired_equipped:Array=[]
+    for card_id in equipped_cards:
+        if owned_cards.has(card_id) and not repaired_equipped.has(card_id): repaired_equipped.append(card_id)
+        if repaired_equipped.size()>=3: break
+    if repaired_equipped.is_empty(): repaired_equipped=["card_01"]
+    data["progression"]["cards"]["equipped"]=repaired_equipped
+
+    if not data["cosmetics"].has("owned"): data["cosmetics"]["owned"]=[]
+    if not data["cosmetics"]["owned"].has("skin_01"): data["cosmetics"]["owned"].append("skin_01")
+    if not data["cosmetics"]["equipped"].has("skin"): data["cosmetics"]["equipped"]["skin"]="skin_01"
+
 
 func save_now()->void:
     DirAccess.make_dir_recursive_absolute(SAVE_DIR)
