@@ -1,12 +1,13 @@
 extends Node
 
-const UNITY_ANDROID_GAME_ID := "6195679"
-const UNITY_IOS_GAME_ID := "6195678"
+const UNITY_ANDROID_GAME_ID := ReleaseConfig.UNITY_ANDROID_GAME_ID
+const UNITY_IOS_GAME_ID := ReleaseConfig.UNITY_IOS_GAME_ID
 
-# These must be the dedicated Unity banner placement/ad-unit IDs from the
-# Unity Monetization dashboard. They are intentionally not guessed.
-const UNITY_ANDROID_TOP_BANNER_PLACEMENT := ""
-const UNITY_ANDROID_BOTTOM_BANNER_PLACEMENT := ""
+# One dedicated Android Banner ad unit can back two BannerAd instances,
+# one anchored at the top and one at the bottom.
+const UNITY_ANDROID_BANNER_AD_UNIT_ID := ReleaseConfig.UNITY_ANDROID_BANNER_AD_UNIT_ID
+const UNITY_ANDROID_REWARDED_AD_UNIT_ID := ReleaseConfig.UNITY_ANDROID_REWARDED_AD_UNIT_ID
+const UNITY_ANDROID_INTERSTITIAL_AD_UNIT_ID := ReleaseConfig.UNITY_ANDROID_INTERSTITIAL_AD_UNIT_ID
 
 var online := false
 var initialized := false
@@ -42,15 +43,17 @@ func _sync_daily() -> void:
 func show_loading_banners() -> void:
     if loading_ads_visible or bool(SaveSystem.data["monetization"].get("remove_ads", false)):
         return
+    if not online:
+        return
     if not Engine.has_singleton("UnityAdsBridge"):
         return
-    if UNITY_ANDROID_TOP_BANNER_PLACEMENT.is_empty() or UNITY_ANDROID_BOTTOM_BANNER_PLACEMENT.is_empty():
+    if UNITY_ANDROID_BANNER_AD_UNIT_ID.is_empty():
         return
     var bridge = Engine.get_singleton("UnityAdsBridge")
     if bridge.has_method("show_loading_banners"):
         bridge.show_loading_banners(
-            UNITY_ANDROID_TOP_BANNER_PLACEMENT,
-            UNITY_ANDROID_BOTTOM_BANNER_PLACEMENT
+            UNITY_ANDROID_BANNER_AD_UNIT_ID,
+            UNITY_ANDROID_BANNER_AD_UNIT_ID
         )
         loading_ads_visible = true
 
@@ -80,8 +83,11 @@ func show_rewarded(slot_id: String, callback: Callable) -> void:
     if not Engine.has_singleton("UnityAdsBridge"):
         callback.call(false)
         return
+    if UNITY_ANDROID_REWARDED_AD_UNIT_ID.is_empty():
+        callback.call(false)
+        return
     var bridge = Engine.get_singleton("UnityAdsBridge")
     if not bridge.has_method("show_rewarded"):
         callback.call(false)
         return
-    bridge.show_rewarded(slot_id, callback)
+    bridge.show_rewarded(UNITY_ANDROID_REWARDED_AD_UNIT_ID, callback)
