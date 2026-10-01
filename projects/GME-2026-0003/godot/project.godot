@@ -18,6 +18,7 @@ renderer/rendering_method.mobile="mobile"
 
 [autoload]
 GameConfig="*res://autoload/GameConfig.gd"
+ContentCatalog="*res://autoload/ContentCatalog.gd"
 EventBus="*res://autoload/EventBus.gd"
 SaveSystem="*res://autoload/SaveSystem.gd"
 EconomyService="*res://autoload/EconomyService.gd"
