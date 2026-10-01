@@ -58,7 +58,7 @@ func _init() -> void:
     _extend_wheels()
 
 func _extend_cars() -> void:
-    var ids := ["volt_striker","apex_runner","nitro_falcon","road_phantom","blaze_gt","iron_comet","storm_racer","neon_sprint","desert_x","coastal_gt","midnight_rs","thunder_bolt","silver_arrow","crimson_apex","blue_orbit","green_fury","violet_xr","solar_gt","arctic_rs","carbon_v","shadow_racer","rally_nova","drift_king","pulse_gt","meteor_rs","night_falcon","ocean_fury","firestorm_gt","glacier_x","vertex_pro","quantum_gt","aurora_racer","titan_rs","velocity_xr","phantom_x","zenith_gt","inferno_rs","cyclone_pro","eclipse_gt","prism_racer","hyperion_rs","galaxy_gt","nova_striker","legend_rs","apex_ultra","zenith_x","titan_ultra","rush_xr"]
+    var ids := ["volt_striker","apex_runner","nitro_falcon","road_phantom","blaze_gt","iron_comet","storm_racer","neon_sprint","desert_x","coastal_gt","midnight_rs","thunder_bolt","silver_arrow","crimson_apex","blue_orbit","green_fury","violet_xr","solar_gt","arctic_rs","carbon_v","shadow_racer","rally_nova","drift_king","pulse_gt","meteor_rs","night_falcon","ocean_fury","firestorm_gt","glacier_x","vertex_pro","quantum_gt","aurora_racer","titan_rs","velocity_xr","phantom_x","zenith_gt","inferno_rs","cyclone_pro","eclipse_gt","prism_racer","hyperion_rs","galaxy_gt","nova_striker","legend_rs","apex_ultra","zenith_x","titan_ultra","rush_xr","finale_xr"]
     for i in range(ids.size()):
         var n := i + 7
         var base := n - 7
@@ -73,11 +73,11 @@ func _extend_cars() -> void:
         var stability := 0.98 + float(base % 7) * 0.012
         var coins := 3000 + base * 2200
         var diamonds := 12 + floori(float(base) * 2.0)
-        var a := ["launch_boost","boost_efficiency","damage_reduction","coin_multiplier","handling","boost_power","stability","speed"][base % 8]
-        var av := [0.05,0.07,0.06,0.05,0.04,0.06,0.05,0.025][base % 8]
-        var an := ["Launch Burst","Nitro Saver","Impact Guard","Coin Rush","Apex Grip","Turbo Core","Stability Pro","Velocity Core"][base % 8]
+        var a:String = ["launch_boost","boost_efficiency","damage_reduction","coin_multiplier","handling","boost_power","stability","speed"][base % 8]
+        var av:float = float([0.05,0.07,0.06,0.05,0.04,0.06,0.05,0.025][base % 8])
+        var an:String = ["Launch Burst","Nitro Saver","Impact Guard","Coin Rush","Apex Grip","Turbo Core","Stability Pro","Velocity Core"][base % 8]
         CARS[ids[i]] = {
-            "name": str(["Street King","Turbo Viper","Canyon Falcon","Circuit Phantom","Hyper Nova","Volt Striker","Apex Runner","Nitro Falcon","Road Phantom","Blaze GT","Iron Comet","Storm Racer","Neon Sprint","Desert X","Coastal GT","Midnight RS","Thunder Bolt","Silver Arrow","Crimson Apex","Blue Orbit","Green Fury","Violet XR","Solar GT","Arctic RS","Carbon V","Shadow Racer","Rally Nova","Drift King","Pulse GT","Meteor RS","Night Falcon","Ocean Fury","Firestorm GT","Glacier X","Vertex Pro","Quantum GT","Aurora Racer","Titan RS","Velocity XR","Phantom X","Zenith GT","Inferno RS","Cyclone Pro","Eclipse GT","Prism Racer","Hyperion RS","Galaxy GT","Nova Striker","Legend RS","Apex Ultra"][n-1]),
+            "name": str(["Street King","Turbo Viper","Canyon Falcon","Circuit Phantom","Hyper Nova","Volt Striker","Apex Runner","Nitro Falcon","Road Phantom","Blaze GT","Iron Comet","Storm Racer","Neon Sprint","Desert X","Coastal GT","Midnight RS","Thunder Bolt","Silver Arrow","Crimson Apex","Blue Orbit","Green Fury","Violet XR","Solar GT","Arctic RS","Carbon V","Shadow Racer","Rally Nova","Drift King","Pulse GT","Meteor RS","Night Falcon","Ocean Fury","Firestorm GT","Glacier X","Vertex Pro","Quantum GT","Aurora Racer","Titan RS","Velocity XR","Phantom X","Zenith GT","Inferno RS","Cyclone Pro","Eclipse GT","Prism Racer","Hyperion RS","Galaxy GT","Nova Striker","Legend RS","Apex Ultra","Finale XR"][n-1]),
             "level": level,
             "cost": coins,
             "cost_coins": coins,
@@ -101,9 +101,9 @@ func _extend_wheels() -> void:
         var level := 4 + i * 3
         var coins := 650 + i * 520
         var diamonds := 6 + floori(float(i) * 1.1)
-        var at := ["launch_boost","boost_efficiency","damage_reduction","coin_multiplier","handling","boost_power","stability","speed"][i % 8]
-        var av := [0.025,0.035,0.025,0.025,0.025,0.03,0.025,0.015][i % 8] + float((i / 8) % 3) * 0.005
-        var an := ["Launch Grip","Nitro Saver","Impact Guard","Coin Rush","Apex Grip","Turbo Core","Stability Pro","Velocity Core"][i % 8]
+        var at:String = ["launch_boost","boost_efficiency","damage_reduction","coin_multiplier","handling","boost_power","stability","speed"][i % 8]
+        var av:float = float([0.025,0.035,0.025,0.025,0.025,0.03,0.025,0.015][i % 8]) + float((i / 8) % 3) * 0.005
+        var an:String = ["Launch Grip","Nitro Saver","Impact Guard","Coin Rush","Apex Grip","Turbo Core","Stability Pro","Velocity Core"][i % 8]
         WHEELS[ids[i]] = {
             "name": str(["Street Steel","Alloy Sport","Turbo Fan","Carbon Track","Chrome Racer","Neon Glow","Golden Crown","Nova Edge","Velocity Mesh","Apex Split","Rally Grip","Circuit Blade","Drift Halo","Road Forge","Storm Alloy","Pulse Rim","Quantum Ring","Titan Mesh","Inferno Rim","Glacier Edge","Aurora Wheel","Phantom Disk","Vortex Wheel","Solar Ring","Lunar Alloy","Cyber Mesh","Blaze Rim","Ocean Edge","Hyper Ring","Carbon Halo","Meteor Mesh","Nova Forge","Royal Spin","Crimson Edge","Volt Ring","Arctic Mesh","Shadow Alloy","Prism Rim","Fusion Wheel","Legend Mesh","Turbo Crown","Racing Orbit","Apex Halo","Night Ring","Chrome Pulse","Titan Crown","Velocity Edge","Storm Ring","Galaxy Mesh","Inferno Crown","Quantum Edge","Aurora Ring","Phantom Crown","Solar Mesh","Eclipse Rim","Zenith Wheel","Nova Crown","Legend Edge","Ultra Carbon","Rush Supreme"][n-1]),
             "level": level,
