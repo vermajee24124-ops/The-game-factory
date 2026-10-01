@@ -1,5 +1,5 @@
 name: Turbo Rush Android Build
-# studio release pipeline 1.2.0
+# studio release pipeline 1.3.0
 
 on:
   workflow_dispatch:
@@ -129,18 +129,18 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p projects/GME-2026-0003/artifacts
-          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.2.0-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.3.0-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
 
       - name: Android release AAB
         run: |
           set -euo pipefail
-          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v1.2.0-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v1.3.0-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
 
       - name: Validate APK
         run: |
           set -euo pipefail
-          APK="projects/GME-2026-0003/artifacts/TurboRush-v1.2.0-release.apk"
-          AAB="projects/GME-2026-0003/artifacts/TurboRush-v1.2.0-release.aab"
+          APK="projects/GME-2026-0003/artifacts/TurboRush-v1.3.0-release.apk"
+          AAB="projects/GME-2026-0003/artifacts/TurboRush-v1.3.0-release.aab"
           "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging "$APK" | tee projects/GME-2026-0003/artifacts/APK_BADGING.txt
           "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose "$APK" | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
           sha256sum "$APK" | tee projects/GME-2026-0003/artifacts/APK_SHA256.txt
@@ -153,7 +153,7 @@ jobs:
         if: always()
         run: |
           {
-            echo "Turbo Rush v1.2.0"
+            echo "Turbo Rush v1.3.0"
             echo "Godot 4.7.2"
             echo "JDK Temurin 17"
             echo "Android platform 34 + 36"
@@ -173,10 +173,10 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Turbo-Rush-v1.2.0-release
+          name: Turbo-Rush-v1.3.0-release
           path: |
-            projects/GME-2026-0003/artifacts/TurboRush-v1.2.0-release.apk
-            projects/GME-2026-0003/artifacts/TurboRush-v1.2.0-release.aab
+            projects/GME-2026-0003/artifacts/TurboRush-v1.3.0-release.apk
+            projects/GME-2026-0003/artifacts/TurboRush-v1.3.0-release.aab
             projects/GME-2026-0003/artifacts/APK_BADGING.txt
             projects/GME-2026-0003/artifacts/APK_SIGNING.txt
             projects/GME-2026-0003/artifacts/APK_SHA256.txt
