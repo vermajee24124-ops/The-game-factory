@@ -97,11 +97,38 @@ jobs:
           set -euo pipefail
           "$GODOT_BIN" --headless             --path projects/GME-2026-0003/godot             --script res://tests/smoke_test.gd             2>&1 | tee /tmp/turbo-smoke.log
 
-      - name: Android debug APK
+      - name: Prepare release signing
+        run: |
+          set -euo pipefail
+          KEYSTORE_PATH="$RUNNER_TEMP/turbo-rush-release.jks"
+          KEYSTORE_PASS=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)
+          keytool -genkeypair -keystore "$KEYSTORE_PATH" -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS" -alias turbo_rush -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Turbo Rush, OU=Verma Game Studios, O=Verma Game Studios, L=India, C=IN"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$KEYSTORE_PASS" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=turbo_rush" >> "$GITHUB_ENV"
+
+      - name: Android release APK
         run: |
           set -euo pipefail
           mkdir -p projects/GME-2026-0003/artifacts
-          "$GODOT_BIN" --headless             --path projects/GME-2026-0003/godot             --export-debug "Android Debug APK (Prebuilt)"             ../artifacts/TurboRush-v1.1.0-debug.apk             2>&1 | tee /tmp/turbo-export.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.2.0-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
+
+      - name: Android release AAB
+        run: |
+          set -euo pipefail
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v1.2.0-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
+
+      - name: Validate APK
+        run: |
+          set -euo pipefail
+          APK="projects/GME-2026-0003/artifacts/TurboRush-v1.2.0-release.apk"
+          AAB="projects/GME-2026-0003/artifacts/TurboRush-v1.2.0-release.aab"
+          "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging "$APK" | tee projects/GME-2026-0003/artifacts/APK_BADGING.txt
+          "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose "$APK" | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
+          sha256sum "$APK" | tee projects/GME-2026-0003/artifacts/APK_SHA256.txt
+          test -s "$AAB"
+          unzip -l "$AAB" | grep -E 'BundleConfig.pb|base/manifest/AndroidManifest.xml' | tee projects/GME-2026-0003/artifacts/AAB_STRUCTURE.txt
+          sha256sum "$AAB" | tee projects/GME-2026-0003/artifacts/AAB_SHA256.txt
 
       - name: Validate APK
         continue-on-error: true
@@ -115,25 +142,38 @@ jobs:
         if: always()
         run: |
           {
-            echo "Turbo Rush v1.1.0"
+            echo "Turbo Rush v1.2.0"
             echo "Godot 4.7.2"
             echo "JDK Temurin 17"
             echo "Android platform 34 + 36"
             echo "Android build-tools 34.0.0 + 36.1.0"
             echo "CodeCraft disabled"
-            echo "Startup logo asset verified"
-            echo "54 skins / 48 cards catalog"
-            echo "10 Aptoide product IDs configured"
-            echo "Debug APK export + signature verification"
+            echo "Branded Android splash configured"
+            echo "54 cars / 60 wheels / 54 skins / 48 cards"
+            echo "10 Aptoide product IDs configured; live native billing remains gated until adapter and account setup"
+            echo "Release APK + release AAB exported in CI"
           } > projects/GME-2026-0003/artifacts/BUILD_INFO.txt
           cp /tmp/turbo-import.log projects/GME-2026-0003/artifacts/import.log
           cp /tmp/turbo-smoke.log projects/GME-2026-0003/artifacts/smoke.log
-          cp /tmp/turbo-export.log projects/GME-2026-0003/artifacts/export.log
+          cp /tmp/turbo-export-release-apk.log projects/GME-2026-0003/artifacts/export_release_apk.log
+          cp /tmp/turbo-export-release-aab.log projects/GME-2026-0003/artifacts/export_release_aab.log
 
-      - name: Upload APK artifact
-        if: always()
+      - name: Upload release artifacts
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Turbo-Rush-v1.1.0-debug-apk
-          path: projects/GME-2026-0003/artifacts/
+          name: Turbo-Rush-v1.2.0-release
+          path: |
+            projects/GME-2026-0003/artifacts/TurboRush-v1.2.0-release.apk
+            projects/GME-2026-0003/artifacts/TurboRush-v1.2.0-release.aab
+            projects/GME-2026-0003/artifacts/APK_BADGING.txt
+            projects/GME-2026-0003/artifacts/APK_SIGNING.txt
+            projects/GME-2026-0003/artifacts/APK_SHA256.txt
+            projects/GME-2026-0003/artifacts/AAB_STRUCTURE.txt
+            projects/GME-2026-0003/artifacts/AAB_SHA256.txt
+            projects/GME-2026-0003/artifacts/BUILD_INFO.txt
+            projects/GME-2026-0003/artifacts/import.log
+            projects/GME-2026-0003/artifacts/smoke.log
+            projects/GME-2026-0003/artifacts/export_release_apk.log
+            projects/GME-2026-0003/artifacts/export_release_aab.log
           if-no-files-found: error
