@@ -384,6 +384,12 @@ func _build_pre_race()->void:
     right.position=Vector2(1665,250)
     right.pressed.connect(func():_cycle_car(1))
 
+func _environment_name(id:String)->String:
+    for e in GameConfig.ENVIRONMENTS:
+        if str(e[0])==id:
+            return str(e[1])
+    return id
+
 func _prepare_pre_race()->void:
     var unlocked:=int(SaveSystem.data["profile"]["highest_unlocked_level"])
     current_level=clampi(current_level,1,unlocked)
