@@ -212,31 +212,37 @@ func card_bonus(stat:String)->float:
     return total
 
 func coin_multiplier()->float:
-    return 1.0 + card_bonus("coin_multiplier")
+    return 1.0 + card_bonus("coin_multiplier") + car_ability_bonus("coin_multiplier") + wheel_ability_bonus("coin_multiplier")
 
 func damage_multiplier()->float:
-    return maxf(0.70, 1.0 - card_bonus("damage_reduction"))
+    return maxf(0.65, 1.0 - card_bonus("damage_reduction") - car_ability_bonus("damage_reduction") - wheel_ability_bonus("damage_reduction"))
 
 func top_speed_bonus()->float:
-    return card_bonus("top_speed")
+    return card_bonus("top_speed") + car_ability_bonus("speed") * 10.0 + wheel_ability_bonus("speed") * 8.0
 
 func acceleration_bonus()->float:
     return card_bonus("acceleration")
 
 func handling_bonus()->float:
-    return card_bonus("handling")
+    return card_bonus("handling") + car_ability_bonus("handling") + wheel_ability_bonus("handling")
 
 func braking_bonus()->float:
     return card_bonus("braking")
 
 func boost_power_bonus()->float:
-    return card_bonus("boost_power")
+    return card_bonus("boost_power") + car_ability_bonus("boost_power") * 10.0 + wheel_ability_bonus("boost_power") * 8.0
 
 func boost_duration_bonus()->float:
     return card_bonus("boost_duration")
 
 func stability_bonus()->float:
-    return card_bonus("stability")
+    return card_bonus("stability") + car_ability_bonus("stability") + wheel_ability_bonus("stability")
+
+func boost_efficiency_bonus()->float:
+    return minf(0.25,car_ability_bonus("boost_efficiency")+wheel_ability_bonus("boost_efficiency"))
+
+func launch_bonus()->float:
+    return car_ability_bonus("launch_boost")+wheel_ability_bonus("launch_boost")
 
 
 func equipped_car_ability()->Dictionary:
