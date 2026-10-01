@@ -18,13 +18,13 @@ func select_car(id: String) -> bool:
 
 func can_buy_car(id: String) -> bool:
     var c: Dictionary = GameConfig.car(id)
-    return not owns_car(id) and player_level() >= int(c.get("level", 1)) and EconomyService.coins() >= int(c.get("cost", 0))
+    return not owns_car(id) and player_level() >= int(c.get("level", 1)) and EconomyService.can_afford_combo(int(c.get("cost_coins", c.get("cost", 0))), int(c.get("cost_diamonds", 0)))
 
 func buy_car(id: String) -> bool:
     if not can_buy_car(id):
         return false
     var c: Dictionary = GameConfig.car(id)
-    if not EconomyService.spend_coins(int(c.get("cost", 0)), "car_purchase"):
+    if not EconomyService.spend_combo(int(c.get("cost_coins", c.get("cost", 0))), int(c.get("cost_diamonds", 0)), "car_purchase"):
         return false
     SaveSystem.data["progression"]["cars"]["owned"].append(id)
     SaveSystem.save_now()
@@ -106,6 +106,10 @@ func handle_race_result(result: Dictionary) -> void:
     SaveSystem.save_now()
 
 func _buy_currency_item(item: Dictionary, reason: String) -> bool:
+    var coins_cost:=int(item.get("cost_coins",0))
+    var diamonds_cost:=int(item.get("cost_diamonds",0))
+    if coins_cost>0 or diamonds_cost>0:
+        return EconomyService.spend_combo(coins_cost,diamonds_cost,reason)
     var amount := int(item.get("cost", 0))
     if amount <= 0:
         return true
@@ -120,7 +124,9 @@ func buy_wheel(id: String) -> bool:
         return false
     var owned: Array = SaveSystem.data["cosmetics"]["owned"]
     if not owned.has(id):
-        if not _buy_currency_item(item, "wheel_purchase"):
+        var coins_cost:=int(item.get("cost_coins",item.get("cost",0)))
+        var diamonds_cost:=int(item.get("cost_diamonds",0))
+        if not EconomyService.spend_combo(coins_cost,diamonds_cost,"wheel_purchase"):
             return false
         owned.append(id)
     SaveSystem.data["cosmetics"]["equipped"]["wheel"] = id
@@ -231,3 +237,20 @@ func boost_duration_bonus()->float:
 
 func stability_bonus()->float:
     return card_bonus("stability")
+
+
+func equipped_car_ability()->Dictionary:
+    var id:=str(SaveSystem.data["progression"]["cars"]["selected"])
+    return GameConfig.car(id)
+
+func equipped_wheel_ability()->Dictionary:
+    var id:=str(SaveSystem.data["cosmetics"]["equipped"].get("wheel","wheel_stock"))
+    return GameConfig.wheel(id)
+
+func car_ability_bonus(type:String)->float:
+    var c:=equipped_car_ability()
+    return float(c.get("ability_value",0.0)) if str(c.get("ability_type",""))==type else 0.0
+
+func wheel_ability_bonus(type:String)->float:
+    var w:=equipped_wheel_ability()
+    return float(w.get("ability_value",0.0)) if str(w.get("ability_type",""))==type else 0.0
