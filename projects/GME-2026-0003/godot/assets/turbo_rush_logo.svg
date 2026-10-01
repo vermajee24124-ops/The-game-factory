@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<rect width="1024" height="1024" fill="#07101f"/>
+<defs>
+  <linearGradient id="car" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#3dd9ff"/>
+    <stop offset="0.55" stop-color="#1976ff"/>
+    <stop offset="1" stop-color="#0b35b8"/>
+  </linearGradient>
+  <linearGradient id="txt" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#f7fbff"/>
+    <stop offset="0.5" stop-color="#bfcbe0"/>
+    <stop offset="1" stop-color="#6c7892"/>
+  </linearGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g transform="translate(112 165)" filter="url(#glow)">
+  <path d="M40 410 L120 250 Q155 185 230 160 L505 95 Q600 73 672 130 L770 220 Q800 245 790 295 L758 400 Q750 430 704 438 L136 452 Q70 450 40 410Z" fill="url(#car)" stroke="#7eeeff" stroke-width="14"/>
+  <path d="M248 176 L482 123 Q564 110 620 154 L677 211 L305 228Z" fill="#0a1a36" stroke="#8cdfff" stroke-width="8"/>
+  <path d="M322 228 L681 211 L734 262 L347 289Z" fill="#112950"/>
+  <circle cx="194" cy="420" r="62" fill="#0b0e15" stroke="#9bb7ff" stroke-width="12"/>
+  <circle cx="666" cy="411" r="62" fill="#0b0e15" stroke="#9bb7ff" stroke-width="12"/>
+  <circle cx="194" cy="420" r="24" fill="#23c4ff"/>
+  <circle cx="666" cy="411" r="24" fill="#23c4ff"/>
+  <path d="M90 333 L152 302 L235 306 L214 340 L110 352Z" fill="#4ce2ff"/>
+  <path d="M570 290 L742 278 L731 329 L600 338Z" fill="#0a42d8"/>
+  <path d="M286 345 Q425 308 590 342 L568 382 Q410 360 301 378Z" fill="#04102a"/>
+</g>
+<text x="512" y="705" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="108" font-weight="900" letter-spacing="8" fill="url(#txt)" stroke="#32425e" stroke-width="4">TURBO</text>
+<text x="512" y="818" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="108" font-weight="900" letter-spacing="8" fill="url(#txt)" stroke="#32425e" stroke-width="4">RUSH</text>
+<text x="512" y="890" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="26" letter-spacing="10" fill="#5ee7ff">ARCADE RACING</text>
+</svg>
