@@ -14,7 +14,6 @@ class Provider:
 
 
 PROVIDERS: tuple[Provider, ...] = (
-    Provider("codecraft", "CODECRAFT_API_KEY", 120, frozenset({"text", "code", "reasoning", "multimodal"})),
     Provider("omniroute", None, 100, frozenset({"text", "code", "reasoning", "multimodal", "routing"})),
     Provider("z-ai", "Z_AI_API_KEY", 95, frozenset({"text", "code", "reasoning"})),
     Provider("gemini", "GEMINI_API_KEY", 90, frozenset({"text", "code", "reasoning", "multimodal"})),
