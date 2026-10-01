@@ -63,6 +63,13 @@ var results_label:Label
 var results_detail:Label
 var next_button:Button
 var double_button:Button
+var menu_stage:Node3D
+var menu_camera:Camera3D
+var menu_car:CharacterBody3D
+var menu_spin:=0.0
+var impact_shake:=0.0
+var race_theme_env:WorldEnvironment
+var race_sun:DirectionalLight3D
 
 var palette := {
     "bg":Color("#0B1020"),
@@ -85,6 +92,7 @@ func _ready()->void:
     IAPManager.init()
     HapticsSystem.enabled=bool(SaveSystem.data["settings"]["haptics_enabled"])
     _setup_world()
+    _build_menu_stage()
     _setup_ui()
     await _run_startup_sequence()
 
@@ -93,6 +101,7 @@ func _setup_world()->void:
     world_root.name="RuntimeWorld"
     add_child(world_root)
     var env:=WorldEnvironment.new()
+    race_theme_env=env
     var e:=Environment.new()
     e.background_mode=Environment.BG_COLOR
     e.background_color=Color("#10192B")
@@ -110,8 +119,10 @@ func _setup_world()->void:
     env.environment=e
     world_root.add_child(env)
     var sun:=DirectionalLight3D.new()
+    race_sun=sun
     sun.rotation_degrees=Vector3(-48.0,-28.0,0.0)
     sun.light_energy=1.45
+    sun.light_color=Color("#D8E8FF")
     sun.shadow_enabled=true
     sun.directional_shadow_max_distance=140.0
     world_root.add_child(sun)
@@ -188,6 +199,10 @@ func _show_only(id:String)->void:
         screens[k].visible=false
     screens[id].visible=true
     current_screen=id
+    if menu_camera:
+        menu_camera.current = id != "race" and id != "pause" and id != "wreck"
+    if race_camera and id=="race":
+        race_camera.current=true
     if hud:
         hud.visible = id == "race"
     _refresh_currency_header()
@@ -195,6 +210,230 @@ func _show_only(id:String)->void:
 func _refresh_currency_header()->void:
     if coins_label:coins_label.text="COINS  %d" % EconomyService.coins()
     if diamonds_label:diamonds_label.text="DIAMONDS  %d" % EconomyService.diamonds()
+
+func _build_menu_stage()->void:
+    menu_stage=Node3D.new()
+    menu_stage.name="MenuHeroStage"
+    add_child(menu_stage)
+
+    var floor:=MeshInstance3D.new()
+    var fm:=PlaneMesh.new()
+    fm.size=Vector2(30.0,22.0)
+    floor.mesh=fm
+    var floor_mat:=StandardMaterial3D.new()
+    floor_mat.albedo_color=Color("#0B1324")
+    floor_mat.metallic=0.12
+    floor_mat.roughness=0.80
+    floor.material_override=floor_mat
+    menu_stage.add_child(floor)
+
+    for x in [-7.0,-3.5,0.0,3.5,7.0]:
+        var strip:=MeshInstance3D.new()
+        var sm:=BoxMesh.new()
+        sm.size=Vector3(0.08,0.03,18.0)
+        strip.mesh=sm
+        strip.position=Vector3(x,0.03,0)
+        var gm:=StandardMaterial3D.new()
+        gm.albedo_color=palette.secondary
+        gm.emission_enabled=true
+        gm.emission=palette.secondary
+        gm.emission_energy_multiplier=0.50
+        strip.material_override=gm
+        menu_stage.add_child(strip)
+
+    var key:=DirectionalLight3D.new()
+    key.rotation_degrees=Vector3(-38,-145,0)
+    key.light_energy=1.1
+    key.light_color=Color("#D6E9FF")
+    key.shadow_enabled=true
+    menu_stage.add_child(key)
+
+    var rim:=OmniLight3D.new()
+    rim.position=Vector3(3.5,4.5,2.5)
+    rim.light_energy=8.0
+    rim.omni_range=14.0
+    rim.light_color=Color("#23C4FF")
+    menu_stage.add_child(rim)
+
+    var warm:=OmniLight3D.new()
+    warm.position=Vector3(-4.0,3.0,-2.0)
+    warm.light_energy=5.0
+    warm.omni_range=11.0
+    warm.light_color=Color("#FF6B2C")
+    menu_stage.add_child(warm)
+
+    menu_car=_make_car("MENU_HERO",str(SaveSystem.data["progression"]["cars"]["selected"]),palette.primary)
+    menu_car.position=Vector3(0,0.40,0)
+    menu_car.rotation_degrees=Vector3(0,-28,0)
+    menu_stage.add_child(menu_car)
+
+    menu_camera=Camera3D.new()
+    menu_camera.name="MenuCamera"
+    menu_camera.position=Vector3(7.8,4.2,-10.0)
+    menu_camera.fov=54.0
+    menu_camera.near=0.1
+    menu_camera.far=80.0
+    menu_stage.add_child(menu_camera)
+    menu_camera.look_at(Vector3(0,1.0,0),Vector3.UP)
+    menu_camera.current=true
+
+func _apply_race_theme()->void:
+    if not race_theme_env or level_def.is_empty():
+        return
+    var env_id:=str(level_def.get("environment_id","sunrise_city"))
+    var condition:=str(level_def.get("condition_id","Clear"))
+    var bg:=Color("#0D1526")
+    var ambient:=Color("#6F8DBA")
+    var fog:=Color("#3B4A61")
+    var sun_color:=Color("#D8E8FF")
+    var sun_energy:=1.30
+
+    match env_id:
+        "sunrise_city":
+            bg=Color("#18314A"); ambient=Color("#86A9CF"); fog=Color("#526984"); sun_color=Color("#FFE1B0"); sun_energy=1.50
+        "coastal_highway":
+            bg=Color("#0C2A3A"); ambient=Color("#6AB1C9"); fog=Color("#3D7182"); sun_color=Color("#D8F2FF"); sun_energy=1.45
+        "desert_canyon":
+            bg=Color("#3A2019"); ambient=Color("#B58B6A"); fog=Color("#76584A"); sun_color=Color("#FFD3A0"); sun_energy=1.55
+        "mountain_pass":
+            bg=Color("#182B32"); ambient=Color("#7FA8AD"); fog=Color("#4F6F73"); sun_color=Color("#D8FFFF"); sun_energy=1.40
+        "industrial_night":
+            bg=Color("#050812"); ambient=Color("#53698E"); fog=Color("#202A42"); sun_color=Color("#94B9FF"); sun_energy=0.72
+        "snowline":
+            bg=Color("#24405A"); ambient=Color("#AFC8D7"); fog=Color("#7790A1"); sun_color=Color("#F4FBFF"); sun_energy=1.35
+        "neon_metro":
+            bg=Color("#090B20"); ambient=Color("#6470C4"); fog=Color("#2C315F"); sun_color=Color("#AAB6FF"); sun_energy=0.80
+        "volcanic_rim":
+            bg=Color("#240B0B"); ambient=Color("#9E5F55"); fog=Color("#593431"); sun_color=Color("#FFB08A"); sun_energy=1.02
+
+    if condition=="Night":
+        bg=bg.darkened(0.28); ambient=ambient.darkened(0.20); fog=fog.darkened(0.12); sun_energy*=0.62
+    elif condition=="Fog":
+        fog=fog.lightened(0.18)
+    elif condition=="Snow":
+        ambient=ambient.lightened(0.10); fog=fog.lightened(0.10)
+    elif condition=="Sandstorm":
+        fog=Color("#8E6C52")
+    elif condition=="Ash Haze":
+        fog=Color("#554E4D")
+
+    var e:=race_theme_env.environment
+    e.background_color=bg
+    e.ambient_light_color=ambient
+    e.ambient_light_energy=1.0
+    e.fog_light_color=fog
+    e.fog_light_energy=0.34 if condition=="Fog" else 0.22
+    e.fog_density=0.0038 if condition=="Fog" else 0.0025
+    race_sun.light_color=sun_color
+    race_sun.light_energy=sun_energy
+
+func _add_road_details()->void:
+    if path_points.size()<2:
+        return
+    var step:=maxi(1,int(path_points.size()/85))
+    var curb1:=StandardMaterial3D.new()
+    curb1.albedo_color=Color("#D2D7E0")
+    curb1.roughness=0.60
+    curb1.metallic=0.18
+    var curb2:=StandardMaterial3D.new()
+    curb2.albedo_color=Color("#38475E")
+    curb2.roughness=0.68
+    for i in range(0,path_points.size()-1,step):
+        var p:=path_points[i]
+        var t:=_tangent_at_index(i)
+        var side:=Vector3(-t.z,0,t.x).normalized()
+        var half:=float(path_widths[i])*0.5
+        for sgn in [-1.0,1.0]:
+            var curb:=MeshInstance3D.new()
+            var cm:=BoxMesh.new()
+            cm.size=Vector3(0.42,0.12,5.8)
+            curb.mesh=cm
+            curb.position=p+side*sgn*(half+0.26)+Vector3.UP*0.08
+            curb.rotation.y=atan2(t.x,t.z)
+            curb.material_override=curb1 if ((i/step)%2==0) else curb2
+            world_root.add_child(curb)
+
+func _add_start_grid()->void:
+    if path_points.size()<2:
+        return
+    var idx:=mini(3,path_points.size()-2)
+    var p:=path_points[idx]
+    var t:=_tangent_at_index(idx)
+    var side:=Vector3(-t.z,0,t.x).normalized()
+    for row in range(3):
+        for col in range(6):
+            var tile:=MeshInstance3D.new()
+            var bm:=BoxMesh.new()
+            bm.size=Vector3(1.55,0.035,1.8)
+            tile.mesh=bm
+            tile.position=p+t*float(row-1)*2.2+side*(float(col)-2.5)*2.5+Vector3.UP*0.10
+            tile.rotation.y=atan2(t.x,t.z)
+            var tm:=StandardMaterial3D.new()
+            tm.albedo_color=Color("#F0F4FF") if ((row+col)%2==0) else Color("#101724")
+            tile.material_override=tm
+            world_root.add_child(tile)
+
+func _spawn_landmarks(env_id:String,rng:RandomNumberGenerator)->void:
+    var count:=mini(10,maxi(4,int(path_points.size()/24)))
+    for n in range(count):
+        var idx:=clampi(int(float(n+1)*float(path_points.size()-1)/float(count+1)),2,path_points.size()-2)
+        var sample:=_sample_path(path_distances[idx])
+        var side:=Vector3(-sample.tangent.z,0,sample.tangent.x).normalized()
+        var sgn:=1.0 if n%2==0 else -1.0
+        var base:=sample.pos+side*sgn*(sample.width*0.5+6.0)
+
+        var pole:=MeshInstance3D.new()
+        var pm:=CylinderMesh.new()
+        pm.top_radius=0.09
+        pm.bottom_radius=0.12
+        pm.height=5.0
+        pole.mesh=pm
+        pole.position=base+Vector3.UP*2.5
+        var steel:=StandardMaterial3D.new()
+        steel.albedo_color=Color("#56657C")
+        steel.metallic=0.65
+        steel.roughness=0.30
+        pole.material_override=steel
+        world_root.add_child(pole)
+
+        var sign:=MeshInstance3D.new()
+        var sm:=BoxMesh.new()
+        sm.size=Vector3(2.8,1.0,0.12)
+        sign.mesh=sm
+        sign.position=base+Vector3.UP*4.8
+        sign.rotation.y=atan2(sample.tangent.x,sample.tangent.z)
+        var signmat:=StandardMaterial3D.new()
+        signmat.albedo_color=palette.secondary if env_id=="neon_metro" else palette.primary
+        signmat.emission_enabled=true
+        signmat.emission=signmat.albedo_color
+        signmat.emission_energy_multiplier=0.55
+        sign.material_override=signmat
+        world_root.add_child(sign)
+
+func _impact_feedback()->void:
+    impact_shake=minf(1.0,impact_shake+0.75)
+    var flash:=hud.get_node_or_null("ImpactFlash") if hud else null
+    if flash is ColorRect:
+        flash.visible=true
+        flash.modulate.a=0.42
+        var tw:=create_tween()
+        tw.tween_property(flash,"modulate:a",0.0,0.18)
+        tw.finished.connect(func():if is_instance_valid(flash):flash.visible=false)
+
+func _update_car_fx()->void:
+    if not is_instance_valid(player_car):
+        return
+    var flame:=player_car.get_meta("boost_flame",null)
+    if flame is Node3D:
+        flame.visible=boosting
+        if boosting:
+            flame.scale=Vector3(0.85,0.72,0.35)+Vector3(0.12,0.08,0.16)*sin(race_clock*32.0)
+    var glow:=player_car.get_meta("boost_glow",null)
+    if glow is OmniLight3D:
+        glow.visible=boosting
+    var brake_fx:=player_car.get_meta("brake_glow",null)
+    if brake_fx is MeshInstance3D:
+        brake_fx.visible=brake_held
 
 func _build_loading_screen()->void:
     loading_screen=Control.new()
@@ -257,7 +496,7 @@ func _run_startup_sequence()->void:
     for step in steps:
         loading_status.text=str(step[0])
         loading_progress.value=float(step[1])
-        await get_tree().create_timer(0.28).timeout
+        await get_tree().create_timer(0.34).timeout
 
     # Never make the player wait for an ad response.
     AdsManager.hide_loading_banners()
@@ -270,6 +509,15 @@ func _run_startup_sequence()->void:
 
 func _show_main_menu()->void:
     AdsManager.hide_loading_banners()
+    if menu_car and is_instance_valid(menu_car):
+        var selected_id:=str(SaveSystem.data["progression"]["cars"]["selected"])
+        var current_id:=str(menu_car.get_meta("car_id",""))
+        if selected_id!=current_id and menu_stage:
+            menu_car.queue_free()
+            menu_car=_make_car("MENU_HERO",selected_id,palette.primary)
+            menu_car.position=Vector3(0,0.40,0)
+            menu_car.rotation_degrees=Vector3(0,-28,0)
+            menu_stage.add_child(menu_car)
     _show_only("main_menu")
 
 func _show_onboarding()->void:
@@ -294,6 +542,18 @@ func _build_onboarding()->void:
 func _build_main_menu()->void:
     var c:=_new_screen("main_menu","TURBO RUSH")
     var p:Control=c.get_node("Panel")
+
+    var logo:=TextureRect.new()
+    logo.name="MenuLogo"
+    logo.position=Vector2(1410,18)
+    logo.size=Vector2(430,150)
+    logo.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+    logo.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+    logo.texture=load("res://assets/turbo_rush_logo.svg")
+    p.add_child(logo)
+
+    var version_badge:=_label(p,"v%s • OFFLINE-FIRST • 6 RACERS" % GameConfig.GAME_VERSION,18,palette.muted)
+    version_badge.position=Vector2(1415,160)
     coins_label=_label(p,"COINS  0",24,palette.coin)
     coins_label.position=Vector2(70,110)
     diamonds_label=_label(p,"DIAMONDS  0",24,palette.diamond)
@@ -493,6 +753,14 @@ func _build_race_hud()->void:
     boost_bar.add_theme_stylebox_override("background",_style(Color(0.05,0.07,0.12,0.88),10))
     boost_bar.add_theme_stylebox_override("fill",_style(palette.secondary,10))
     hud.add_child(boost_bar)
+
+    var impact_flash:=ColorRect.new()
+    impact_flash.name="ImpactFlash"
+    impact_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    impact_flash.color=Color("#FF5368")
+    impact_flash.mouse_filter=Control.MOUSE_FILTER_IGNORE
+    impact_flash.visible=false
+    hud.add_child(impact_flash)
 
     countdown_label=_label(hud,"",98,palette.text)
     countdown_label.position=Vector2(860,330)
@@ -909,6 +1177,7 @@ func _clear_race_world()->void:
 func _build_race_world()->void:
     _generate_path()
     _build_track_surface()
+    _apply_race_theme()
     _spawn_scenery()
     _spawn_items()
     _spawn_racers()
@@ -997,6 +1266,8 @@ func _build_track_surface()->void:
         marker.material_override=line_mat
         world_root.add_child(marker)
     _add_finish_gate()
+    _add_road_details()
+    _add_start_grid()
 
 func _add_finish_gate()->void:
     var p:=path_points[path_points.size()-1]
@@ -1168,6 +1439,8 @@ func _spawn_scenery()->void:
                 rail.material_override=rm
                 world_root.add_child(rail)
 
+    _spawn_landmarks(env_id,rng)
+
 func _spawn_items()->void:
     var rng:=RandomNumberGenerator.new()
     rng.seed=int(level_def.seed)^76543
@@ -1236,6 +1509,7 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
     shape.position.y=0.58
     car.add_child(shape)
 
+    car.set_meta("car_id",_car_id)
     var body_color:=color
     if car_name=="PLAYER":
         var skin_id:=str(SaveSystem.data["cosmetics"]["equipped"].get("skin","skin_01"))
@@ -1379,6 +1653,73 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
         tail.material_override=tail_mat
         car.add_child(tail)
 
+    var underglow:=MeshInstance3D.new()
+    underglow.name="Underglow"
+    var ugm:=BoxMesh.new()
+    ugm.size=Vector3(1.55,0.03,3.10)
+    underglow.mesh=ugm
+    underglow.position=Vector3(0,0.26,0)
+    var ugmat:=StandardMaterial3D.new()
+    ugmat.albedo_color=body_color
+    ugmat.emission_enabled=true
+    ugmat.emission=body_color
+    ugmat.emission_energy_multiplier=0.72
+    underglow.material_override=ugmat
+    car.add_child(underglow)
+
+    for sx in [-1.0,1.0]:
+        var mirror:=MeshInstance3D.new()
+        var mm:=BoxMesh.new()
+        mm.size=Vector3(0.22,0.16,0.42)
+        mirror.mesh=mm
+        mirror.position=Vector3(sx*1.10,1.05,-0.05)
+        mirror.rotation_degrees.y=12.0*float(sx)
+        mirror.material_override=roof_mat
+        car.add_child(mirror)
+
+    var flame:=MeshInstance3D.new()
+    flame.name="BoostFlame"
+    var fm:=BoxMesh.new()
+    fm.size=Vector3(0.44,0.22,0.75)
+    flame.mesh=fm
+    flame.position=Vector3(0,0.72,2.42)
+    flame.scale=Vector3(0.85,0.72,0.35)
+    var fmat:=StandardMaterial3D.new()
+    fmat.albedo_color=Color("#FF9B4A")
+    fmat.emission_enabled=true
+    fmat.emission=Color("#5DE9FF")
+    fmat.emission_energy_multiplier=3.2
+    flame.material_override=fmat
+    flame.visible=false
+    car.add_child(flame)
+    car.set_meta("boost_flame",flame)
+
+    var boost_light:=OmniLight3D.new()
+    boost_light.name="BoostGlow"
+    boost_light.position=Vector3(0,0.75,2.55)
+    boost_light.light_energy=6.0
+    boost_light.omni_range=5.0
+    boost_light.light_color=Color("#32D8FF")
+    boost_light.visible=false
+    car.add_child(boost_light)
+    car.set_meta("boost_glow",boost_light)
+
+    var brake_glow:=MeshInstance3D.new()
+    brake_glow.name="BrakeGlow"
+    var bgm:=BoxMesh.new()
+    bgm.size=Vector3(1.38,0.08,0.12)
+    brake_glow.mesh=bgm
+    brake_glow.position=Vector3(0,0.88,2.12)
+    var bgmat:=StandardMaterial3D.new()
+    bgmat.albedo_color=Color("#FF3147")
+    bgmat.emission_enabled=true
+    bgmat.emission=Color("#FF3147")
+    bgmat.emission_energy_multiplier=2.6
+    brake_glow.material_override=bgmat
+    brake_glow.visible=false
+    car.add_child(brake_glow)
+    car.set_meta("brake_glow",brake_glow)
+
     return car
 
 func _animate_vehicle_wheels(vehicle:Node3D,speed:float,delta:float)->void:
@@ -1458,6 +1799,11 @@ func _tangent_at_index(i:int)->Vector3:
     return (b-a).normalized()
 
 func _process(delta:float)->void:
+    if menu_car and is_instance_valid(menu_car) and current_screen!="race":
+        menu_spin+=delta
+        menu_car.rotation.y=deg_to_rad(-28.0)+sin(menu_spin*0.32)*0.12
+    if impact_shake>0.0:
+        impact_shake=maxf(0.0,impact_shake-delta*4.0)
     if state=="COUNTDOWN":
         _update_countdown(delta)
     elif state=="RACING":
@@ -1512,12 +1858,15 @@ func _update_race(delta:float)->void:
     player_speed=move_toward(player_speed,target_speed,accel*delta)
     player_progress=minf(player_progress+player_speed*delta,float(level_def.track_length_m))
     _place_racer(player_car,player_progress,player_lane)
+    player_car.rotation.z=lerpf(player_car.rotation.z,-steer*0.035*clampf(player_speed/45.0,0.0,1.0),minf(1.0,delta*8.0))
     _animate_vehicle_wheels(player_car,player_speed,delta)
+    _update_car_fx()
     if is_instance_valid(race_camera):
         var speed_ratio:=clampf(player_speed/(GameConfig.car(car_id).get("top_speed",140.0)/3.6),0.0,1.25)
         race_camera.fov=lerpf(68.0,78.0,speed_ratio)+(3.0 if boosting else 0.0)
+        race_camera.position.z=lerpf(-13.0,-9.5,speed_ratio)
         race_camera.position.x=sin(race_clock*18.0)*0.035*(1.0 if boosting else 0.35)
-        race_camera.position.y=4.1+sin(race_clock*10.0)*0.04*(1.0 if boosting else 0.25)
+        race_camera.position.y=4.1+sin(race_clock*10.0)*0.04*(1.0 if boosting else 0.25)+impact_shake*0.08
     _update_ai(delta)
     _update_traffic(delta)
     _check_pickups()
@@ -1622,6 +1971,7 @@ func _check_collisions()->void:
                 damage=minf(100.0,damage+dmg)
                 clean_score=maxf(0.0,clean_score-(15.0 if dmg>20.0 else 5.0))
             collision_cooldown=0.8
+            _impact_feedback()
             HapticsSystem.pulse(0.7)
     for t in traffic:
         if absf(player_progress-float(t.progress))<3.5 and absf(player_lane-float(t.lane))<1.8:
@@ -1629,6 +1979,7 @@ func _check_collisions()->void:
             damage=minf(100.0,damage+traffic_damage)
             clean_score=maxf(0.0,clean_score-5.0)
             collision_cooldown=1.0
+            _impact_feedback()
             HapticsSystem.pulse(0.5)
 
 func _player_position()->int:
