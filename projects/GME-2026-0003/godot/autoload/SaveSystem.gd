@@ -10,7 +10,7 @@ func _ready()->void:
 
 func _defaults()->Dictionary:
     return {
-        "meta":{"schema_version":2,"game_version":GameConfig.GAME_VERSION,"save_id":str(Time.get_ticks_usec()),"created_at_unix":Time.get_unix_time_from_system(),"updated_at_unix":Time.get_unix_time_from_system(),"last_launch_unix":Time.get_unix_time_from_system()},
+        "meta":{"schema_version":3,"game_version":GameConfig.GAME_VERSION,"save_id":str(Time.get_ticks_usec()),"created_at_unix":Time.get_unix_time_from_system(),"updated_at_unix":Time.get_unix_time_from_system(),"last_launch_unix":Time.get_unix_time_from_system()},
         "profile":{"player_level":0,"highest_completed_level":0,"highest_unlocked_level":1,"selected_level":1,"selected_car_id":"rookie_gt","onboarding_completed":false,"total_races_completed":0,"total_races_failed":0},
         "currencies":{"coins":0,"diamonds":0},
         "campaign":{"total_stars":0,"star_milestones_claimed":[],"levels":{}},
@@ -52,6 +52,10 @@ func load_or_create()->void:
 
 func _repair_invariants()->void:
     var defaults:=_defaults()
+    # Migrate legacy billing/store fields out of old saves. Turbo Rush v1.7 is ads + gameplay only.
+    data.erase("iap")
+    data.erase("in_app_purchases")
+    data.erase("monetization_entitlements")
     if data.has("monetization") and data["monetization"] is Dictionary:
         data["monetization"].erase("iap")
         data["monetization"].erase("remove_ads")
