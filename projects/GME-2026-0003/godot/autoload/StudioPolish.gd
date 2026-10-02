@@ -9,13 +9,13 @@ const CYAN := Color("#23C4FF")
 const ORANGE := Color("#FF6B2C")
 const WHITE := Color("#EAF4FF")
 
-const HERO_SCENE: PackedScene = preload("res://assets/studio/race-future.glb")
-const HERO_ALT_SCENE: PackedScene = preload("res://assets/studio/sedan-sports.glb")
-const BUILDING_SCENE: PackedScene = preload("res://assets/studio/building-c.glb")
-const SKYSCRAPER_SCENE: PackedScene = preload("res://assets/studio/building-skyscraper-b.glb")
-const LIGHT_SCENE: PackedScene = preload("res://assets/studio/light-square-double.glb")
-const STAND_SCENE: PackedScene = preload("res://assets/studio/grandStandCovered.glb")
-const BARRIER_SCENE: PackedScene = preload("res://assets/studio/barrierRed.glb")
+const HERO_PATH := "res://assets/studio/race-future.glb"
+const HERO_ALT_PATH := "res://assets/studio/sedan-sports.glb"
+const BUILDING_PATH := "res://assets/studio/building-c.glb"
+const SKYSCRAPER_PATH := "res://assets/studio/building-skyscraper-b.glb"
+const LIGHT_PATH := "res://assets/studio/light-square-double.glb"
+const STAND_PATH := "res://assets/studio/grandStandCovered.glb"
+const BARRIER_PATH := "res://assets/studio/barrierRed.glb"
 
 var _menu_refresh_queued := false
 
@@ -64,11 +64,13 @@ func enhance_menu(stage:Node3D) -> void:
     if existing_car:
         existing_car.visible = false
 
-    var car_scene:PackedScene = HERO_SCENE
+    var car_scene:PackedScene = _optional_scene(HERO_PATH)
     if existing_car:
         var selected := str(existing_car.get("name"))
         if not selected.is_empty() and abs(selected.hash()) % 3 == 1:
-            car_scene = HERO_ALT_SCENE
+            var alt := _optional_scene(HERO_ALT_PATH)
+            if alt:
+                car_scene = alt
 
     var car := car_scene.instantiate() as Node3D
     if car:
@@ -159,6 +161,12 @@ func _dress_with_cc0_assets(g:Node3D, points:Array, widths:Array, env:String) ->
     if points.size() < 10 or widths.is_empty():
         return
 
+    var building := _optional_scene(BUILDING_PATH)
+    var skyscraper := _optional_scene(SKYSCRAPER_PATH)
+    var road_light := _optional_scene(LIGHT_PATH)
+    var stand := _optional_scene(STAND_PATH)
+    var barrier := _optional_scene(BARRIER_PATH)
+
     var asset_root := Node3D.new()
     asset_root.name = ASSET_GROUP
     g.add_child(asset_root)
@@ -172,7 +180,7 @@ func _dress_with_cc0_assets(g:Node3D, points:Array, widths:Array, env:String) ->
         for n in range(6):
             var idx := clampi(int(float(n + 1) * float(points.size() - 1) / 7.0), 3, points.size() - 3)
             var sample := _sample(points, widths, idx)
-            var packed:PackedScene = SKYSCRAPER_SCENE if n % 2 == 0 else BUILDING_SCENE
+            var packed:PackedScene = skyscraper if n % 2 == 0 else building
             _add_asset(asset_root, packed, sample["position"], sample["side"], float(sample["width"]), 0.0, 5.6 if n % 2 == 0 else 7.2, -1.0 if n % 2 == 0 else 1.0, n)
             count += 1
 
@@ -180,21 +188,21 @@ func _dress_with_cc0_assets(g:Node3D, points:Array, widths:Array, env:String) ->
         for n in range(5):
             var idx := clampi(int(float(n + 1) * float(points.size() - 1) / 6.0), 2, points.size() - 2)
             var sample := _sample(points, widths, idx)
-            _add_light_asset(asset_root, sample["position"], sample["side"], float(sample["width"]), 1.0 if n % 2 == 0 else -1.0, n)
+            _add_light_asset(asset_root, road_light, sample["position"], sample["side"], float(sample["width"]), 1.0 if n % 2 == 0 else -1.0, n)
             count += 1
 
     # A small race-day grandstand near the opening section reinforces the event presentation.
     if points.size() > 20:
         var start_idx := mini(8, points.size() - 3)
         var sample := _sample(points, widths, start_idx)
-        _add_asset(asset_root, STAND_SCENE, sample["position"], sample["side"], float(sample["width"]), 0.0, 6.0, -1.0, 90)
+        _add_asset(asset_root, stand, sample["position"], sample["side"], float(sample["width"]), 0.0, 6.0, -1.0, 90)
 
     # Short barrier run near selected bends gives the road a manufactured race-course feel.
     var barrier_step := maxi(6, int(points.size() / 8))
     for n in range(3):
         var idx := clampi(5 + n * barrier_step, 3, points.size() - 3)
         var sample := _sample(points, widths, idx)
-        _add_asset(asset_root, BARRIER_SCENE, sample["position"], sample["side"], float(sample["width"]), 0.0, 4.5, 1.0 if n % 2 == 0 else -1.0, 140 + n)
+        _add_asset(asset_root, barrier, sample["position"], sample["side"], float(sample["width"]), 0.0, 4.5, 1.0 if n % 2 == 0 else -1.0, 140 + n)
 
 func _sample(points:Array, widths:Array, idx:int) -> Dictionary:
     var p:Vector3 = points[idx]
@@ -205,6 +213,11 @@ func _sample(points:Array, widths:Array, idx:int) -> Dictionary:
         "side": side,
         "width": float(widths[mini(idx, widths.size() - 1)])
     }
+
+func _optional_scene(path:String) -> PackedScene:
+    if path.is_empty() or not ResourceLoader.exists(path):
+        return null
+    return load(path) as PackedScene
 
 func _add_asset(parent:Node3D, packed:PackedScene, p:Vector3, side:Vector3, width:float, yaw:float, scale_value:float, sign:float, seed:int) -> void:
     if packed == null:
@@ -218,8 +231,10 @@ func _add_asset(parent:Node3D, packed:PackedScene, p:Vector3, side:Vector3, widt
     node.scale = Vector3.ONE * scale_value
     parent.add_child(node)
 
-func _add_light_asset(parent:Node3D, p:Vector3, side:Vector3, width:float, sign:float, seed:int) -> void:
-    var node := LIGHT_SCENE.instantiate() as Node3D
+func _add_light_asset(parent:Node3D, packed:PackedScene, p:Vector3, side:Vector3, width:float, sign:float, seed:int) -> void:
+    if packed == null:
+        return
+    var node := packed.instantiate() as Node3D
     if node == null:
         return
     node.position = p + side * sign * (width * 0.5 + 3.2)
