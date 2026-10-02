@@ -1,5 +1,5 @@
 name: Turbo Rush Android Build
-# studio release pipeline 1.6.0
+# studio release pipeline 1.7.0 - Unity Ads bridge + no billing
 
 on:
   workflow_dispatch:
