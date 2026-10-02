@@ -1,14 +1,35 @@
 extends Node
 ## Turbo Rush Studio Polish runtime layer.
-## Augments the existing game without replacing its core systems.
+## Adds a cohesive showroom and lightweight CC0 environment dressing
+## on top of the existing procedural racing foundation.
 
 const GROUP := "StudioPolish"
+const ASSET_GROUP := "StudioAssets"
 const CYAN := Color("#23C4FF")
 const ORANGE := Color("#FF6B2C")
 const WHITE := Color("#EAF4FF")
 
+const HERO_SCENE: PackedScene = preload("res://assets/studio/race-future.glb")
+const HERO_ALT_SCENE: PackedScene = preload("res://assets/studio/sedan-sports.glb")
+const BUILDING_SCENE: PackedScene = preload("res://assets/studio/building-c.glb")
+const SKYSCRAPER_SCENE: PackedScene = preload("res://assets/studio/building-skyscraper-b.glb")
+const LIGHT_SCENE: PackedScene = preload("res://assets/studio/light-square-double.glb")
+const STAND_SCENE: PackedScene = preload("res://assets/studio/grandStandCovered.glb")
+const BARRIER_SCENE: PackedScene = preload("res://assets/studio/barrierRed.glb")
+
+var _menu_refresh_queued := false
+
 func _ready() -> void:
+    if not get_tree().node_added.is_connected(_on_node_added):
+        get_tree().node_added.connect(_on_node_added)
     call_deferred("_enhance_menu")
+
+func _on_node_added(node: Node) -> void:
+    if node == null:
+        return
+    if node.name == "MENU_HERO" and not _menu_refresh_queued:
+        _menu_refresh_queued = true
+        call_deferred("_refresh_menu_showroom")
 
 func _enhance_menu() -> void:
     var root := get_tree().current_scene
@@ -18,52 +39,95 @@ func _enhance_menu() -> void:
     if stage:
         enhance_menu(stage)
 
-func enhance_menu(stage:Node3D) -> void:
-    if stage.get_node_or_null(GROUP):
+func _refresh_menu_showroom() -> void:
+    _menu_refresh_queued = false
+    var root := get_tree().current_scene
+    if root == null:
         return
+    var stage := root.get_node_or_null("MenuHeroStage") as Node3D
+    if stage:
+        enhance_menu(stage)
+
+func enhance_menu(stage:Node3D) -> void:
+    if stage == null or not is_instance_valid(stage):
+        return
+
+    var old := stage.get_node_or_null(ASSET_GROUP)
+    if old:
+        old.queue_free()
+
     var g := Node3D.new()
-    g.name = GROUP
+    g.name = ASSET_GROUP
     stage.add_child(g)
 
-    var ring := MeshInstance3D.new()
-    var rm := TorusMesh.new()
-    rm.inner_radius = 5.7
-    rm.outer_radius = 5.95
-    ring.mesh = rm
-    ring.position.y = 0.36
-    var rmat := StandardMaterial3D.new()
-    rmat.albedo_color = CYAN
-    rmat.emission_enabled = true
-    rmat.emission = CYAN
-    rmat.emission_energy_multiplier = 1.8
-    ring.material_override = rmat
-    g.add_child(ring)
+    var existing_car := stage.get_node_or_null("MENU_HERO")
+    if existing_car:
+        existing_car.visible = false
 
-    for side in [-1.0, 1.0]:
-        for z in [-6.0, -2.0, 2.0, 6.0]:
-            var pillar := MeshInstance3D.new()
-            var pm := BoxMesh.new()
-            pm.size = Vector3(0.16, 3.0, 0.16)
-            pillar.mesh = pm
-            pillar.position = Vector3(side * 10.0, 1.5, z)
-            var mat := StandardMaterial3D.new()
-            mat.albedo_color = Color("#17233A")
-            mat.metallic = 0.7
-            mat.roughness = 0.25
-            pillar.material_override = mat
-            g.add_child(pillar)
+    var car_scene:PackedScene = HERO_SCENE
+    if existing_car:
+        var selected := str(existing_car.get("name"))
+        if not selected.is_empty() and abs(selected.hash()) % 3 == 1:
+            car_scene = HERO_ALT_SCENE
 
-            var light := OmniLight3D.new()
-            light.position = pillar.position + Vector3(0, 2.0, 0)
-            light.light_color = ORANGE if side < 0.0 else CYAN
-            light.light_energy = 2.2
-            light.omni_range = 5.0
-            g.add_child(light)
+    var car := car_scene.instantiate() as Node3D
+    if car:
+        car.name = "StudioHeroVehicle"
+        car.position = Vector3(0, 0.52, 0)
+        car.rotation_degrees = Vector3(0, -28, 0)
+        car.scale = Vector3.ONE * 2.15
+        g.add_child(car)
+
+    _showroom_lights(g)
+    _showroom_markers(g)
+
+func _showroom_lights(g:Node3D) -> void:
+    var key := SpotLight3D.new()
+    key.position = Vector3(-4.0, 6.5, 5.0)
+    key.rotation_degrees = Vector3(-38.0, -28.0, 0.0)
+    key.light_color = WHITE
+    key.light_energy = 7.0
+    key.spot_range = 16.0
+    key.spot_angle = 45.0
+    g.add_child(key)
+
+    var rim := OmniLight3D.new()
+    rim.position = Vector3(4.5, 4.0, -2.5)
+    rim.light_color = CYAN
+    rim.light_energy = 5.0
+    rim.omni_range = 12.0
+    g.add_child(rim)
+
+    var warm := OmniLight3D.new()
+    warm.position = Vector3(-4.0, 2.6, -1.0)
+    warm.light_color = ORANGE
+    warm.light_energy = 3.5
+    warm.omni_range = 9.0
+    g.add_child(warm)
+
+func _showroom_markers(g:Node3D) -> void:
+    for z in [-5.5, 0.0, 5.5]:
+        var marker := MeshInstance3D.new()
+        var mesh := BoxMesh.new()
+        mesh.size = Vector3(0.10, 0.03, 2.0)
+        marker.mesh = mesh
+        marker.position = Vector3(6.2, 0.04, z)
+        var mat := StandardMaterial3D.new()
+        mat.albedo_color = CYAN
+        mat.emission_enabled = true
+        mat.emission = CYAN
+        mat.emission_energy_multiplier = 1.4
+        marker.material_override = mat
+        g.add_child(marker)
 
 func enhance_race(world:Node3D, points:Array, widths:Array, environment_id:String) -> void:
+    if world == null or not is_instance_valid(world):
+        return
+
     var old := world.get_node_or_null(GROUP)
     if old:
         old.queue_free()
+
     if points.size() < 4:
         return
 
@@ -89,6 +153,80 @@ func enhance_race(world:Node3D, points:Array, widths:Array, environment_id:Strin
 
     _horizon(g, environment_id)
     _start_arch(g, points[mini(3, points.size()-1)], points[mini(4, points.size()-1)])
+    _dress_with_cc0_assets(g, points, widths, environment_id)
+
+func _dress_with_cc0_assets(g:Node3D, points:Array, widths:Array, env:String) -> void:
+    if points.size() < 10 or widths.is_empty():
+        return
+
+    var asset_root := Node3D.new()
+    asset_root.name = ASSET_GROUP
+    g.add_child(asset_root)
+
+    var urban := env in ["sunrise_city", "neon_metro", "industrial_night"]
+    var highway := env in ["coastal_highway", "mountain_pass", "snowline", "desert_canyon", "volcanic_rim"]
+    var count := 0
+
+    # Keep runtime geometry light: a few large shared GLB instances, no collision.
+    if urban:
+        for n in range(6):
+            var idx := clampi(int(float(n + 1) * float(points.size() - 1) / 7.0), 3, points.size() - 3)
+            var sample := _sample(points, widths, idx)
+            var packed:PackedScene = SKYSCRAPER_SCENE if n % 2 == 0 else BUILDING_SCENE
+            _add_asset(asset_root, packed, sample["position"], sample["side"], float(sample["width"]), 0.0, 5.6 if n % 2 == 0 else 7.2, -1.0 if n % 2 == 0 else 1.0, n)
+            count += 1
+
+    if highway:
+        for n in range(5):
+            var idx := clampi(int(float(n + 1) * float(points.size() - 1) / 6.0), 2, points.size() - 2)
+            var sample := _sample(points, widths, idx)
+            _add_light_asset(asset_root, sample["position"], sample["side"], float(sample["width"]), 1.0 if n % 2 == 0 else -1.0, n)
+            count += 1
+
+    # A small race-day grandstand near the opening section reinforces the event presentation.
+    if points.size() > 20:
+        var start_idx := mini(8, points.size() - 3)
+        var sample := _sample(points, widths, start_idx)
+        _add_asset(asset_root, STAND_SCENE, sample["position"], sample["side"], float(sample["width"]), 0.0, 6.0, -1.0, 90)
+
+    # Short barrier run near selected bends gives the road a manufactured race-course feel.
+    var barrier_step := maxi(6, int(points.size() / 8))
+    for n in range(3):
+        var idx := clampi(5 + n * barrier_step, 3, points.size() - 3)
+        var sample := _sample(points, widths, idx)
+        _add_asset(asset_root, BARRIER_SCENE, sample["position"], sample["side"], float(sample["width"]), 0.0, 4.5, 1.0 if n % 2 == 0 else -1.0, 140 + n)
+
+func _sample(points:Array, widths:Array, idx:int) -> Dictionary:
+    var p:Vector3 = points[idx]
+    var t:Vector3 = (points[mini(idx + 1, points.size() - 1)] - p).normalized()
+    var side := Vector3(-t.z, 0, t.x).normalized()
+    return {
+        "position": p,
+        "side": side,
+        "width": float(widths[mini(idx, widths.size() - 1)])
+    }
+
+func _add_asset(parent:Node3D, packed:PackedScene, p:Vector3, side:Vector3, width:float, yaw:float, scale_value:float, sign:float, seed:int) -> void:
+    if packed == null:
+        return
+    var node := packed.instantiate() as Node3D
+    if node == null:
+        return
+    node.position = p + side * sign * (width * 0.5 + 12.0)
+    node.position.y = p.y
+    node.rotation.y = yaw + float(seed % 7) * 0.13
+    node.scale = Vector3.ONE * scale_value
+    parent.add_child(node)
+
+func _add_light_asset(parent:Node3D, p:Vector3, side:Vector3, width:float, sign:float, seed:int) -> void:
+    var node := LIGHT_SCENE.instantiate() as Node3D
+    if node == null:
+        return
+    node.position = p + side * sign * (width * 0.5 + 3.2)
+    node.position.y = p.y + 0.04
+    node.rotation.y = atan2(side.x, side.z)
+    node.scale = Vector3.ONE * 8.0
+    parent.add_child(node)
 
 func _lamp(g:Node3D, p:Vector3, env:String) -> void:
     var pole := MeshInstance3D.new()
