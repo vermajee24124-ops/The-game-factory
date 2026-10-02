@@ -98,6 +98,7 @@ func _ready()->void:
     HapticsSystem.enabled=bool(SaveSystem.data["settings"]["haptics_enabled"])
     _setup_world()
     _build_menu_stage()
+    StudioPolish.enhance_menu(menu_stage)
     _setup_ui()
     await _run_startup_sequence()
 
@@ -1290,6 +1291,7 @@ func _build_race_world()->void:
     _build_track_surface()
     _apply_race_theme()
     _spawn_scenery()
+    StudioPolish.enhance_race(world_root, path_points, path_widths, str(level_def.environment_id))
     _spawn_items()
     _spawn_racers()
     player_car=_make_car("PLAYER",str(SaveSystem.data["progression"]["cars"]["selected"]),palette.primary)
@@ -2042,6 +2044,7 @@ func _update_race(delta:float)->void:
         race_camera.position.z=lerpf(-13.0,-9.5,speed_ratio)
         race_camera.position.x=sin(race_clock*18.0)*0.035*(1.0 if boosting else 0.35)
         race_camera.position.y=4.1+sin(race_clock*10.0)*0.04*(1.0 if boosting else 0.25)+impact_shake*0.08
+        StudioPolish.camera_feedback(race_camera, player_speed, boosting, impact_shake, delta)
     _update_ai(delta)
     _update_traffic(delta)
     _check_pickups()
