@@ -1,0 +1,152 @@
+{
+  "generated_at": "20261002T221623Z",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "skills": [
+    {
+      "name": "character_body_kinematics_controller",
+      "domain": "Physics & Movement",
+      "skill": "Implement robust kinematic player controllers using CharacterBody3D and CharacterBody2D with custom gravity, slope sliding, and platform snap.",
+      "tools": [
+        "godot_cli",
+        "gdscript_linter",
+        "scene_tree_editor"
+      ],
+      "procedure": [
+        "Create a CharacterBody node with a CollisionShape child using standard primitives (CapsuleShape3D or CapsuleShape2D).",
+        "Configure motion parameters: set floor_snap_length, floor_max_angle, and floor_constant_speed according to movement design.",
+        "In _physics_process(delta), apply gravity using ProjectSettings.get_setting('physics/3d/default_gravity') or 2D counterpart when not on the floor.",
+        "Calculate velocity.x/z (or x/y in 2D) using input vectors with lerp/move_toward for acceleration and deceleration.",
+        "Call move_and_slide() without parameters (Godot 4 API relies on the internal velocity property).",
+        "Query is_on_floor(), is_on_wall(), and get_floor_normal() post-move_and_slide() for state transitions."
+      ],
+      "verification": [
+        "Run headless tests asserting velocity updates properly over multiple physics ticks.",
+        "Assert character does not jitter or slide down slopes within floor_max_angle limits.",
+        "Verify move_and_slide() is called with no arguments and modifies transform.origin as expected."
+      ],
+      "pitfalls": [
+        "Passing velocity to move_and_slide(); in Godot 4, move_and_slide() takes 0 arguments and modifies self.velocity in-place.",
+        "Applying delta to velocity when using move_toward or lerp instead of passing delta to the step size parameter.",
+        "Relying on is_on_floor() before calling move_and_slide() in the current physics tick."
+      ],
+      "benchmark_prompt": "Write a GDScript CharacterBody3D script for a third-person controller that handles acceleration, variable jump height, slope adherence up to 45 degrees, and coyote time without passing arguments to move_and_slide()."
+    },
+    {
+      "name": "astar_grid_pathfinding_system",
+      "domain": "AI & Navigation",
+      "skill": "Set up deterministic 2D/3D grid-based navigation using AStarGrid2D and AStar3D with obstacle registration and dynamic weighting.",
+      "tools": [
+        "godot_cli",
+        "gdscript_runtime",
+        "nav_debugger"
+      ],
+      "procedure": [
+        "Instantiate AStarGrid2D and define region via region (Rect2i) and cell_size (Vector2).",
+        "Set diagonal_mode (e.g., DIAGONAL_MODE_NEVER or DIAGONAL_MODE_AT_LEAST_ONE_WALKABLE) and heuristic.",
+        "Call update() to initialize grid topology.",
+        "Register static and dynamic colliders using set_point_solid(coords, true) or clear boundaries.",
+        "Query paths with get_point_path(start, end) or get_id_path(start, end) for discrete grid points.",
+        "Synchronize grid solids upon TileMap/GridMap changes or obstacle destruction."
+      ],
+      "verification": [
+        "Assert that paths generated around known solid cells do not intersect solid coordinates.",
+        "Verify diagonal navigation behaves according to the specified DiagonalMode constant.",
+        "Ensure path queries return empty PackedVector2Array when start or target is completely enclosed by solid cells."
+      ],
+      "pitfalls": [
+        "Attempting path queries before calling astar_grid.update() after resizing or reconfiguring regions.",
+        "Mixing local world coordinates with grid indices; use local_to_map conversions before querying grid points.",
+        "Forgetting to mark points as walkable again when dynamic obstacles move."
+      ],
+      "benchmark_prompt": "Create an autonomous grid pathfinding manager in Godot 4 using AStarGrid2D that supports dynamic obstacle blocking, updates solid cells based on an Area2D collider array, and outputs smoothed world-space paths."
+    },
+    {
+      "name": "animation_tree_state_machine_setup",
+      "domain": "Animation",
+      "skill": "Configure and control AnimationTree with AnimationNodeStateMachine and AnimationMixer for decoupled skeletal and state transitions.",
+      "tools": [
+        "godot_editor_headless",
+        "resource_serializer",
+        "gdscript_linter"
+      ],
+      "procedure": [
+        "Add AnimationPlayer containing all target Animation clips to the node hierarchy.",
+        "Add an AnimationTree, assign anim_player path, and set tree_root to an AnimationNodeStateMachine.",
+        "Populate states with AnimationNodeAnimation or blend nodes (e.g., AnimationNodeBlendSpace2D).",
+        "Create AnimationNodeStateMachineTransition connections with appropriate switch_mode and advance_mode (e.g., ADVANCE_MODE_AUTO or expression-based).",
+        "Set AnimationTree.active = true.",
+        "Obtain state machine playback via animation_tree.get('parameters/playback') as AnimationNodeStateMachinePlayback and invoke travel('state_name')."
+      ],
+      "verification": [
+        "Verify animation playback state switches correctly via playback.get_current_node().",
+        "Check that blending parameters update continuously through animation_tree.set('parameters/...', value).",
+        "Ensure no errors about missing root motion tracks or invalid target node paths appear in output logs."
+      ],
+      "pitfalls": [
+        "Setting AnimationTree.active = true before assigning a valid AnimationPlayer path.",
+        "Using deprecated Godot 3 property paths (e.g., 'parameters/playback' remains valid, but root assignment structure changed under AnimationMixer).",
+        "Calling play() on AnimationPlayer while AnimationTree is active and controlling the same mixer properties."
+      ],
+      "benchmark_prompt": "Programmatically construct an AnimationTree with an AnimationNodeStateMachine for an NPC with 'Idle', 'Run', and 'Attack' states, configuring cross-fade transitions and triggering them from GDScript via AnimationNodeStateMachinePlayback."
+    },
+    {
+      "name": "polyphonic_audio_manager",
+      "domain": "Audio Systems",
+      "skill": "Manage dynamic, low-latency concurrent sound effects using AudioStreamPolyphonic and AudioStreamPlaybackPolyphonic on designated audio buses.",
+      "tools": [
+        "godot_cli",
+        "audio_profiler",
+        "gdscript_runtime"
+      ],
+      "procedure": [
+        "Instantiate an AudioStreamPlayer (or 2D/3D variant) set to a specific bus.",
+        "Initialize AudioStreamPolyphonic and set polyphony limit.",
+        "Assign the polyphonic stream to the player's stream property and start playback via play().",
+        "Fetch the active playback controller using player.get_stream_playback() as AudioStreamPlaybackPolyphonic.",
+        "Trigger sound effects using playback.play_stream(sample, from_offset, volume_db, pitch_scale).",
+        "Store stream playback IDs if dynamic volume adjustments, pitch modulation, or early termination via stop_stream(id) are required."
+      ],
+      "verification": [
+        "Confirm concurrent playback of multiple audio streams without cutting off earlier voices up to polyphony limits.",
+        "Verify audio bus routing and volume balance using AudioServer queries.",
+        "Ensure stopping a specific stream ID terminates playback cleanly without affecting active peer voices."
+      ],
+      "pitfalls": [
+        "Calling get_stream_playback() before calling player.play(); the playback instance is only valid while playing.",
+        "Exceeding maximum configured polyphony, leading to dropped audio voices.",
+        "Creating new AudioStreamPlayer nodes per sound effect instead of using a single polyphonic stream manager."
+      ],
+      "benchmark_prompt": "Implement a GDScript SFXManager autoload using AudioStreamPlayer and AudioStreamPolyphonic that pools audio requests, supports volume/pitch variance, and provides handles to stop specific playing sounds."
+    },
+    {
+      "name": "skeleton_modifier_procedural_rigging",
+      "domain": "3D Rigging & Inverse Kinematics",
+      "skill": "Implement procedural bone adjustments, aim targeting, and IK chains using SkeletonModifier3D nodes (AimModifier3D, ChainIK3D, BoneConstraint3D).",
+      "tools": [
+        "godot_editor_headless",
+        "scene_tree_editor",
+        "gdscript_linter"
+      ],
+      "procedure": [
+        "Ensure the 3D model contains a Skeleton3D node under the mesh root.",
+        "Attach a SkeletonModifier3D derivative (such as AimModifier3D or ChainIK3D) as a direct child of the Skeleton3D node.",
+        "Assign bone names or bone indices within the modifier inspector/properties.",
+        "Set target positions or target nodes for the IK solver or aim constraint.",
+        "Enable modifier processing via active = true and adjust influence property (0.0 to 1.0) for blending procedural adjustments with played animations.",
+        "Execute updates in _physics_process or through target transform assignment."
+      ],
+      "verification": [
+        "Assert that target bones rotate towards the target transform while preserving skeleton hierarchy constraints.",
+        "Verify that modifier influence values blend smoothly between raw animation and procedurally driven poses.",
+        "Inspect bone transforms using skeleton.get_bone_global_pose() before and after solver execution."
+      ],
+      "pitfalls": [
+        "Placing SkeletonModifier3D nodes outside of the Skeleton3D hierarchy; they must be children of the Skeleton3D.",
+        "Modifying bone poses manually in _process while a SkeletonModifier3D is active without syncing processing order.",
+        "Passing invalid bone names that fail silently or reset poses to default transforms."
+      ],
+      "benchmark_prompt": "Configure an AimModifier3D under a Skeleton3D in GDScript to rotate a character's spine and head towards a moving target position while clamping maximum yaw/pitch angles and smoothly interpolating influence."
+    }
+  ]
+}
