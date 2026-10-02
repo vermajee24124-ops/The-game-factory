@@ -132,8 +132,7 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
                                 emitSignal("unity_ads_initialized", false);
                                 emitSignal("unity_ads_error", error.name() + ": " + message);
                             }
-                        },
-                        testMode
+                        }
                 );
             } catch (Throwable t) {
                 initialized = false;
