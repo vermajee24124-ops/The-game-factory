@@ -102,8 +102,9 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
                 // publisher consent flow is configured.
                 UnityAds.setNonBehavioral(true);
                 UnityAds.initialize(
-                        host,
+                        host.getApplicationContext(),
                         gameId,
+                        testMode,
                         new IUnityAdsInitializationListener() {
                             @Override
                             public void onInitializationComplete() {
@@ -126,8 +127,7 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
                                 emitSignal("unity_ads_error", error.name() + ": " + message);
                             }
                         },
-                        testMode,
-                        true
+                        testMode
                 );
             } catch (Throwable t) {
                 initialized = false;
@@ -343,6 +343,10 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
             @Override
             public void onBannerFailedToLoad(BannerView bannerAdView, BannerErrorInfo errorInfo) {
                 emitSignal("unity_ads_error", "Banner: " + errorInfo.toString());
+            }
+
+            @Override
+            public void onBannerShown(BannerView bannerAdView) {
             }
 
             @Override
