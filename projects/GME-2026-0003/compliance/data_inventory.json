@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "project_id": "GME-2026-0003",
   "data_collected": [],
   "local_data": [
@@ -7,13 +7,12 @@
     "currencies",
     "cosmetics",
     "settings",
-    "monetization_entitlements",
     "privacy_consent",
     "statistics"
   ],
   "network_data": [
-    "native_ads_requests",
-    "native_store_purchase_metadata"
+    "advertising_requests",
+    "advertising_delivery_metadata"
   ],
-  "notes": "Production SDK behavior must be audited again after native ads, billing, analytics or platform consent components are attached."
+  "notes": "No in-app purchase, payment, purchase entitlement, or external billing data is stored by Turbo Rush 1.7. The Android advertising bridge is non-personalized by default. Re-audit platform consent and advertising SDK behavior before public release."
 }
