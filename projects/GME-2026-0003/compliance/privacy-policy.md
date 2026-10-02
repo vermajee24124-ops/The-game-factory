@@ -14,7 +14,6 @@ The core game stores game progress on the player's device, including:
 - game settings
 - local gameplay statistics
 - privacy/consent state
-- purchase entitlement records when purchases are integrated
 
 The core save system is not designed to store names, email addresses, phone numbers, passwords, precise location, contacts or message content.
 
