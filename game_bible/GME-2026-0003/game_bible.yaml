@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 project_id: GME-2026-0003
 title: "Turbo Rush"
 genre: "Mobile 3D Arcade Racing"
@@ -53,14 +53,8 @@ monetization:
       coins: [80, 120, 180, 250, 400]
       diamonds: [1, 2, 3]
   interstitial: "results_to_menu only; max once per 5 minutes; first 10 minutes disabled"
-  iap_products: []
   content_catalog: {skins: 54, cards: 48}
-  paid_content_is_fixed: false
-  paid_random_loot: false
-  duplicate_skin_compensation_coins: 250
-  duplicate_card_compensation_coins: 120
   pay_to_win: false
-  billing: disabled
 release:
   requires_build: true
   requires_tests: true

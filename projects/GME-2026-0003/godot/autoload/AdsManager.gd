@@ -9,6 +9,10 @@ const UNITY_ANDROID_INTERSTITIAL_AD_UNIT_ID := ReleaseConfig.UNITY_ANDROID_INTER
 var online := false
 var initialized := false
 var loading_ads_visible := false
+var _reward_callback: Callable
+var _reward_slot := ""
+var _reward_granted := false
+var _signals_connected := false
 
 func _unity_bridge():
     if Engine.has_singleton("UnityAdsBridge"):
@@ -26,6 +30,12 @@ func init() -> void:
     online = bridge != null
     if bridge == null:
         return
+    if not _signals_connected:
+        if bridge.has_signal("unity_ads_rewarded"):
+            bridge.unity_ads_rewarded.connect(_on_native_rewarded)
+        if bridge.has_signal("unity_ads_closed"):
+            bridge.unity_ads_closed.connect(_on_native_ad_closed)
+        _signals_connected = true
     if bridge.has_method("initialize"):
         bridge.initialize(UNITY_ANDROID_GAME_ID, false)
     elif bridge.has_method("initialise"):
@@ -112,17 +122,21 @@ func show_rewarded(slot_id: String, callback: Callable) -> void:
     if bridge == null or UNITY_ANDROID_REWARDED_AD_UNIT_ID.is_empty():
         callback.call(false)
         return
-    if bridge.has_method("show_rewarded"):
+    _reward_callback = callback
+    _reward_slot = slot_id
+    _reward_granted = false
+    if bridge.has_method("showRewardedAd"):
+        var accepted:bool = bool(bridge.showRewardedAd(UNITY_ANDROID_REWARDED_AD_UNIT_ID))
+        if not accepted:
+            _clear_reward(false)
+    elif bridge.has_method("show_rewarded"):
         bridge.show_rewarded(UNITY_ANDROID_REWARDED_AD_UNIT_ID, func(ok:bool):
             if ok:
                 _record_rewarded_success(slot_id)
             callback.call(ok)
         )
-    elif bridge.has_method("showRewardedAd"):
-        bridge.showRewardedAd(UNITY_ANDROID_REWARDED_AD_UNIT_ID)
-        callback.call(false)
     else:
-        callback.call(false)
+        _clear_reward(false)
 
 func show_midgame() -> void:
     if not online:
@@ -146,6 +160,31 @@ func _record_rewarded_success(slot_id:String) -> void:
     elif slot_id=="double_coins": SaveSystem.data["stats"]["ads_double_coins_used"]+=1
     elif slot_id=="bonus_coins": SaveSystem.data["stats"]["ads_bonus_coins_used"]+=1
     SaveSystem.save_now()
+
+func _on_native_rewarded() -> void:
+    if not _reward_callback.is_valid() or _reward_granted:
+        return
+    _reward_granted = true
+    var slot := _reward_slot
+    _record_rewarded_success(slot)
+    var cb := _reward_callback
+    _reward_callback = Callable()
+    _reward_slot = ""
+    cb.call(true)
+
+func _on_native_ad_closed() -> void:
+    if not _reward_callback.is_valid() or _reward_granted:
+        return
+    _clear_reward(false)
+
+func _clear_reward(ok:bool) -> void:
+    if not _reward_callback.is_valid():
+        return
+    var cb := _reward_callback
+    _reward_callback = Callable()
+    _reward_slot = ""
+    _reward_granted = false
+    cb.call(ok)
 
 func daily_remaining(slot_id:String)->int:
     _sync_daily()
