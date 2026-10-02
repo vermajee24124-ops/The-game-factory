@@ -2,9 +2,6 @@ extends Node
 
 const UNITY_ANDROID_GAME_ID := ReleaseConfig.UNITY_ANDROID_GAME_ID
 const UNITY_IOS_GAME_ID := ReleaseConfig.UNITY_IOS_GAME_ID
-
-# One dedicated Android Banner ad unit can back two BannerAd instances,
-# one anchored at the top and one at the bottom.
 const UNITY_ANDROID_BANNER_AD_UNIT_ID := ReleaseConfig.UNITY_ANDROID_BANNER_AD_UNIT_ID
 const UNITY_ANDROID_REWARDED_AD_UNIT_ID := ReleaseConfig.UNITY_ANDROID_REWARDED_AD_UNIT_ID
 const UNITY_ANDROID_INTERSTITIAL_AD_UNIT_ID := ReleaseConfig.UNITY_ANDROID_INTERSTITIAL_AD_UNIT_ID
@@ -13,13 +10,30 @@ var online := false
 var initialized := false
 var loading_ads_visible := false
 
+func _unity_bridge():
+    if Engine.has_singleton("UnityAdsBridge"):
+        return Engine.get_singleton("UnityAdsBridge")
+    if Engine.has_singleton("UnityAdsGodotAndroid"):
+        return Engine.get_singleton("UnityAdsGodotAndroid")
+    return null
+
 func init() -> void:
     initialized = true
-    online = false
-    if Engine.has_singleton("UnityAdsBridge"):
-        var bridge = Engine.get_singleton("UnityAdsBridge")
-        if bridge.has_method("initialize"):
-            bridge.initialize(UNITY_ANDROID_GAME_ID, false)
+    if OS.has_feature("web"):
+        online = WebAdsManager.is_available()
+        return
+    var bridge = _unity_bridge()
+    online = bridge != null
+    if bridge == null:
+        return
+    if bridge.has_method("initialize"):
+        bridge.initialize(UNITY_ANDROID_GAME_ID, false)
+    elif bridge.has_method("initialise"):
+        bridge.initialise(UNITY_ANDROID_GAME_ID, false)
+    if bridge.has_method("loadInterstitialAd") and not UNITY_ANDROID_INTERSTITIAL_AD_UNIT_ID.is_empty():
+        bridge.loadInterstitialAd(UNITY_ANDROID_INTERSTITIAL_AD_UNIT_ID)
+    if bridge.has_method("loadRewardedAd") and not UNITY_ANDROID_REWARDED_AD_UNIT_ID.is_empty():
+        bridge.loadRewardedAd(UNITY_ANDROID_REWARDED_AD_UNIT_ID)
 
 func set_online(value: bool) -> void:
     online = value
@@ -41,29 +55,36 @@ func _sync_daily() -> void:
         SaveSystem.save_now()
 
 func show_loading_banners() -> void:
-    if loading_ads_visible or bool(SaveSystem.data["monetization"].get("remove_ads", false)):
+    if loading_ads_visible or not online:
         return
-    if not online:
-        return
-    if not Engine.has_singleton("UnityAdsBridge"):
-        return
-    if UNITY_ANDROID_BANNER_AD_UNIT_ID.is_empty():
-        return
-    var bridge = Engine.get_singleton("UnityAdsBridge")
-    if bridge.has_method("show_loading_banners"):
-        bridge.show_loading_banners(
-            UNITY_ANDROID_BANNER_AD_UNIT_ID,
-            UNITY_ANDROID_BANNER_AD_UNIT_ID
-        )
+    if OS.has_feature("web"):
+        WebAdsManager.show_startup_banners()
         loading_ads_visible = true
+        return
+    var bridge = _unity_bridge()
+    if bridge == null or UNITY_ANDROID_BANNER_AD_UNIT_ID.is_empty():
+        return
+    if bridge.has_method("show_loading_banners"):
+        bridge.show_loading_banners(UNITY_ANDROID_BANNER_AD_UNIT_ID, UNITY_ANDROID_BANNER_AD_UNIT_ID)
+    elif bridge.has_method("showBanner"):
+        bridge.showBanner(UNITY_ANDROID_BANNER_AD_UNIT_ID, true)
+        bridge.showBanner(UNITY_ANDROID_BANNER_AD_UNIT_ID, false)
+    else:
+        return
+    loading_ads_visible = true
 
 func hide_loading_banners() -> void:
     if not loading_ads_visible:
         return
-    if Engine.has_singleton("UnityAdsBridge"):
-        var bridge = Engine.get_singleton("UnityAdsBridge")
-        if bridge.has_method("hide_loading_banners"):
-            bridge.hide_loading_banners()
+    if OS.has_feature("web"):
+        WebAdsManager.hide_startup_banners()
+    else:
+        var bridge = _unity_bridge()
+        if bridge != null:
+            if bridge.has_method("hide_loading_banners"):
+                bridge.hide_loading_banners()
+            elif bridge.has_method("hideBanner"):
+                bridge.hideBanner()
     loading_ads_visible = false
 
 func can_show_rewarded(slot_id: String) -> bool:
@@ -80,22 +101,42 @@ func show_rewarded(slot_id: String, callback: Callable) -> void:
     if not can_show_rewarded(slot_id):
         callback.call(false)
         return
-    if not Engine.has_singleton("UnityAdsBridge"):
+    if OS.has_feature("web"):
+        WebAdsManager.show_rewarded(func(ok:bool):
+            if ok:
+                _record_rewarded_success(slot_id)
+            callback.call(ok)
+        )
+        return
+    var bridge = _unity_bridge()
+    if bridge == null or UNITY_ANDROID_REWARDED_AD_UNIT_ID.is_empty():
         callback.call(false)
         return
-    if UNITY_ANDROID_REWARDED_AD_UNIT_ID.is_empty():
+    if bridge.has_method("show_rewarded"):
+        bridge.show_rewarded(UNITY_ANDROID_REWARDED_AD_UNIT_ID, func(ok:bool):
+            if ok:
+                _record_rewarded_success(slot_id)
+            callback.call(ok)
+        )
+    elif bridge.has_method("showRewardedAd"):
+        bridge.showRewardedAd(UNITY_ANDROID_REWARDED_AD_UNIT_ID)
         callback.call(false)
-        return
-    var bridge = Engine.get_singleton("UnityAdsBridge")
-    if not bridge.has_method("show_rewarded"):
+    else:
         callback.call(false)
-        return
-    bridge.show_rewarded(UNITY_ANDROID_REWARDED_AD_UNIT_ID, func(ok:bool):
-        if ok:
-            _record_rewarded_success(slot_id)
-        callback.call(ok)
-    )
 
+func show_midgame() -> void:
+    if not online:
+        return
+    if OS.has_feature("web"):
+        WebAdsManager.show_midgame()
+        return
+    var bridge = _unity_bridge()
+    if bridge == null or UNITY_ANDROID_INTERSTITIAL_AD_UNIT_ID.is_empty():
+        return
+    if bridge.has_method("showInterstitialAd"):
+        bridge.showInterstitialAd(UNITY_ANDROID_INTERSTITIAL_AD_UNIT_ID)
+    elif bridge.has_method("show_interstitial"):
+        bridge.show_interstitial(UNITY_ANDROID_INTERSTITIAL_AD_UNIT_ID)
 
 func _record_rewarded_success(slot_id:String) -> void:
     var daily:Dictionary=SaveSystem.data["monetization"]["ads"]["daily"]
@@ -111,4 +152,7 @@ func daily_remaining(slot_id:String)->int:
     var caps:Dictionary={"revive":5,"double_coins":10,"bonus_coins":3}
     if not caps.has(slot_id): return 0
     var daily:Dictionary=SaveSystem.data["monetization"]["ads"]["daily"]
-    return maxi(0,int(caps[slot_id])-int(daily.get(slot_id+"_count",0)))
+    return maxi(0,int(caps[slot_id])-int(daily.get(key_for_slot(slot_id),0)))
+
+func key_for_slot(slot_id:String)->String:
+    return slot_id+"_count"
