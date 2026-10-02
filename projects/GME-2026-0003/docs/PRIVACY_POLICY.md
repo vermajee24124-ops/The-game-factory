@@ -16,7 +16,7 @@ The game may use contextual advertising when personalized advertising is not per
 
 ## Purchases
 
-When Aptoide Billing is enabled, purchases are processed through Aptoide's billing service. Purchase entitlements should only be granted after a successful and verified transaction.
+Turbo Rush 1.6.0 does not include in-app purchases or an external billing service.
 
 ## Notifications
 
@@ -30,7 +30,7 @@ For support, contact:
 
 ## Third-party services
 
-Unity Ads and Aptoide Billing are third-party services. Their handling of data is governed by their respective policies in addition to this app policy.
+Unity Ads is a third-party advertising service when its native adapter is enabled. Its handling of data is governed by its applicable policy in addition to this app policy.
 
 ## Changes
 
