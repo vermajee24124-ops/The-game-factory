@@ -99,8 +99,8 @@ jobs:
           BASE="https://raw.githubusercontent.com/georg-doc/kayfabizarro/378b209355b13304e3cff656ec0806ca5b89df28"
           DEST="projects/GME-2026-0003/godot/assets/studio"
           mkdir -p "$DEST"
-          curl -L --fail --retry 3 -o "$DEST/race-future.glb" "$BASE/media/3D_Assets/kenney-car-kit/Models/GLB%20format/race-future.glb"
-          curl -L --fail --retry 3 -o "$DEST/sedan-sports.glb" "$BASE/media/3D_Assets/kenney-car-kit/Models/GLB%20format/sedan-sports.glb"
+          curl -L --fail --retry 3 -o "$DEST/race-future.glb" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/race-future.glb"
+          curl -L --fail --retry 3 -o "$DEST/sedan-sports.glb" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/sedan-sports.glb"
           curl -L --fail --retry 3 -o "$DEST/building-c.glb" "$BASE/media/3D_Assets/kenney_city-kit-commercial_2.1/Models/GLB%20format/building-c.glb"
           curl -L --fail --retry 3 -o "$DEST/building-skyscraper-b.glb" "$BASE/media/3D_Assets/kenney_city-kit-commercial_2.1/Models/GLB%20format/building-skyscraper-b.glb"
           curl -L --fail --retry 3 -o "$DEST/light-square-double.glb" "$BASE/media/3D_Assets/kenney_city-kit-roads/Models/GLB%20format/light-square-double.glb"
@@ -205,6 +205,7 @@ jobs:
       - name: Write build evidence
         if: always()
         run: |
+          mkdir -p projects/GME-2026-0003/artifacts
           {
             echo "Turbo Rush v1.5.0"
             echo "Godot 4.7.2"
