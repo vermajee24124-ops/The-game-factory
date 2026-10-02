@@ -17,8 +17,8 @@ func _initialize() -> void:
         failures.append("expected 54 skins")
     if catalog.CARDS.size() != 48:
         failures.append("expected 48 cards")
-    if catalog.BUNDLES.size() != 10:
-        failures.append("expected 10 products")
+    if catalog.has_method("product_ids"):
+        failures.append("paid product catalog should be removed")
 
     var checkpoints: Array[int] = [1, 5, 10, 15, 20, 27, 30, 50, 100, 250, 500, 1000, 5000, 10000]
     for level in checkpoints:
