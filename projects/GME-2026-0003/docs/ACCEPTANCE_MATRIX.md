@@ -16,13 +16,12 @@
 | Support | Support email configured in app settings | PASS |
 | Unity Ads | Game IDs configured; native bridge pending exact ad-unit IDs | CONFIGURED / BRIDGE PENDING |
 | Startup Ads | Two banner instances, top + bottom, startup/loading only | CODE PATH READY |
-| Aptoide | Public key configured | PASS |
-| Aptoide IAP | Native billing + product registration + validation | PENDING |
+| Billing | External billing removed from product | PASS |
 | Notifications | Product behavior defined | PENDING NATIVE SCHEDULER |
 | Security | Code / dependency / repository gates | PASS FOR CODEBASE, DEVICE AUDIT PENDING |
 | Performance | Mobile device matrix | DEVICE TEST REQUIRED |
 | Compliance | Store submission metadata/privacy/consent | FINAL CHECK REQUIRED |
-| Android Build | Debug APK export workflow | READY |
+| Android Build | Release APK + AAB export workflow | READY |
 | Android Release | Publisher-signed release APK/AAB | SIGNING KEY REQUIRED |
 
 The current repository is deliberately not marked as a production release until the external billing/ads inputs, native bridges, signing, store compliance and real-device tests have been completed.
