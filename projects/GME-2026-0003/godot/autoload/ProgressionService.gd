@@ -267,7 +267,7 @@ func grant_car(id:String) -> bool:
     if c.is_empty(): return false
     var owned:Array=SaveSystem.data["progression"]["cars"]["owned"]
     if owned.has(id):
-        EconomyService.grant_coins(500,"duplicate_iap_car_conversion")
+        EconomyService.grant_coins(500,"duplicate_car_conversion")
         return false
     owned.append(id)
     SaveSystem.save_now()
@@ -278,7 +278,7 @@ func grant_wheel(id:String) -> bool:
     if item.is_empty(): return false
     var owned:Array=SaveSystem.data["cosmetics"]["owned"]
     if owned.has(id):
-        EconomyService.grant_coins(200,"duplicate_iap_wheel_conversion")
+        EconomyService.grant_coins(200,"duplicate_wheel_conversion")
         return false
     owned.append(id)
     SaveSystem.save_now()
