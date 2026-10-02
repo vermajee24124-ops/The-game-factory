@@ -4,12 +4,9 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.unity3d.ads.IUnityAdsInitializationListener;
 import com.unity3d.ads.IUnityAdsLoadListener;
 import com.unity3d.ads.IUnityAdsShowListener;
@@ -324,10 +321,6 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
         runOnHostThread(this::removeBannerViews);
     }
 
-    private BannerView createBanner(ContextLike contextLike, String placementId) {
-        return null;
-    }
-
     private BannerView createBanner(Activity host, String placementId) {
         BannerView view = new BannerView(host, placementId, new UnityBannerSize(BANNER_WIDTH, BANNER_HEIGHT));
         view.setListener(new BannerView.IListener() {
@@ -376,9 +369,5 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
         }
         topBanner = null;
         bottomBanner = null;
-    }
-
-    // Small private marker to make accidental calls to the wrong overload impossible.
-    private interface ContextLike {
     }
 }
