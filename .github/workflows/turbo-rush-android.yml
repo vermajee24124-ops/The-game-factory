@@ -106,7 +106,9 @@ jobs:
           curl -L --fail --retry 3 -o "$DEST/light-square-double.glb" "$BASE/media/3D_Assets/kenney_city-kit-roads/Models/GLB%20format/light-square-double.glb"
           curl -L --fail --retry 3 -o "$DEST/grandStandCovered.glb" "$BASE/media/3D_Assets/kenney_racing-kit/Models/GLTF%20format/grandStandCovered.glb"
           curl -L --fail --retry 3 -o "$DEST/barrierRed.glb" "$BASE/media/3D_Assets/kenney_racing-kit/Models/GLTF%20format/barrierRed.glb"
-          for f in "$DEST"/*.glb; do test -s "$f"; done
+          mkdir -p "$DEST/Textures"
+          curl -L --fail --retry 3 -o "$DEST/Textures/colormap.png" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/Textures/colormap.png"
+          for f in "$DEST"/*.glb "$DEST/Textures/colormap.png"; do test -s "$f"; done
 
       - name: Verify project files
         run: |
@@ -229,7 +231,7 @@ jobs:
             echo "Release APK + release AAB + Web export generated in CI"
           } > projects/GME-2026-0003/artifacts/BUILD_INFO.txt
           cp /tmp/turbo-import.log projects/GME-2026-0003/artifacts/import.log
-          cp /tmp/turbo-smoke.log projects/GME-2026-0003/artifacts/smoke.log
+          test -f /tmp/turbo-smoke.log && cp /tmp/turbo-smoke.log projects/GME-2026-0003/artifacts/smoke.log || true
           test -f /tmp/turbo-export-release-apk.log && cp /tmp/turbo-export-release-apk.log projects/GME-2026-0003/artifacts/export_release_apk.log || true
           test -f /tmp/turbo-export-release-aab.log && cp /tmp/turbo-export-release-aab.log projects/GME-2026-0003/artifacts/export_release_aab.log || true
           test -f /tmp/turbo-export-web.log && cp /tmp/turbo-export-web.log projects/GME-2026-0003/artifacts/export_web.log || true
