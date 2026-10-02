@@ -655,7 +655,7 @@ func _build_main_menu()->void:
         _refresh_garage()
         _show_only("garage")
     )
-    var shop:=_button(p,"SHOP",Vector2(240,72),false)
+    var shop:=_button(p,"REWARDS",Vector2(240,72),false)
     shop.position=Vector2(330,380)
     shop.pressed.connect(func():_show_only("shop"))
     var campaign:=_button(p,"CAMPAIGN",Vector2(500,78),true)
