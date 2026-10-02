@@ -40,6 +40,9 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
 
     private String rewardedPlacement = "";
     private String interstitialPlacement = "";
+    private String startupTopPlacement = "";
+    private String startupBottomPlacement = "";
+    private volatile boolean loadingBannersRequested = false;
 
     private final IUnityAdsLoadListener loadListener = new IUnityAdsLoadListener() {
         @Override
@@ -115,6 +118,9 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
                                 }
                                 if (!interstitialPlacement.isEmpty()) {
                                     loadInterstitialAd(interstitialPlacement);
+                                }
+                                if (loadingBannersRequested && !startupTopPlacement.isEmpty() && !startupBottomPlacement.isEmpty()) {
+                                    showLoadingBanners(startupTopPlacement, startupBottomPlacement);
                                 }
                             }
 
@@ -302,6 +308,12 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
         if (topId.isEmpty() || bottomId.isEmpty()) {
             return false;
         }
+        startupTopPlacement = topId;
+        startupBottomPlacement = bottomId;
+        loadingBannersRequested = true;
+        if (!isInitialized()) {
+            return true;
+        }
 
         runOnHostThread(() -> {
             contentRoot = host.findViewById(android.R.id.content);
@@ -330,6 +342,7 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
 
     @UsedByGodot
     public void hideLoadingBanners() {
+        loadingBannersRequested = false;
         runOnHostThread(this::removeBannerViews);
     }
 
