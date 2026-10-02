@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+<title>$GODOT_PROJECT_NAME</title>
+<style>
+html,body,#canvas{margin:0;padding:0;border:0}
+body{color:#fff;background:#070B14;overflow:hidden;touch-action:none}
+#canvas{display:block;width:100vw;height:100vh}
+#canvas:focus{outline:none}
+#status,#status-splash,#status-progress{position:absolute;left:0;right:0}
+#status,#status-splash{top:0;bottom:0}
+#status{background:$GODOT_SPLASH_COLOR;display:flex;flex-direction:column;justify-content:center;align-items:center;visibility:hidden}
+#status-splash{max-height:100%;max-width:100%;margin:auto}
+#status-splash.show-image--false{display:none}
+#status-splash.fullsize--true{height:100%;width:100%;object-fit:contain}
+#status-splash.use-filter--false{image-rendering:pixelated}
+#status-progress,#status-notice{display:none}
+#status-progress{bottom:10%;width:50%;margin:0 auto}
+#status-notice{background:#5b3943;border-radius:.5rem;border:1px solid #9b3943;color:#e0e0e0;font-family:Arial,sans-serif;line-height:1.3;margin:0 2rem;overflow:hidden;padding:1rem;text-align:center;z-index:20}
+.web-banner{position:fixed;z-index:10;display:none;left:50%;transform:translateX(-50%);width:320px;height:50px;background:transparent}
+#turbo-banner-top{top:0}
+#turbo-banner-bottom{bottom:0}
+</style>
+$GODOT_HEAD_INCLUDE
+<script>
+window.TURBO_RUSH_GD_GAME_ID = "";
+window.TurboRushWebAds = {
+  available:false, provider:"none",
+  _loadScript(src,id){return new Promise((resolve,reject)=>{if(document.getElementById(id)){resolve();return}const s=document.createElement("script");s.id=id;s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});},
+  async init(){
+    const host=location.hostname;
+    const useCrazy=host==="localhost"||host==="127.0.0.1"||host.endsWith(".crazygames.com")||host==="crazygames.com";
+    if(useCrazy){
+      try{
+        await this._loadScript("https://sdk.crazygames.com/crazygames-sdk-v3.js","turbo-crazy-sdk");
+        if(window.CrazyGames&&window.CrazyGames.SDK){await window.CrazyGames.SDK.init();this.provider="crazygames";this.available=true;}
+      }catch(e){console.warn("CrazyGames SDK unavailable",e);}
+    }
+    const gdId=window.TURBO_RUSH_GD_GAME_ID;
+    if(!this.available&&gdId){
+      window.GD_OPTIONS={gameId:gdId,advertisementSettings:{autoplay:false},onEvent:function(event){
+        if(event&&event.name==="SDK_REWARDED_WATCH_COMPLETE"&&window.__turboRushRewardCallback){window.__turboRushRewardCallback(true);}
+      }};
+      try{await this._loadScript("https://html5.api.gamedistribution.com/main.min.js","gamedistribution-jssdk");this.provider="gamedistribution";this.available=true;}catch(e){console.warn("GameDistribution SDK unavailable",e);}
+    }
+    return this.available;
+  },
+  showStartupBanners(){
+    if(this.provider!=="crazygames")return;
+    document.getElementById("turbo-banner-top").style.display="block";
+    document.getElementById("turbo-banner-bottom").style.display="block";
+    try{
+      window.CrazyGames.SDK.banner.requestBanner({id:"turbo-banner-top",width:320,height:50});
+      window.CrazyGames.SDK.banner.requestBanner({id:"turbo-banner-bottom",width:320,height:50});
+    }catch(e){}
+  },
+  hideStartupBanners(){
+    if(this.provider!=="crazygames")return;
+    try{
+      window.CrazyGames.SDK.banner.clearBanner("turbo-banner-top");
+      window.CrazyGames.SDK.banner.clearBanner("turbo-banner-bottom");
+    }catch(e){}
+    document.getElementById("turbo-banner-top").style.display="none";
+    document.getElementById("turbo-banner-bottom").style.display="none";
+  },
+  showMidgame(){
+    if(this.provider==="crazygames"&&window.CrazyGames&&window.CrazyGames.SDK.ad){
+      try{window.CrazyGames.SDK.ad.requestAd("midgame",{adStarted:()=>{},adError:()=>{},adFinished:()=>{}});}catch(e){}
+    }else if(this.provider==="gamedistribution"&&window.gdsdk&&window.gdsdk.showAd){
+      try{window.gdsdk.showAd();}catch(e){}
+    }
+  },
+  showRewarded(){
+    if(this.provider==="crazygames"&&window.CrazyGames&&window.CrazyGames.SDK.ad){
+      try{
+        window.CrazyGames.SDK.ad.requestAd("rewarded",{
+          adStarted:()=>{},
+          adError:()=>{if(window.__turboRushRewardCallback)window.__turboRushRewardCallback(false);},
+          adFinished:()=>{if(window.__turboRushRewardCallback)window.__turboRushRewardCallback(true);}
+        });
+      }catch(e){if(window.__turboRushRewardCallback)window.__turboRushRewardCallback(false);}
+    }else if(this.provider==="gamedistribution"&&window.gdsdk&&window.gdsdk.showAd){
+      try{window.gdsdk.showAd("rewarded").catch(()=>{if(window.__turboRushRewardCallback)window.__turboRushRewardCallback(false);});}catch(e){if(window.__turboRushRewardCallback)window.__turboRushRewardCallback(false);}
+    }else if(window.__turboRushRewardCallback){window.__turboRushRewardCallback(false);}
+  }
+};
+</script>
+<script src="$GODOT_URL"></script>
+</head>
+<body>
+<canvas id="canvas"><p>Your browser does not support WebGL/WebAssembly.</p></canvas>
+<div id="turbo-banner-top" class="web-banner"></div>
+<div id="turbo-banner-bottom" class="web-banner"></div>
+<div id="status">
+<img id="status-splash" class="$GODOT_SPLASH_CLASSES" src="$GODOT_SPLASH" alt="">
+<progress id="status-progress"></progress><div id="status-notice"></div>
+</div>
+<script>
+const GODOT_CONFIG=$GODOT_CONFIG;
+const GODOT_THREADS_ENABLED=$GODOT_THREADS_ENABLED;
+const engine=new Engine(GODOT_CONFIG);
+(async function(){
+ const statusOverlay=document.getElementById("status"),progress=document.getElementById("status-progress"),notice=document.getElementById("status-notice");
+ let initializing=true,statusMode="";
+ function mode(m){if(statusMode===m||!initializing)return;if(m==="hidden"){statusOverlay.remove();initializing=false;return}statusOverlay.style.visibility="visible";progress.style.display=m==="progress"?"block":"none";notice.style.display=m==="notice"?"block":"none";statusMode=m}
+ function fail(err){console.error(err);notice.textContent=err instanceof Error?err.message:String(err||"Unknown error");mode("notice");initializing=false}
+ try{await window.TurboRushWebAds.init();}catch(e){console.warn("Web ad init failed",e)}
+ const missing=Engine.getMissingFeatures({threads:GODOT_THREADS_ENABLED});
+ if(missing.length){fail("The following browser features are required:\n"+missing.join("\n"));return}
+ mode("progress");
+ engine.startGame({onProgress:(current,total)=>{if(current>0&&total>0){progress.value=current;progress.max=total}else{progress.removeAttribute("value");progress.removeAttribute("max")}}}).then(()=>mode("hidden"),fail);
+})();
+</script>
+</body>
+</html>
