@@ -1201,7 +1201,7 @@ func _build_shop()->void:
     var campaign:=_button(p,"PLAY CAMPAIGN",Vector2(420,70),false)
     campaign.position=Vector2(500,165)
     campaign.pressed.connect(func():_show_only("level_select"))
-    var info:=_label(p,"Turbo Rush 1.6 has no in-app purchase or external billing system.\nAll progression and unlocks are available through normal gameplay.",30,palette.text)
+    var info:=_label(p,"Turbo Rush 1.7 has no in-app purchase or external billing system.\nAll progression and unlocks are available through normal gameplay.",30,palette.text)
     info.position=Vector2(60,300)
     var details:=_label(p,"Complete races • collect track pickups • open earned chests • claim daily rewards • upgrade your garage.",24,palette.muted)
     details.position=Vector2(60,410)
