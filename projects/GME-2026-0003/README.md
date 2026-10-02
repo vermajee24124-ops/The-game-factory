@@ -21,10 +21,12 @@ Implemented:
 - car unlock and selection
 - paints and wheels catalog/equipment
 - landscape UI with touch controls
-- offline-safe ads and IAP abstraction points
+- offline-safe optional ads with platform-specific adapters
 - 10,000-level deterministic smoke-test coverage
 
 ## Release-stage adapters
+
+Billing and Aptoide Connect integration are intentionally removed from Turbo Rush 1.6.0. The game has no in-app purchase path.
 
 Native ads, native store billing, purchase validation, consent/ATT, production assets and device-matrix profiling are intentionally adapter points. The base build never invents a successful purchase or ad reward.
 
