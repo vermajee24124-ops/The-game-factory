@@ -75,7 +75,8 @@ func show_loading_banners() -> void:
     if bridge == null or UNITY_ANDROID_BANNER_AD_UNIT_ID.is_empty():
         return
     if bridge.has_method("show_loading_banners"):
-        bridge.show_loading_banners(UNITY_ANDROID_BANNER_AD_UNIT_ID, UNITY_ANDROID_BANNER_AD_UNIT_ID)
+        if not bool(bridge.show_loading_banners(UNITY_ANDROID_BANNER_AD_UNIT_ID, UNITY_ANDROID_BANNER_AD_UNIT_ID)):
+            return
     elif bridge.has_method("showBanner"):
         bridge.showBanner(UNITY_ANDROID_BANNER_AD_UNIT_ID, true)
         bridge.showBanner(UNITY_ANDROID_BANNER_AD_UNIT_ID, false)
