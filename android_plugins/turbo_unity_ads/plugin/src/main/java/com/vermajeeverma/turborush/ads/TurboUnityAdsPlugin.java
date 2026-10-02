@@ -345,6 +345,10 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
             }
 
             @Override
+            public void onBannerShown(BannerView bannerAdView) {
+            }
+
+            @Override
             public void onBannerClick(BannerView bannerAdView) {
             }
 
