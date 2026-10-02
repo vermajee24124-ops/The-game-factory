@@ -15,7 +15,6 @@ const CARD_TYPES := ["boost_power","acceleration","handling","braking","stabilit
 func _init() -> void:
     _build_skins()
     _build_cards()
-    _build_bundles()
 
 func _build_skins() -> void:
     for i in range(SKIN_NAMES.size()):
