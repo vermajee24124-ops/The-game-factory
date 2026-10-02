@@ -40,6 +40,9 @@ HapticsSystem="*res://autoload/HapticsSystem.gd"
 ObjectPoolManager="*res://autoload/ObjectPoolManager.gd"
 StudioPolish="*res://autoload/StudioPolish.gd"
 
+[editor_plugins]
+enabled=PackedStringArray("res://addons/turbo_unity_ads/plugin.cfg")
+
 [layer_names]
 3d_physics/layer_1="Track"
 3d_physics/layer_2="Player"
