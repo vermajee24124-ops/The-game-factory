@@ -70,6 +70,19 @@ jobs:
           chmod +x /tmp/godot/Godot_v4.7.2-stable_linux.x86_64
           echo "GODOT_BIN=/tmp/godot/Godot_v4.7.2-stable_linux.x86_64" >> "$GITHUB_ENV"
 
+      - name: Build TurboUnityAds Android plugin
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.13-bin.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+          /tmp/gradle-8.13/bin/gradle -p android_plugins/turbo_unity_ads clean assembleDebug assembleRelease --no-daemon --stacktrace
+          mkdir -p projects/GME-2026-0003/godot/addons/turbo_unity_ads/bin/debug
+          mkdir -p projects/GME-2026-0003/godot/addons/turbo_unity_ads/bin/release
+          cp android_plugins/turbo_unity_ads/plugin/build/outputs/aar/plugin-debug.aar projects/GME-2026-0003/godot/addons/turbo_unity_ads/bin/debug/TurboUnityAds-debug.aar
+          cp android_plugins/turbo_unity_ads/plugin/build/outputs/aar/plugin-release.aar projects/GME-2026-0003/godot/addons/turbo_unity_ads/bin/release/TurboUnityAds-release.aar
+          test -s projects/GME-2026-0003/godot/addons/turbo_unity_ads/bin/debug/TurboUnityAds-debug.aar
+          test -s projects/GME-2026-0003/godot/addons/turbo_unity_ads/bin/release/TurboUnityAds-release.aar
+
       - name: Install export templates
         run: |
           set -euo pipefail
@@ -174,7 +187,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p projects/GME-2026-0003/artifacts
-          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.6.0-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.7.0-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
 
       - name: Reset Gradle template before AAB
         run: |
@@ -191,7 +204,7 @@ jobs:
       - name: Android release AAB
         run: |
           set -euo pipefail
-          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v1.6.0-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v1.7.0-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
 
       - name: Web release export
         run: |
@@ -199,7 +212,7 @@ jobs:
           mkdir -p projects/GME-2026-0003/artifacts/web
           "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Web" ../artifacts/web/index.html 2>&1 | tee /tmp/turbo-export-web.log
           test -s projects/GME-2026-0003/artifacts/web/index.html
-          (cd projects/GME-2026-0003/artifacts/web && zip -qr ../TurboRush-v1.6.0-web.zip .)
+          (cd projects/GME-2026-0003/artifacts/web && zip -qr ../TurboRush-v1.7.0-web.zip .)
 
       - name: Validate APK
         run: |
@@ -219,7 +232,7 @@ jobs:
         run: |
           mkdir -p projects/GME-2026-0003/artifacts
           {
-            echo "Turbo Rush v1.6.0"
+            echo "Turbo Rush v1.7.0"
             echo "Godot 4.7.2"
             echo "JDK Temurin 17"
             echo "Android platform 34 + 36"
@@ -240,7 +253,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Turbo-Rush-v1.6.0-release
+          name: Turbo-Rush-v1.7.0-release
           path: |
             projects/GME-2026-0003/artifacts/TurboRush-v1.6.0-release.apk
             projects/GME-2026-0003/artifacts/TurboRush-v1.6.0-release.aab
