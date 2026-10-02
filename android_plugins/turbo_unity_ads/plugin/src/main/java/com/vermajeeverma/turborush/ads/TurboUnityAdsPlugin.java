@@ -102,7 +102,7 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
                 // publisher consent flow is configured.
                 UnityAds.setNonBehavioral(true);
                 UnityAds.initialize(
-                        host,
+                        host.getApplicationContext(),
                         gameId,
                         new IUnityAdsInitializationListener() {
                             @Override
