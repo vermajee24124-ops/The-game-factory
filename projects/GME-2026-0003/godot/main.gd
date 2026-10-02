@@ -94,7 +94,7 @@ var palette := {
 func _ready()->void:
     SaveSystem.mark_launch()
     AdsManager.init()
-    IAPManager.init()
+    WebAdsManager.init()
     HapticsSystem.enabled=bool(SaveSystem.data["settings"]["haptics_enabled"])
     _setup_world()
     _build_menu_stage()
@@ -1188,34 +1188,25 @@ func _claim_daily_reward()->void:
     )
 
 func _build_shop()->void:
-    var c:=_new_screen("shop","SHOP")
+    var c:=_new_screen("shop","REWARDS")
     var p:Control=c.get_node("Panel")
     var back:=_button(p,"BACK",Vector2(160,60),false)
     back.position=Vector2(1650,35)
     back.pressed.connect(func():_show_main_menu())
-    var note:=_label(p,"Fixed-content bundles: Coins + Diamonds + Skins + Cards. No paid random loot boxes.",22,palette.muted)
+    var note:=_label(p,"Free-to-play rewards only • Earn Coins, Diamonds, cars, wheels and cards through gameplay.",22,palette.muted)
     note.position=Vector2(60,105)
-    var restore:=_button(p,"RESTORE PURCHASES",Vector2(280,58),false)
-    restore.position=Vector2(1370,100)
-    restore.pressed.connect(func():IAPManager.restore_purchases())
-    var scroll:=ScrollContainer.new()
-    scroll.position=Vector2(60,180)
-    scroll.size=Vector2(1740,760)
-    p.add_child(scroll)
-    var list:=VBoxContainer.new()
-    list.name="IAPList"
-    list.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-    list.add_theme_constant_override("separation",10)
-    scroll.add_child(list)
-    for id in IAPManager.products.keys():
-        var item:Dictionary=IAPManager.products[id]
-        var title:=str(item.get("name",id))
-        var content:=IAPManager.product_summary(str(id))
-        var price:=float(item.get("reference_price_usd",0.0))
-        var text_value:="​%s\n%s\nReference: $%.2f" % [title,content,price]
-        var b:=_button(list,text_value,Vector2(1620,86),true)
-        b.disabled=not IAPManager.online
-        b.pressed.connect(func(pid=str(id)):IAPManager.purchase(pid))
+    var daily:=_button(p,"OPEN DAILY TASKS",Vector2(420,70),true)
+    daily.position=Vector2(60,165)
+    daily.pressed.connect(func():_show_only("daily_tasks"))
+    var campaign:=_button(p,"PLAY CAMPAIGN",Vector2(420,70),false)
+    campaign.position=Vector2(500,165)
+    campaign.pressed.connect(func():_show_only("level_select"))
+    var info:=_label(p,"Turbo Rush 1.6 has no in-app purchase or external billing system.\nAll progression and unlocks are available through normal gameplay.",30,palette.text)
+    info.position=Vector2(60,300)
+    var details:=_label(p,"Complete races • collect track pickups • open earned chests • claim daily rewards • upgrade your garage.",24,palette.muted)
+    details.position=Vector2(60,410)
+    var ad_info:=_label(p,"Optional rewarded ads may appear only when you explicitly choose an ad reward.",22,palette.secondary)
+    ad_info.position=Vector2(60,520)
 
 func _build_settings()->void:
     var c:=_new_screen("settings","SETTINGS")
@@ -2248,6 +2239,7 @@ func _show_results(result:Dictionary,rewards:Dictionary)->void:
     last_rewards=rewards.duplicate(true)
     double_reward_claimed=false
     _show_only("results")
+    WebAdsManager.show_midgame()
     results_label.text=_ordinal(int(result.finish_position))+" PLACE" if bool(result.completed) else "DNF"
     results_detail.text="Rank Coins: %d\nChest: %s • %d Coins • %d Diamonds\nRandom Bonus: %d Coins • %d Diamonds\nTrack Coins: %d\nFirst Clear Diamonds: %d\nStars: %d\nTOTAL: %d Coins • %d Diamonds" % [int(rewards.rank_coins),str(rewards.chest),int(rewards.chest_coins),int(rewards.chest_diamonds),int(rewards.bonus_coins),int(rewards.bonus_diamonds),int(rewards.track_coins),int(rewards.first_clear_diamonds),int(rewards.stars),int(rewards.total_coins),int(rewards.total_diamonds)]
     next_button.disabled=not bool(result.completed) or int(result.finish_position)>5
