@@ -109,6 +109,12 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
                             public void onInitializationComplete() {
                                 initialized = true;
                                 emitSignal("unity_ads_initialized", true);
+                                if (!rewardedPlacement.isEmpty()) {
+                                    loadRewardedAd(rewardedPlacement);
+                                }
+                                if (!interstitialPlacement.isEmpty()) {
+                                    loadInterstitialAd(interstitialPlacement);
+                                }
                             }
 
                             @Override
@@ -139,14 +145,17 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
 
     @UsedByGodot
     public boolean loadInterstitialAd(final String placementId) {
-        if (placementId == null || placementId.trim().isEmpty() || !isInitialized()) {
+        if (placementId == null || placementId.trim().isEmpty()) {
             return false;
         }
-        interstitialPlacement = placementId;
+        interstitialPlacement = placementId.trim();
         interstitialLoaded = false;
+        if (!isInitialized()) {
+            return true;
+        }
         runOnHostThread(() -> {
             try {
-                UnityAds.load(placementId, loadListener);
+                UnityAds.load(interstitialPlacement, loadListener);
             } catch (Throwable t) {
                 emitSignal("unity_ads_error", "Interstitial load exception: " + t.getMessage());
             }
@@ -156,14 +165,17 @@ public final class TurboUnityAdsPlugin extends GodotPlugin {
 
     @UsedByGodot
     public boolean loadRewardedAd(final String placementId) {
-        if (placementId == null || placementId.trim().isEmpty() || !isInitialized()) {
+        if (placementId == null || placementId.trim().isEmpty()) {
             return false;
         }
-        rewardedPlacement = placementId;
+        rewardedPlacement = placementId.trim();
         rewardedLoaded = false;
+        if (!isInitialized()) {
+            return true;
+        }
         runOnHostThread(() -> {
             try {
-                UnityAds.load(placementId, loadListener);
+                UnityAds.load(rewardedPlacement, loadListener);
             } catch (Throwable t) {
                 emitSignal("unity_ads_error", "Rewarded load exception: " + t.getMessage());
             }
