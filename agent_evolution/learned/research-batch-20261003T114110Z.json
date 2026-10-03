@@ -1,0 +1,125 @@
+{
+  "generated_at": "20261003T114110Z",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "skills": [
+    {
+      "name": "character_body_kinematics",
+      "domain": "Physics & Movement",
+      "skill": "Implement robust kinematic controller pipelines for CharacterBody2D and CharacterBody3D with gravity, floor snapping, slope handling, and velocity integration.",
+      "tools": [
+        "godot-cli",
+        "gdscript_compiler",
+        "physics_server_debugger"
+      ],
+      "procedure": [
+        "Select CharacterBody2D or CharacterBody3D as root physics object with an appropriate CollisionShape child.",
+        "Declare velocity vectors and integrate standard project gravity using `get_gravity()` or `ProjectSettings.get_setting(\"physics/2d/default_gravity\")` / `3d/default_gravity`.",
+        "Process player inputs in `_physics_process(delta)` using `Input.get_axis()` or `Input.get_vector()` into normalized move directions.",
+        "Apply directional acceleration and friction towards target velocity using `Vector2.move_toward()` or `Vector3.move_toward()`.",
+        "Execute `move_and_slide()` to resolve collisions against static, animatable, and rigid bodies.",
+        "Configure `floor_snap_length`, `floor_max_angle`, and `floor_stop_on_slope` properties to prevent airborne jitter on declivities."
+      ],
+      "verification": [
+        "Verify `is_on_floor()` returns true when stationary on walkable surfaces.",
+        "Check that vertical velocity does not compound infinitely while grounded.",
+        "Run simulation over sloped geometry up to configured `floor_max_angle` to ensure no downward bouncing."
+      ],
+      "pitfalls": [
+        "Multiplying velocity by delta before calling `move_and_slide()`; in Godot 4, delta is automatically applied internally.",
+        "Modifying global position directly instead of assigning to `velocity` prior to `move_and_slide()`.",
+        "Omitting collision shape assignments, causing silent collision bypass."
+      ],
+      "benchmark_prompt": "Create a CharacterBody3D player script in Godot 4.7.2 featuring 8-direction WASD movement, jumping with proper gravity integration, acceleration/deceleration damping, and stable slope traversal using move_and_slide()."
+    },
+    {
+      "name": "animation_tree_state_machine",
+      "domain": "Animation Systems",
+      "skill": "Configure and control AnimationTree with AnimationNodeStateMachine and AnimationNodeBlendSpace2D for responsive character locomotion blending.",
+      "tools": [
+        "godot-cli",
+        "animation_library_editor",
+        "node_tree_inspector"
+      ],
+      "procedure": [
+        "Attach an AnimationPlayer to the node hierarchy containing required clips (idle, walk, run, jump).",
+        "Attach an AnimationTree, set `anim_player` path to target AnimationPlayer, and set `tree_root` to `AnimationNodeStateMachine`.",
+        "Add nodes within the state machine: combine locomotion clips into an `AnimationNodeBlendSpace2D` and discrete actions into independent `AnimationNodeAnimation` or `AnimationNodeOneShot` nodes.",
+        "Construct `AnimationNodeStateMachineTransition` edges between states, configuring cross-fade times and auto-advance rules.",
+        "Activate the tree by setting `active = true`.",
+        "Query the playback controller via `var playback = animation_tree[\"parameters/playback\"] as AnimationNodeStateMachinePlayback`.",
+        "Update blend space parameters via `animation_tree.set(\"parameters/Locomotion/blend_position\", input_dir)` in `_process` or `_physics_process`."
+      ],
+      "verification": [
+        "Assert `animation_tree.active == true` at runtime.",
+        "Verify state transitions occur without hitching by asserting `playback.get_current_node()` matches expectations during simulated input.",
+        "Check that blend coordinates smoothly interpolate between idle and movement animations."
+      ],
+      "pitfalls": [
+        "Using legacy `AnimationTreePlayer` patterns instead of Godot 4's parameter path notation `parameters/<NodeName>/<Property>`.",
+        "Calling `travel()` on a null playback reference due to unassigned or inactive `AnimationTree`.",
+        "Setting `advance_mode` to `ADVANCE_MODE_AUTO` without a valid switch condition, causing instant unwanted state transitions."
+      ],
+      "benchmark_prompt": "Set up a script and node structure connecting an AnimationTree and AnimationPlayer. Implement state transitions between Idle, Locomotion (using BlendSpace2D for directional run/walk), and an Attack one-shot animation triggered via an exported trigger method."
+    },
+    {
+      "name": "audio_stream_polyphony_management",
+      "domain": "Audio Engineering",
+      "skill": "Manage dynamic, low-latency concurrent sound effects using AudioStreamPolyphonic and AudioStreamPlaybackPolyphonic inside AudioStreamPlayer nodes.",
+      "tools": [
+        "godot-cli",
+        "audio_server_debugger",
+        "audio_bus_inspector"
+      ],
+      "procedure": [
+        "Instantiate an `AudioStreamPlayer`, `AudioStreamPlayer2D`, or `AudioStreamPlayer3D` node.",
+        "Assign an `AudioStreamPolyphonic` resource to its `stream` property and set `polyphony` limit (e.g., 16-32 channels).",
+        "Play the player node via `play()` to initialize the underlying playback buffer.",
+        "Retrieve the polyphonic stream playback via `var playback = player.get_stream_playback() as AudioStreamPlaybackPolyphonic`.",
+        "Trigger sound instances using `var voice_id = playback.play_stream(sample_resource, from_offset, volume_db, pitch_scale)`.",
+        "Manage active voices using `playback.is_stream_playing(voice_id)` and adjust volumes or stop voices dynamically using `playback.stop_stream(voice_id)`."
+      ],
+      "verification": [
+        "Verify `playback != null` and is an instance of `AudioStreamPlaybackPolyphonic`.",
+        "Test concurrent audio playback triggers up to polyphony capacity without audio dropouts or node allocation overhead.",
+        "Confirm voice IDs return false on `is_stream_playing(id)` after sound duration expires."
+      ],
+      "pitfalls": [
+        "Attempting to call `get_stream_playback()` before calling `play()` on the AudioStreamPlayer, returning null.",
+        "Instantiating dozens of individual `AudioStreamPlayer` nodes for rapid sound effects instead of using a single polyphonic stream, causing scene tree overhead.",
+        "Exceeding the pre-allocated polyphony stream count, causing silent voice drops."
+      ],
+      "benchmark_prompt": "Construct a GDScript sound manager that uses an AudioStreamPlayer configured with AudioStreamPolyphonic to play overlapping sound effects with randomized pitch modulation and volume scaling without instantiating extra player nodes."
+    },
+    {
+      "name": "astar2d_grid_pathfinding",
+      "domain": "AI & Navigation",
+      "skill": "Build grid-based pathfinding systems utilizing AStarGrid2D with obstacle avoidance, region bounding, and cell weight configuration.",
+      "tools": [
+        "godot-cli",
+        "astar_profiler",
+        "tilemap_inspector"
+      ],
+      "procedure": [
+        "Instantiate an `AStarGrid2D` instance in script.",
+        "Define grid boundaries via `region = Rect2i(start_pos, size_in_cells)` and `cell_size = Vector2(cell_w, cell_h)`.",
+        "Set `diagonal_mode` (e.g., `DIAGONAL_MODE_NEVER`, `DIAGONAL_MODE_AT_LEAST_ONE_WALKABLE`, or `DIAGONAL_MODE_ALWAYS`).",
+        "Set `heuristic` using `HEURISTIC_MANHATTAN`, `HEURISTIC_EUCLIDEAN`, or `HEURISTIC_OCTILE`.",
+        "Invoke `update()` to allocate the internal grid structures.",
+        "Synchronize static obstacles from TileMapLayer or collision objects by setting `set_point_solid(cell_coords, true)`.",
+        "Query paths at runtime using `get_point_path(from_cell, to_cell)` or `get_id_path(from_cell, to_cell)`."
+      ],
+      "verification": [
+        "Verify `is_in_bounds(x, y)` returns true for valid navigation requests.",
+        "Assert `get_point_path()` returns an empty array when destination is blocked or unreachable.",
+        "Check that solid coordinates are bypassed correctly in generated point sequences."
+      ],
+      "pitfalls": [
+        "Forgetting to call `astar_grid.update()` after configuring region, cell size, or diagonal mode, resulting in invalid path calculations.",
+        "Passing world-space pixel coordinates directly into `set_point_solid` or `get_id_path` instead of cell-index coordinates.",
+        "Overlooking diagonal corner clipping where entities cut through solid diagonals; mitigate using `DIAGONAL_MODE_AT_LEAST_ONE_WALKABLE`."
+      ],
+      "benchmark_prompt": "Write a pathfinding manager using AStarGrid2D that initializes a 100x100 grid, marks arbitrary rectangular zones as obstacles, and exposes a function `get_world_route(start: Vector2, end: Vector2) -> PackedVector2Array` converting world coordinates to grid queries and back."
+    }
+  ]
+}
