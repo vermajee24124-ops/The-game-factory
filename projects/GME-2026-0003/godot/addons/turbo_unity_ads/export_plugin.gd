@@ -23,7 +23,7 @@ class AndroidExportPlugin extends EditorExportPlugin:
         return PackedStringArray(["turbo_unity_ads/bin/" + ("debug/" if debug else "release/") + PLUGIN_NAME + suffix])
 
     func _get_android_dependencies(platform, debug) -> PackedStringArray:
-        return PackedStringArray(["com.unity3d.ads:unity-ads:4.20.1"])
+        return PackedStringArray(["com.unity3d.ads:unity-ads:4.21.0"])
 
     func _get_name() -> String:
         return PLUGIN_NAME
