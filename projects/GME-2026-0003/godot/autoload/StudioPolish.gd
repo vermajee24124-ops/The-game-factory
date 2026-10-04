@@ -71,7 +71,7 @@ func enhance_menu(stage:Node3D) -> void:
     var car_scene:PackedScene = _optional_scene(HERO_PATH)
     if existing_car:
         var selected := str(existing_car.get("name"))
-        var variant := abs(selected.hash()) % 4
+        var variant:int = abs(selected.hash()) % 4
         if variant == 1:
             var alt := _optional_scene(HERO_ALT_PATH)
             if alt:
