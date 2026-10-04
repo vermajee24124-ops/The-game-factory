@@ -108,31 +108,52 @@ jobs:
           printf '%s\n' "4.7.2.stable" > projects/GME-2026-0003/godot/android/.build_version
           test -f projects/GME-2026-0003/godot/android/.build_version
 
-      - name: Fetch pinned CC0 production assets
+      - name: Fetch curated assets from the supplied CC0 asset library
         run: |
           set -euo pipefail
-          BASE="https://raw.githubusercontent.com/georg-doc/kayfabizarro/378b209355b13304e3cff656ec0806ca5b89df28"
-          DEST="projects/GME-2026-0003/godot/assets/studio"
-          mkdir -p "$DEST"
-          curl -L --fail --retry 3 -o "$DEST/race-future.glb" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/race-future.glb"
-          curl -L --fail --retry 3 -o "$DEST/sedan-sports.glb" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/sedan-sports.glb"
-          curl -L --fail --retry 3 -o "$DEST/hatchback-sports.glb" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/hatchback-sports.glb"
-          curl -L --fail --retry 3 -o "$DEST/suv-luxury.glb" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/suv-luxury.glb"
-          curl -L --fail --retry 3 -o "$DEST/race.glb" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/race.glb"
-          curl -L --fail --retry 3 -o "$DEST/wheel-racing.glb" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/wheel-racing.glb"
-          curl -L --fail --retry 3 -o "$DEST/ambulance.glb" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/ambulance.glb"
-          curl -L --fail --retry 3 -o "$DEST/police.glb" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/police.glb"
-          curl -L --fail --retry 3 -o "$DEST/firetruck.glb" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/firetruck.glb"
-          curl -L --fail --retry 3 -o "$DEST/building-c.glb" "$BASE/media/3D_Assets/kenney_city-kit-commercial_2.1/Models/GLB%20format/building-c.glb"
-          curl -L --fail --retry 3 -o "$DEST/building-skyscraper-b.glb" "$BASE/media/3D_Assets/kenney_city-kit-commercial_2.1/Models/GLB%20format/building-skyscraper-b.glb"
-          curl -L --fail --retry 3 -o "$DEST/light-square-double.glb" "$BASE/media/3D_Assets/kenney_city-kit-roads/Models/GLB%20format/light-square-double.glb"
-          curl -L --fail --retry 3 -o "$DEST/grandStandCovered.glb" "$BASE/media/3D_Assets/kenney_racing-kit/Models/GLTF%20format/grandStandCovered.glb"
-          curl -L --fail --retry 3 -o "$DEST/barrierRed.glb" "$BASE/media/3D_Assets/kenney_racing-kit/Models/GLTF%20format/barrierRed.glb"
-          curl -L --fail --retry 3 -o "$DEST/building-type-a.glb" "$BASE/media/3D_Assets/kenney_city-kit-suburban_2.0/Models/GLB%20format/building-type-a.glb"
-          curl -L --fail --retry 3 -o "$DEST/shipping-container-a.glb" "$BASE/media/3D_Assets/kenney_city-kit-industrial_2.0/Models/GLB%20format/shipping-container-a.glb"
-          mkdir -p "$DEST/Textures"
-          curl -L --fail --retry 3 -o "$DEST/Textures/colormap.png" "$BASE/media/3D_Assets/kenney_car-kit/Models/GLB%20format/Textures/colormap.png"
-          for f in "$DEST"/*.glb "$DEST/Textures/colormap.png"; do test -s "$f"; done
+          ASSET_ROOT="projects/GME-2026-0003/godot/assets/studio"
+          mkdir -p "$ASSET_ROOT/Textures" /tmp/turbo-assets
+
+          CAR_ZIP=/tmp/turbo-assets/kenney_car-kit_3.1.zip
+          RACING_ZIP=/tmp/turbo-assets/Racing_Kit_1.2.zip
+          COMM_ZIP=/tmp/turbo-assets/kenney_city-kit-commercial_2.1.zip
+          SUB_ZIP=/tmp/turbo-assets/kenney_city-kit-suburban_2.0.zip
+          IND_ZIP=/tmp/turbo-assets/kenney_city-kit-industrial_2.0.zip
+
+          curl -L --fail --retry 3 -o "$CAR_ZIP" "https://opengameart.org/sites/default/files/kenney_car-kit_3.1.zip"
+          curl -L --fail --retry 3 -o "$RACING_ZIP" "https://opengameart.org/sites/default/files/Racing%20Kit%20%281.2%29.zip"
+          curl -L --fail --retry 3 -o "$COMM_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-commercial_2.1.zip"
+          curl -L --fail --retry 3 -o "$SUB_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-suburban_2.0.zip"
+          curl -L --fail --retry 3 -o "$IND_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-industrial_2.0.zip"
+
+          extract_one() {
+            local zip="$1"; local src="$2"; local dst="$3"
+            unzip -p "$zip" "$src" > "$ASSET_ROOT/$dst"
+            test -s "$ASSET_ROOT/$dst"
+          }
+
+          extract_one "$CAR_ZIP" "Models/GLB format/race-future.glb" "race-future.glb"
+          extract_one "$CAR_ZIP" "Models/GLB format/sedan-sports.glb" "sedan-sports.glb"
+          extract_one "$CAR_ZIP" "Models/GLB format/hatchback-sports.glb" "hatchback-sports.glb"
+          extract_one "$CAR_ZIP" "Models/GLB format/suv-luxury.glb" "suv-luxury.glb"
+          extract_one "$CAR_ZIP" "Models/GLB format/race.glb" "race.glb"
+          extract_one "$CAR_ZIP" "Models/GLB format/wheel-racing.glb" "wheel-racing.glb"
+          extract_one "$CAR_ZIP" "Models/GLB format/ambulance.glb" "ambulance.glb"
+          extract_one "$CAR_ZIP" "Models/GLB format/police.glb" "police.glb"
+          extract_one "$CAR_ZIP" "Models/GLB format/firetruck.glb" "firetruck.glb"
+          extract_one "$CAR_ZIP" "Models/GLB format/Textures/colormap.png" "Textures/colormap.png"
+
+          extract_one "$RACING_ZIP" "Models/GLTF format/grandStandCovered.glb" "grandStandCovered.glb"
+          extract_one "$RACING_ZIP" "Models/GLTF format/barrierRed.glb" "barrierRed.glb"
+          extract_one "$RACING_ZIP" "Models/GLTF format/race.glb" "racing-kit-race.glb"
+
+          extract_one "$COMM_ZIP" "Models/GLB format/building-c.glb" "building-c.glb"
+          extract_one "$COMM_ZIP" "Models/GLB format/building-skyscraper-b.glb" "building-skyscraper-b.glb"
+          extract_one "$SUB_ZIP" "Models/GLB format/building-type-a.glb" "building-type-a.glb"
+          extract_one "$IND_ZIP" "Models/GLB format/shipping-container-a.glb" "shipping-container-a.glb"
+
+          for f in "$ASSET_ROOT"/*.glb "$ASSET_ROOT/Textures/colormap.png"; do test -s "$f"; done
+          sha256sum "$ASSET_ROOT"/*.glb "$ASSET_ROOT/Textures/colormap.png" > projects/GME-2026-0003/artifacts/SELECTED_ASSETS_SHA256.txt
 
       - name: Verify project files
         run: |
