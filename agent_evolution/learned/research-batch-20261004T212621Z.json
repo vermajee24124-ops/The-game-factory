@@ -1,0 +1,212 @@
+{
+  "generated_at": "20261004T212621Z",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "skills": [
+    {
+      "name": "godot_character_body_controller_3d",
+      "domain": "Gameplay & Physics",
+      "skill": "Implement robust kinematic character controllers using CharacterBody3D and Godot 4.7 motion APIs",
+      "tools": [
+        "godot_editor_cli",
+        "gdscript_compiler",
+        "scene_instancer"
+      ],
+      "procedure": [
+        "Create a CharacterBody3D node with a CollisionShape3D (CapsuleShape3D) and visual hierarchy.",
+        "In _physics_process(delta), compute gravitational acceleration: velocity.y -= ProjectSettings.get_setting('physics/3d/default_gravity') * delta when not is_on_floor().",
+        "Derive horizontal direction from player input relative to the active Camera3D basis: direction = (camera_basis * Vector3(input_x, 0, input_z)).normalized().",
+        "Apply smooth acceleration and deceleration using velocity.move_toward() or lerp on horizontal velocity components (x and z).",
+        "Call move_and_slide() without parameters (Godot 4 uses internal velocity state).",
+        "Inspect collision data via get_slide_collision_count() and get_slide_collision() for impact responses, platform interaction, and slope handling."
+      ],
+      "verification": [
+        "Run headless tests asserting is_on_floor() returns true on static bodies.",
+        "Verify character slides smoothly up floor_max_angle slopes without jitter.",
+        "Check terminal velocities under continuous falling to ensure no NaN/INF propagation in velocity vector."
+      ],
+      "pitfalls": [
+        "Passing velocity to move_and_slide(); in Godot 4, move_and_slide takes no arguments and mutates the internal velocity property directly.",
+        "Failing to flatten camera transform basis vectors before calculating ground velocity, causing unintended vertical thrust when looking up or down.",
+        "Modifying global_transform.origin directly instead of setting velocity, breaking continuous collision detection."
+      ],
+      "benchmark_prompt": "Create a complete GDScript for a 3D first-person CharacterBody3D that supports 8-direction WASD movement, jumping with variable jump height, slope walking up to 45 degrees, and camera-relative motion, compatible with Godot 4.7.2."
+    },
+    {
+      "name": "godot_procedural_grid_pathfinding_2d",
+      "domain": "AI & Navigation",
+      "skill": "Build dynamic 2D grid-based navigation using AStarGrid2D with obstacle avoidance and weight masks",
+      "tools": [
+        "godot_editor_cli",
+        "gdscript_compiler",
+        "unit_test_runner"
+      ],
+      "procedure": [
+        "Instantiate an AStarGrid2D instance via GDScript.",
+        "Define grid boundaries and cell dimensions using region (Rect2i) and cell_size (Vector2).",
+        "Set diagonal_mode (e.g., DIAGONAL_MODE_AT_LEAST_ONE_WALKABLE or DIAGONAL_MODE_NEVER) and heuristic calculation.",
+        "Call update() to initialize internal navigation memory structures.",
+        "Mark static obstacles and TileMap collisions using set_point_solid(coords, true) or clear_point_weight_scale().",
+        "Query paths on demand with get_point_path(from_coord, to_coord) or get_id_path(from_coord, to_coord).",
+        "Dynamically toggle point solid state in response to runtime gameplay events (e.g., doors opening, destructible objects)."
+      ],
+      "verification": [
+        "Assert path result is non-empty for reachable adjacent coordinates.",
+        "Assert path avoids coordinates set as solid via set_point_solid().",
+        "Profile path query times over a 256x256 grid ensuring latency remains below 1ms per query."
+      ],
+      "pitfalls": [
+        "Forgetting to call astar_grid.update() after configuring region or cell_size, resulting in empty path arrays.",
+        "Passing world coordinates directly instead of converted grid coordinates (Vector2i) to get_point_path().",
+        "Re-initializing the entire grid per frame instead of mutating solid flags incrementally."
+      ],
+      "benchmark_prompt": "Implement a GDScript class GridNavigator2D wrapping AStarGrid2D for a 100x100 tile world. Expose methods to toggle obstacles, update cell weights for terrain penalties, and retrieve world-space Vector2 paths smoothed for CharacterBody2D navigation."
+    },
+    {
+      "name": "godot_animation_tree_statemachine_blend",
+      "domain": "Animation",
+      "skill": "Configure and control layered 3D character animations via AnimationTree and AnimationNodeStateMachine",
+      "tools": [
+        "godot_editor_cli",
+        "scene_parser",
+        "gdscript_compiler"
+      ],
+      "procedure": [
+        "Attach an AnimationPlayer to the skeleton scene containing all required asset animations.",
+        "Add an AnimationTree node, set anim_player path to the AnimationPlayer, and assign tree_root to an AnimationNodeStateMachine or AnimationNodeBlendTree.",
+        "Construct state nodes (e.g., Idle, Run, Jump, Fall) and configure AnimationNodeStateMachineTransition with appropriate switch mode and xfade_time.",
+        "For locomotion, nest an AnimationNodeBlendSpace2D inside locomotion states to blend horizontal/vertical movement blends.",
+        "In the character script, retrieve the playback controller: state_machine = animation_tree.get('parameters/playback').",
+        "Update state machine parameters dynamically: call state_machine.travel('Run') and animation_tree.set('parameters/Run/blend_position', input_vector).",
+        "Activate the AnimationTree node (active = true)."
+      ],
+      "verification": [
+        "Verify state transitions complete smoothly without visual frame pops using blend cross-fade checks.",
+        "Check animation_tree.get('parameters/playback').get_current_node() matches expected state during simulated physics steps."
+      ],
+      "pitfalls": [
+        "Querying parameter paths with typos; paths are string-based and fail silently or return null if unverified.",
+        "Setting active = true on AnimationTree before the AnimationPlayer has valid animation libraries registered.",
+        "Calling state_machine.travel() every frame with the same state string, which can inadvertently reset non-looping transitions if auto-restart conditions match."
+      ],
+      "benchmark_prompt": "Write a GDScript helper that initializes an AnimationTree programmatically with an AnimationNodeStateMachine containing 'Idle' and 'Move' states, an active transition with 0.2s crossfade, and provides a clean API to blend locomotion velocity."
+    },
+    {
+      "name": "godot_polyphonic_audio_synthesis",
+      "domain": "Audio",
+      "skill": "Implement low-latency, dynamic polyphonic SFX playback using AudioStreamPolyphonic and AudioServer",
+      "tools": [
+        "godot_editor_cli",
+        "gdscript_compiler"
+      ],
+      "procedure": [
+        "Instantiate an AudioStreamPolyphonic resource and configure polyphony capacity (number of concurrent voices).",
+        "Assign the polyphonic resource to an AudioStreamPlayer, AudioStreamPlayer2D, or AudioStreamPlayer3D.",
+        "Ensure the AudioStreamPlayer is started via play() to obtain an active playback instance.",
+        "Acquire the stream playback interface: playback = player.get_stream_playback() as AudioStreamPlaybackPolyphonic.",
+        "Trigger audio samples using playback.play_stream(stream, from_offset, volume_db, pitch_scale).",
+        "Store stream playback IDs to dynamically adjust pitch, volume, or stop active voices via playback.set_stream_pitch_scale(id, pitch) and playback.stop_stream(id)."
+      ],
+      "verification": [
+        "Assert playback is not null and is of type AudioStreamPlaybackPolyphonic.",
+        "Trigger rapid concurrent sound bursts and verify voice count does not exceed allocated polyphony or cause audio underruns.",
+        "Confirm voice pitch modulation reflects immediately without restarting the stream."
+      ],
+      "pitfalls": [
+        "Calling player.get_stream_playback() before player.play() is invoked, which returns null.",
+        "Exceeding maximum configured voices in AudioStreamPolyphonic, resulting in dropped sound triggers.",
+        "Storing voice IDs across scene changes or after streams naturally finish playing."
+      ],
+      "benchmark_prompt": "Develop an AudioManager autoload script in GDScript utilizing AudioStreamPolyphonic on Godot 4.7.2 that pools SFX streams, prevents sound spamming with a cooldown table, and modulates pitch randomly between 0.95 and 1.05."
+    },
+    {
+      "name": "godot_surface_tool_procedural_mesh",
+      "domain": "Rendering & Geometry",
+      "skill": "Generate optimized procedural 3D runtime geometry using SurfaceTool and ArrayMesh",
+      "tools": [
+        "godot_editor_cli",
+        "gdscript_compiler",
+        "mesh_inspector"
+      ],
+      "procedure": [
+        "Instantiate a SurfaceTool object via SurfaceTool.new().",
+        "Begin primitive construction with st.begin(Mesh.PRIMITIVE_TRIANGLES).",
+        "For each vertex, define attributes prior to the vertex position: st.set_normal(), st.set_uv(), st.set_color(), followed by st.add_vertex(position).",
+        "Generate triangle indices using st.add_index() to allow vertex reuse across shared edges.",
+        "Call st.generate_normals() and st.generate_tangents() if vertex attributes were not manually calculated.",
+        "Commit the geometry into an ArrayMesh via st.commit().",
+        "Assign the generated ArrayMesh to a MeshInstance3D and apply a BaseMaterial3D."
+      ],
+      "verification": [
+        "Inspect committed mesh surface count with array_mesh.get_surface_count() == 1.",
+        "Check triangle vertex count and index count match the planned geometric topology.",
+        "Validate presence of normals and tangents by inspecting Mesh.ARRAY_NORMAL and Mesh.ARRAY_TANGENT arrays."
+      ],
+      "pitfalls": [
+        "Calling st.set_uv() or st.set_normal() after st.add_vertex(); attribute setters must precede the vertex they apply to.",
+        "Failing to specify indices when building complex watertight geometry, causing massive vertex redundancy and broken smooth shading.",
+        "Invoking generate_tangents() without valid UV coordinates on the surface, which causes runtime errors."
+      ],
+      "benchmark_prompt": "Write a GDScript tool script that procedurally generates a subdivided UV sphere mesh using SurfaceTool, computes smooth normals and UV coordinates, commits to an ArrayMesh, and generates an optimized collision shape via create_trimesh_shape()."
+    },
+    {
+      "name": "godot_custom_compositor_post_process",
+      "domain": "Rendering & Shaders",
+      "skill": "Create custom screen-space post-processing pipelines using Godot 4.7 CompositorEffect and RenderingDevice",
+      "tools": [
+        "godot_editor_cli",
+        "gdscript_compiler",
+        "shader_validator"
+      ],
+      "procedure": [
+        "Create a custom resource script extending CompositorEffect.",
+        "Set access_resolved_color and access_resolved_depth flags depending on render pass requirements.",
+        "Override _render_callback(effect_callback_type, render_data) to hook into the Godot render graph.",
+        "Retrieve the RenderingDevice: rd = RenderingServer.get_rendering_device().",
+        "Extract the render scene buffers via render_data.get_render_scene_buffers().",
+        "Bind compute pipelines, uniform sets, and screen textures, then dispatch compute shaders across the screen dimensions.",
+        "Attach the custom CompositorEffect resource to a Compositor assigned to Camera3D or WorldEnvironment."
+      ],
+      "verification": [
+        "Ensure _render_callback only executes when render_data is valid.",
+        "Verify compute shader dispatches match target viewport dimensions: ceil(size.x / workgroup_size_x).",
+        "Confirm absence of GPU sync stalls and validation layer errors in debug output."
+      ],
+      "pitfalls": [
+        "Retaining RenderingDevice RID handles across frame reconstitutions without tracking lifecycle.",
+        "Dispatching compute shaders on incompatible callback stages (e.g., using stage EFFECT_CALLBACK_TYPE_PRE_OPAQUE for post-tonemap effects).",
+        "Forgetting synchronization barriers when reading and writing to the same scene buffer."
+      ],
+      "benchmark_prompt": "Create a custom CompositorEffect in GDScript for Godot 4.7.2 that accesses the resolved color buffer and executes a simple compute shader to invert screen colors at the post-transparent stage."
+    },
+    {
+      "name": "godot_procedural_ik_bone_modifiers",
+      "domain": "Rigging & Skeletal Animation",
+      "skill": "Configure procedural inverse kinematics and bone constraints using SkeletonModifier3D and IKModifier3D nodes",
+      "tools": [
+        "godot_editor_cli",
+        "scene_parser",
+        "gdscript_compiler"
+      ],
+      "procedure": [
+        "Identify the Skeleton3D node within the imported character hierarchy.",
+        "Add skeletal modifier nodes as direct children of Skeleton3D (e.g., CCDIK3D, ChainIK3D, AimModifier3D, BoneTwistDisperser3D).",
+        "Set modifier target nodes or transform nodes (e.g., marker or target Node3D representing hand reach or look-at targets).",
+        "Specify bone chains by configuring the root bone name and tip bone name using valid skeleton bone names.",
+        "Adjust solver parameters such as iterations, tolerance, and angle limits to ensure natural deformation.",
+        "Enable the modifier via active = true and tune influence dynamically during gameplay interactions."
+      ],
+      "verification": [
+        "Verify that tip bone transform tracks target marker position during runtime physics steps.",
+        "Check that bone twists along joint chains do not produce flipped or collapsing meshes when limits are reached.",
+        "Ensure modifier execution order under Skeleton3D reflects intended dependencies (e.g., twisting after IK solving)."
+      ],
+      "pitfalls": [
+        "Adding SkeletonModifier3D nodes outside of the Skeleton3D subtree; modifiers must be children of the Skeleton3D.",
+        "Specifying misspelled bone names; use skeleton.find_bone(name) to validate bone indices before assignment.",
+        "Running conflicting IK modifiers simultaneously on overlapping bone segments without properly weighted influence values."
+      ],
+      "benchmark_prompt": "Write a GDScript setup that configures an AimModifier3D and a ChainIK3D on a humanoid Skeleton3D to make the head track the player's crosshair and the arm reach towards an interactable 3D handle."
+    }
+  ]
+}
