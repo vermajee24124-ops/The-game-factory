@@ -153,3 +153,5 @@ jobs:
           git add public-assets
           git commit -m "Publish Turbo Rush public CC0 asset bundle" || true
           git push
+
+# trigger verification pass
