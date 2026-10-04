@@ -115,13 +115,11 @@ jobs:
           mkdir -p "$ASSET_ROOT/Textures" /tmp/turbo-assets
 
           CAR_ZIP=/tmp/turbo-assets/kenney_car-kit_3.1.zip
-          RACING_ZIP=/tmp/turbo-assets/Racing_Kit_1.2.zip
           COMM_ZIP=/tmp/turbo-assets/kenney_city-kit-commercial_2.1.zip
           SUB_ZIP=/tmp/turbo-assets/kenney_city-kit-suburban_2.0.zip
           IND_ZIP=/tmp/turbo-assets/kenney_city-kit-industrial_2.0.zip
 
           curl -L --fail --retry 3 -o "$CAR_ZIP" "https://opengameart.org/sites/default/files/kenney_car-kit_3.1.zip"
-          curl -L --fail --retry 3 -o "$RACING_ZIP" "https://opengameart.org/sites/default/files/Racing%20Kit%20%281.2%29.zip"
           curl -L --fail --retry 3 -o "$COMM_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-commercial_2.1.zip"
           curl -L --fail --retry 3 -o "$SUB_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-suburban_2.0.zip"
           curl -L --fail --retry 3 -o "$IND_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-industrial_2.0.zip"
@@ -143,8 +141,10 @@ jobs:
           extract_one "$CAR_ZIP" "Models/GLB format/firetruck.glb" "firetruck.glb"
           extract_one "$CAR_ZIP" "Models/GLB format/Textures/colormap.png" "Textures/colormap.png"
 
-          extract_one "$RACING_ZIP" "Models/GLTF format/grandStandCovered.glb" "grandStandCovered.glb"
-          extract_one "$RACING_ZIP" "Models/GLTF format/barrierRed.glb" "barrierRed.glb"
+          curl -L --fail --retry 3 -o "$ASSET_ROOT/grandStandCovered.glb" "https://raw.githubusercontent.com/georg-doc/kayfabizarro/378b209355b13304e3cff656ec0806ca5b89df28/media/3D_Assets/kenney_racing-kit/Models/GLTF%20format/grandStandCovered.glb"
+          curl -L --fail --retry 3 -o "$ASSET_ROOT/barrierRed.glb" "https://raw.githubusercontent.com/georg-doc/kayfabizarro/378b209355b13304e3cff656ec0806ca5b89df28/media/3D_Assets/kenney_racing-kit/Models/GLTF%20format/barrierRed.glb"
+          test -s "$ASSET_ROOT/grandStandCovered.glb"
+          test -s "$ASSET_ROOT/barrierRed.glb"
 
           extract_one "$COMM_ZIP" "Models/GLB format/building-c.glb" "building-c.glb"
           extract_one "$COMM_ZIP" "Models/GLB format/building-skyscraper-b.glb" "building-skyscraper-b.glb"
