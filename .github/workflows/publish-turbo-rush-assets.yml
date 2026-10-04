@@ -1,0 +1,155 @@
+name: Publish Turbo Rush Public Asset Bundle
+
+on:
+  push:
+    paths:
+      - ".github/workflows/publish-turbo-rush-assets.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download verified CC0 sources and build bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf public-assets /tmp/turbo-public
+          mkdir -p public-assets /tmp/turbo-public/sources
+
+          cat > /tmp/turbo-public/build.py <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import urllib.request
+          import zipfile
+
+          root = pathlib.Path("/tmp/turbo-public")
+          src = root / "sources"
+          out = pathlib.Path("public-assets")
+          out.mkdir(parents=True, exist_ok=True)
+
+          sources = [
+              ("kenney_car-kit.zip", "https://opengameart.org/sites/default/files/kenney_car-kit_3.1.zip", "Kenney Car Kit", "Kenney", "CC0-1.0", "https://opengameart.org/content/car-kit"),
+              ("kenney_racing-kit.zip", "https://opengameart.org/sites/default/files/Racing%20Kit%20%281.2%29.zip", "Kenney Racing Kit", "Kenney", "CC0-1.0", "https://opengameart.org/content/racing-kit"),
+              ("kenney_city-kit-roads.zip", "https://opengameart.org/sites/default/files/kenney_city-kit-roads_0.zip", "Kenney City Kit Roads", "Kenney", "CC0-1.0", "https://opengameart.org/content/city-kit-roads"),
+              ("kenney_city-kit-commercial_2.1.zip", "https://opengameart.org/sites/default/files/kenney_city-kit-commercial_2.1.zip", "Kenney City Kit Commercial", "Kenney", "CC0-1.0", "https://opengameart.org/content/city-kit-commercial"),
+              ("kenney_city-kit-suburban_2.0.zip", "https://opengameart.org/sites/default/files/kenney_city-kit-suburban_2.0.zip", "Kenney City Kit Suburban", "Kenney", "CC0-1.0", "https://opengameart.org/content/city-kit-suburban"),
+              ("kenney_city-kit-industrial_2.0.zip", "https://opengameart.org/sites/default/files/kenney_city-kit-industrial_2.0.zip", "Kenney City Kit Industrial", "Kenney", "CC0-1.0", "https://opengameart.org/content/city-kit-industrial"),
+              ("racing_assets_v1_oga.zip", "https://opengameart.org/sites/default/files/racing_assets_v1_oga.zip", "Racing Assets v1", "OpenGameArt contributor", "CC0-1.0", "https://opengameart.org/content/racing-assets-v1"),
+              ("racetrack_collection_for_assetforge.zip", "https://opengameart.org/sites/default/files/racetrack_collection_for_assetforge.zip", "Modular Racetrack", "Keith at Fertile Soil Productions", "CC0-1.0", "https://opengameart.org/content/modular-racetrack-3d-models"),
+              ("kenney_toy-car-kit.zip", "https://opengameart.org/sites/default/files/kenney_toy-car-kit.zip", "Kenney Toy Car Kit", "Kenney", "CC0-1.0", "https://opengameart.org/content/toy-car-kit"),
+              ("CarPack.zip", "https://opengameart.org/sites/default/files/CarPack.zip", "Low poly Cars", "Quaternius", "CC0-1.0", "https://opengameart.org/content/low-poly-cars-0"),
+              ("free_low_poly_vehicles_pack_by_rgsdev.zip", "https://opengameart.org/sites/default/files/free_low_poly_vehicles_pack_by_rgsdev.zip", "Free Low Poly Vehicles Pack", "rgsdev", "CC0-1.0", "https://opengameart.org/content/free-low-poly-vehicles-pack"),
+          ]
+
+          meta = []
+          for filename, url, name, author, license_name, page in sources:
+              target = src / filename
+              req = urllib.request.Request(url, headers={"User-Agent": "Turbo-Rush-Public-Asset-Publisher/1.0"})
+              with urllib.request.urlopen(req, timeout=180) as r:
+                  data = r.read()
+              target.write_bytes(data)
+              meta.append({
+                  "filename": filename,
+                  "name": name,
+                  "author": author,
+                  "license": license_name,
+                  "source_page": page,
+                  "source_url": url,
+                  "bytes": len(data),
+                  "sha256": hashlib.sha256(data).hexdigest()
+              })
+
+          mega = out / "Racing_Cars_Mega_Pack_CC0_Sources.zip"
+          racing_source_names = [
+              "kenney_car-kit.zip",
+              "kenney_toy-car-kit.zip",
+              "CarPack.zip",
+              "racing_assets_v1_oga.zip",
+              "free_low_poly_vehicles_pack_by_rgsdev.zip",
+              "racetrack_collection_for_assetforge.zip"
+          ]
+          with zipfile.ZipFile(mega, "w", zipfile.ZIP_DEFLATED) as z:
+              z.writestr(
+                  "README.txt",
+                  "Racing Cars Mega Pack - public CC0 source reconstruction.\n"
+                  "Contains the verified CC0 source archives used by the supplied pack.\n"
+                  "This is not a byte-for-byte copy of the original uploaded derived ZIP.\n"
+              )
+              z.writestr(
+                  "CREDITS.md",
+                  "All included source packs are documented as CC0-1.0 on their public source pages.\n"
+                  "See source_manifest.json in the parent Turbo Rush bundle for source links.\n"
+              )
+              for name in racing_source_names:
+                  z.writestr("sources/" + name, (src / name).read_bytes())
+
+          public_files = [
+              ("kenney_car-kit.zip", "kenney_car-kit.zip"),
+              ("kenney_racing-kit.zip", "kenney_racing-kit.zip"),
+              ("kenney_city-kit-roads.zip", "kenney_city-kit-roads.zip"),
+              ("kenney_city-kit-commercial_2.1.zip", "kenney_city-kit-commercial_2.1.zip"),
+              ("kenney_city-kit-suburban_2.0.zip", "kenney_city-kit-suburban_2.0.zip"),
+              ("Modular_Racetrack_CC0.zip", "racetrack_collection_for_assetforge.zip"),
+              ("Racing_Cars_Mega_Pack_CC0_Sources.zip", "Racing_Cars_Mega_Pack_CC0_Sources.zip"),
+              ("kenney_city-kit-industrial_2.0.zip", "kenney_city-kit-industrial_2.0.zip"),
+          ]
+
+          for output_name, source_name in public_files:
+              if output_name == "Racing_Cars_Mega_Pack_CC0_Sources.zip":
+                  continue
+              source_path = src / source_name
+              (out / output_name).write_bytes(source_path.read_bytes())
+
+          bundle = out / "Turbo_Rush_All_Assets_PUBLIC.zip"
+          with zipfile.ZipFile(bundle, "w", zipfile.ZIP_DEFLATED) as z:
+              for output_name, source_name in public_files:
+                  z.writestr(output_name, (out / output_name).read_bytes())
+              z.writestr(
+                  "PUBLIC_LICENSE_NOTICE.txt",
+                  "Public-safe Turbo Rush bundle.\n"
+                  "Included asset families are documented as CC0-1.0 on their source pages.\n"
+                  "The supplied Ignition Labs car model files are excluded because their supplied archive "
+                  "contained no license/readme/credit evidence sufficient to verify redistribution rights.\n"
+              )
+
+          manifest = {
+              "bundle": bundle.name,
+              "bundle_bytes": bundle.stat().st_size,
+              "bundle_sha256": hashlib.sha256(bundle.read_bytes()).hexdigest(),
+              "included": [name for name, _ in public_files],
+              "excluded": [
+                  "CAR Model by Ignition Labs - 5zUWP5UsLg-.glb",
+                  "CAR Model by Ignition Labs - 5zUWP5UsLg-.zip"
+              ],
+              "sources": meta,
+              "note": "Public-safe reconstruction from verified CC0 sources; the Racing Cars Mega Pack entry is a source reconstruction, not a byte-for-byte copy."
+          }
+          (out / "source_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+          (out / "SHA256SUMS.txt").write_text(manifest["bundle_sha256"] + "  " + bundle.name + "\n", encoding="utf-8")
+          (out / "README.md").write_text(
+              "# Turbo Rush Public Assets\n\n"
+              "Public-safe bundle assembled from sources documented as CC0-1.0.\n\n"
+              "The supplied Ignition Labs car files are excluded because redistribution rights could not "
+              "be verified from the supplied archive.\n\n"
+              "Direct bundle file: Turbo_Rush_All_Assets_PUBLIC.zip\n",
+              encoding="utf-8"
+          )
+          PY
+
+          python3 /tmp/turbo-public/build.py
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public-assets
+          git commit -m "Publish Turbo Rush public CC0 asset bundle" || true
+          git push
