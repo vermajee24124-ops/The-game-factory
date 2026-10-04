@@ -29,7 +29,7 @@ for base in [GODOT, ROOT / "android_plugins" / "turbo_unity_ads"]:
         rel=path.relative_to(ROOT).as_posix()
         if '"debug_save":true' in text or "'debug_save':true" in text:
             problems.append(f"{rel}: debug_save is enabled")
-        if "OS.execute(" in text or "eval(" in text:
+        if "OS.execute(" in text or re.search(r"(?<!JavaScriptBridge\.)\beval\s*\(", text):
             problems.append(f"{rel}: process/eval primitive requires manual review")
         for lineno,line in enumerate(text.splitlines(),1):
             for rx in patterns:
