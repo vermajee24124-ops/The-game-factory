@@ -1,6 +1,6 @@
 extends Node
 
-const GAME_VERSION := "1.8.0"
+const GAME_VERSION := "1.9.0"
 const MAX_UPGRADE_LEVEL := 10
 const REVIVE_DIAMOND_COST := 5
 const PLAYER_CAR_COUNT := 1
