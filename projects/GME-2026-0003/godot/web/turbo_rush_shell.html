@@ -35,7 +35,7 @@ window.TurboRushWebAds = {
     if(useCrazy){
       try{
         await this._loadScript("https://sdk.crazygames.com/crazygames-sdk-v3.js","turbo-crazy-sdk");
-        if(window.CrazyGames&&window.CrazyGames.SDK){this.provider="crazygames";this.available=true;}
+        if(window.CrazyGames&&window.CrazyGames.SDK){await window.CrazyGames.SDK.init();this.provider="crazygames";this.available=true;}
       }catch(e){console.warn("CrazyGames SDK unavailable",e);}
     }
     const gdId=window.TURBO_RUSH_GD_GAME_ID;
@@ -48,7 +48,7 @@ window.TurboRushWebAds = {
     return this.available;
   },
   showStartupBanners(){
-    // Called from the Godot startup path, but banners are rendered only after the lobby is visible.
+    // Called by the Godot startup path while the loading screen is visible; hidden when the lobby opens.
     if(this.provider!=="crazygames")return;
     document.getElementById("turbo-banner-top").style.display="block";
     document.getElementById("turbo-banner-bottom").style.display="block";
