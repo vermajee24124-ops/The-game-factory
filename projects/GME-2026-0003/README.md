@@ -4,7 +4,7 @@ Godot 4.7.2-first mobile 3D arcade racing game built from the six canonical spec
 
 ## Current integrated build
 
-This branch contains a playable, asset-light core implementation designed to validate the complete race loop before native store SDKs are attached.
+This branch contains a playable, asset-light core implementation designed to validate the complete race loop before native platform services are finalized.
 
 Implemented:
 - finite level-based races
@@ -24,11 +24,9 @@ Implemented:
 - offline-safe optional ads with platform-specific adapters
 - 10,000-level deterministic smoke-test coverage
 
-## Release-stage adapters
+## Monetization
 
-Billing and Aptoide Connect integration are intentionally removed from Turbo Rush 1.6.0. The game has no in-app purchase path.
-
-Native ads, native store billing, purchase validation, consent/ATT, production assets and device-matrix profiling are intentionally adapter points. The base build never invents a successful purchase or ad reward.
+Turbo Rush has no in-app purchase system, no external billing integration and no paid-content entitlement path. Cars, wheels, skins, cards, currencies and upgrades are earned through gameplay.
 
 ## Run
 
