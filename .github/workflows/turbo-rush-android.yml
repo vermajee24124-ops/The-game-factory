@@ -205,6 +205,11 @@ jobs:
           mkdir -p projects/GME-2026-0003/artifacts/web
           "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Web" ../artifacts/web/index.html 2>&1 | tee /tmp/turbo-export-web.log
           test -s projects/GME-2026-0003/artifacts/web/index.html
+          python3 projects/GME-2026-0003/godot/web/patch_export.py
+          test -s projects/GME-2026-0003/artifacts/web/index.html
+          grep -q "TurboRushWebAds" projects/GME-2026-0003/artifacts/web/index.html
+          grep -q "turbo-banner-top" projects/GME-2026-0003/artifacts/web/index.html
+          grep -q "turbo-banner-bottom" projects/GME-2026-0003/artifacts/web/index.html
           (cd projects/GME-2026-0003/artifacts/web && zip -qr ../TurboRush-v1.7.1-web.zip .)
 
       - name: Validate APK
