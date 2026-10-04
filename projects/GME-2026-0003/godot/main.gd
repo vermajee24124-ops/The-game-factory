@@ -93,14 +93,24 @@ var palette := {
 
 func _ready()->void:
     SaveSystem.mark_launch()
-    AdsManager.init()
-    WebAdsManager.init()
     HapticsSystem.enabled=bool(SaveSystem.data["settings"]["haptics_enabled"])
     _setup_world()
     _build_menu_stage()
     StudioPolish.enhance_menu(menu_stage)
     _setup_ui()
-    await _run_startup_sequence()
+
+    if OS.has_feature("web"):
+        WebAdsManager.init()
+        AdsManager.init()
+        await _run_startup_sequence()
+        return
+
+    var consent_status := str(SaveSystem.data.get("privacy", {}).get("consent_status", "unknown"))
+    if consent_status == "unknown":
+        _show_privacy()
+    else:
+        AdsManager.init()
+        await _run_startup_sequence()
 
 func _setup_world()->void:
     world_root=Node3D.new()
@@ -216,6 +226,7 @@ func _setup_ui()->void:
     _build_collection()
     _build_daily_tasks()
     _build_settings()
+    _build_privacy()
     _build_loading_screen()
     toast=_label(ui_root,"",22,palette.text)
     toast.position=Vector2(730,990)
@@ -500,6 +511,46 @@ func _update_car_fx()->void:
     var brake_fx:Node=player_car.get_meta("brake_glow",null)
     if brake_fx is MeshInstance3D:
         brake_fx.visible=brake_held
+
+func _build_privacy()->void:
+    var c:=_new_screen("privacy","PRIVACY & AD CHOICE")
+    var p:Control=c.get_node("Panel")
+
+    var intro:=_label(p,"Turbo Rush works fully offline. Advertising is optional and uses the non-personalized mode.",30,palette.text)
+    intro.position=Vector2(70,145)
+    intro.size=Vector2(1200,90)
+    intro.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+
+    var detail:=_label(p,"Choose whether Turbo Rush may load optional ads. You can keep playing normally without ads.",23,palette.muted)
+    detail.position=Vector2(70,260)
+    detail.size=Vector2(1250,80)
+    detail.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+
+    var allow:=_button(p,"ALLOW OPTIONAL NON-PERSONALIZED ADS",Vector2(650,82),true)
+    allow.position=Vector2(70,390)
+    allow.pressed.connect(func():
+        SaveSystem.data["privacy"]["consent_status"]="non_personalized"
+        SaveSystem.data["privacy"]["personalized_ads"]=false
+        SaveSystem.data["privacy"]["consent_timestamp_unix"]=Time.get_unix_time_from_system()
+        SaveSystem.save_now()
+        AdsManager.init()
+        await _run_startup_sequence()
+    )
+
+    var deny:=_button(p,"CONTINUE WITHOUT ADS",Vector2(650,82),false)
+    deny.position=Vector2(70,495)
+    deny.pressed.connect(func():
+        SaveSystem.data["privacy"]["consent_status"]="denied"
+        SaveSystem.data["privacy"]["personalized_ads"]=false
+        SaveSystem.data["privacy"]["consent_timestamp_unix"]=Time.get_unix_time_from_system()
+        SaveSystem.save_now()
+        AdsManager.set_online(false)
+        await _run_startup_sequence()
+    )
+
+    var note:=_label(p,"Choice: non-personalized ads only. No purchases or external billing are used.",20,palette.secondary)
+    note.position=Vector2(70,625)
+    note.size=Vector2(1300,70)
 
 func _build_loading_screen()->void:
     loading_screen=Control.new()
@@ -2239,7 +2290,7 @@ func _show_results(result:Dictionary,rewards:Dictionary)->void:
     last_rewards=rewards.duplicate(true)
     double_reward_claimed=false
     _show_only("results")
-    AdsManager.show_midgame()
+    AdsManager.maybe_show_midgame()
     results_label.text=_ordinal(int(result.finish_position))+" PLACE" if bool(result.completed) else "DNF"
     results_detail.text="Rank Coins: %d\nChest: %s • %d Coins • %d Diamonds\nRandom Bonus: %d Coins • %d Diamonds\nTrack Coins: %d\nFirst Clear Diamonds: %d\nStars: %d\nTOTAL: %d Coins • %d Diamonds" % [int(rewards.rank_coins),str(rewards.chest),int(rewards.chest_coins),int(rewards.chest_diamonds),int(rewards.bonus_coins),int(rewards.bonus_diamonds),int(rewards.track_coins),int(rewards.first_clear_diamonds),int(rewards.stars),int(rewards.total_coins),int(rewards.total_diamonds)]
     next_button.disabled=not bool(result.completed) or int(result.finish_position)>5
