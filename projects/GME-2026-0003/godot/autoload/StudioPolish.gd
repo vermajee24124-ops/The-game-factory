@@ -24,16 +24,14 @@ const BARRIER_PATH := "res://assets/studio/barrierRed.glb"
 var _menu_refresh_queued := false
 
 func _ready() -> void:
-    if not get_tree().node_added.is_connected(_on_node_added):
-        get_tree().node_added.connect(_on_node_added)
-    call_deferred("_enhance_menu")
+    # Studio assets are activated only after the first playable screen is visible.
+    # Loading GLBs from an autoload during boot caused a blank startup on slower phones.
+    pass
 
 func _on_node_added(node: Node) -> void:
-    if node == null:
-        return
-    if node.name == "MENU_HERO" and not _menu_refresh_queued:
-        _menu_refresh_queued = true
-        call_deferred("_refresh_menu_showroom")
+    # Intentionally no automatic asset loading during boot.
+    # main.gd calls enhance_menu() after the startup gate completes.
+    pass
 
 func _enhance_menu() -> void:
     var root := get_tree().current_scene
