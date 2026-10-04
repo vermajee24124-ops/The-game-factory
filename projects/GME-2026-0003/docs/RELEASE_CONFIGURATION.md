@@ -5,11 +5,11 @@
 - Android package: com.vermajeeverma.turborush
 - Support: vermagamestudios@gmail.com
 - Engine: Godot 4.7.2
-- Release version: 1.7.0
+- Release version: 1.8.0
 - Android architecture: arm64-v8a
 - Orientation: landscape
 - Core mode: offline-first finite level racing
-- Billing: disabled and removed
+- Billing: removed (no billing subsystem)
 
 ## Android advertising
 Unity Ads Android SDK target: 4.20.1.
@@ -35,7 +35,7 @@ The Web export is host-aware:
 - Startup banner placements never overlap the race HUD.
 
 ## Payments and external billing
-Turbo Rush 1.7 contains:
+Turbo Rush 1.8 contains:
 - no in-app purchase product catalog
 - no billing manager
 - no external billing SDK
@@ -58,3 +58,14 @@ The CI artifact must include:
 - smoke-test log
 - export logs
 - build information
+
+## 1.8.0 monetization/web update
+
+- Aptoide Connect: removed from Turbo Rush.
+- In-app purchases: removed from Turbo Rush.
+- Billing permission/SDK: not part of the Turbo Rush Android build.
+- Real-money products: none.
+- Diamonds: gameplay-earned only.
+- Android monetization: ads only through the existing Unity Ads bridge.
+- Web monetization: host-aware CrazyGames/GameDistribution adapters; generic Web/itch.io remains playable without an ad SDK.
+- Primary Web export: single-threaded, with threaded export treated as an optional compatibility-tested variant only.
