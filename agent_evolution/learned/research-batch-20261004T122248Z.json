@@ -1,0 +1,111 @@
+{
+  "generated_at": "20261004T122248Z",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "skills": [
+    {
+      "name": "character_body_movement",
+      "domain": "Physics",
+      "skill": "Implement robust kinematic controller movement for 2D and 3D scenes using CharacterBody2D and CharacterBody3D with move_and_slide.",
+      "tools": [
+        "godot_editor_cli",
+        "gdscript_compiler"
+      ],
+      "procedure": [
+        "Select CharacterBody2D or CharacterBody3D as the root node of the character scene.",
+        "Attach a CollisionShape2D/3D with a primitive shape (CapsuleShape or BoxShape).",
+        "In GDScript, read directional input inside _physics_process using Input.get_vector or get_axis.",
+        "Calculate velocity based on acceleration, friction, and gravity (using ProjectSettings.get_setting('physics/2d/default_gravity') or 3D equivalent).",
+        "Assign the calculated Vector2/Vector3 to the velocity property and invoke move_and_slide().",
+        "Query collision outcomes via is_on_floor(), is_on_wall(), and get_slide_collision_count() directly after move_and_slide()."
+      ],
+      "verification": [
+        "Run the scene headless or via debug runner to assert that move_and_slide() executes without warnings.",
+        "Verify velocity is properly decelerated by friction when no input is received.",
+        "Check that is_on_floor() returns true when colliding with static floor colliders."
+      ],
+      "pitfalls": [
+        "Do not pass velocity into move_and_slide() as was done in Godot 3; assign the self.velocity property instead.",
+        "Avoid multiplying move_and_slide() velocity by delta; Godot handles time delta internally inside move_and_slide().",
+        "Do not modify global_position directly for movement when dynamic collisions are needed, as this bypasses solver iterations."
+      ],
+      "benchmark_prompt": "Create a CharacterBody3D controller in GDScript that implements ground locomotion, gravity, jump mechanics, and returns landing state using is_on_floor()."
+    },
+    {
+      "name": "grid_pathfinding_astar",
+      "domain": "Navigation",
+      "skill": "Implement 2D grid-based pathfinding using AStarGrid2D with obstacle avoidance and dynamic updates.",
+      "tools": [
+        "gdscript_compiler"
+      ],
+      "procedure": [
+        "Instantiate an AStarGrid2D object in script.",
+        "Define region boundaries using region = Rect2i(start_x, start_y, width, height) and set cell_size.",
+        "Set diagonal_mode (e.g., DIAGONAL_MODE_NEVER or DIAGONAL_MODE_AT_LEAST_ONE_WALKABLE) and heuristic.",
+        "Call update() to build the internal grid representation.",
+        "Mark obstacles using set_point_solid(grid_pos, true).",
+        "Query paths via get_point_path(start_pos, target_pos) or get_id_path() for grid coordinates."
+      ],
+      "verification": [
+        "Verify that get_point_path returns a non-empty PackedVector2Array between accessible points.",
+        "Verify that setting a cell as solid prevents paths from traversing that cell coordinate."
+      ],
+      "pitfalls": [
+        "Failing to call update() after changing grid size or parameters causes pathfinding queries to fail silently or crash.",
+        "Passing world positions instead of grid-space Vector2i positions to set_point_solid() or get_id_path()."
+      ],
+      "benchmark_prompt": "Construct an AStarGrid2D navigation helper in GDScript that configures a 20x20 grid, sets solid boundaries, and provides a method to get a smoothed world-space Vector2 path."
+    },
+    {
+      "name": "procedural_mesh_generation",
+      "domain": "Rendering",
+      "skill": "Generate runtime dynamic 3D meshes using ArrayMesh and SurfaceTool.",
+      "tools": [
+        "godot_editor_cli",
+        "gdscript_compiler"
+      ],
+      "procedure": [
+        "Instantiate a SurfaceTool instance via SurfaceTool.new().",
+        "Call begin(Mesh.PRIMITIVE_TRIANGLES) to initialize buffer creation.",
+        "Iterate through vertices, emitting set_normal(), set_uv(), and add_vertex() in order per vertex.",
+        "Optionally call index() to generate indices or add_index() manually.",
+        "Generate tangents using generate_tangents() if normal mapping is required.",
+        "Commit the geometry to an ArrayMesh via commit() and assign it to a MeshInstance3D."
+      ],
+      "verification": [
+        "Ensure get_surface_count() on the resulting ArrayMesh is greater than zero.",
+        "Inspect the generated mesh visually or through automated unit tests checking array sizes in surface_get_arrays()."
+      ],
+      "pitfalls": [
+        "Attributes like set_color, set_uv, and set_normal must be called *before* add_vertex(); calling them after applies to the subsequent vertex.",
+        "Forgetting to call generate_normals() or provide explicit normals results in incorrect lighting artifacts."
+      ],
+      "benchmark_prompt": "Write a GDScript utility class that generates a flat procedural plane mesh of arbitrary width, depth, and subdivision count using SurfaceTool and returns an ArrayMesh."
+    },
+    {
+      "name": "audio_bus_effects_routing",
+      "domain": "Audio",
+      "skill": "Configure runtime audio buses, adjust volumes, and apply dynamic AudioEffect chains using AudioServer.",
+      "tools": [
+        "godot_editor_cli",
+        "gdscript_compiler"
+      ],
+      "procedure": [
+        "Check or dynamically create an audio bus using AudioServer.add_bus() or AudioServer.get_bus_index(name).",
+        "Set bus volume using AudioServer.set_bus_volume_db(bus_idx, linear_to_db(volume)).",
+        "Instantiate desired AudioEffect classes (e.g., AudioEffectLowPassFilter, AudioEffectReverb).",
+        "Attach the effect to the bus using AudioServer.add_bus_effect(bus_idx, effect, at_position).",
+        "Assign AudioStreamPlayer, AudioStreamPlayer2D, or AudioStreamPlayer3D to the target bus via the bus property."
+      ],
+      "verification": [
+        "Query AudioServer.get_bus_effect_count(bus_idx) to assert effect presence.",
+        "Check AudioServer.is_bus_mute(bus_idx) and ensure output streams are routed correctly without clipping."
+      ],
+      "pitfalls": [
+        "Setting volume directly in linear amplitude instead of decibels, which leads to perceived silence or harsh distortion.",
+        "Adding duplicate effects on dynamic reloads instead of checking AudioServer.get_bus_effect() first."
+      ],
+      "benchmark_prompt": "Create an AudioController script that initializes an 'Underwater' audio bus routed to 'Master', attaches an AudioEffectLowPassFilter, and toggles filter cutoff frequency via tweening."
+    }
+  ]
+}
