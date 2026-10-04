@@ -145,7 +145,6 @@ jobs:
 
           extract_one "$RACING_ZIP" "Models/GLTF format/grandStandCovered.glb" "grandStandCovered.glb"
           extract_one "$RACING_ZIP" "Models/GLTF format/barrierRed.glb" "barrierRed.glb"
-          extract_one "$RACING_ZIP" "Models/GLTF format/race.glb" "racing-kit-race.glb"
 
           extract_one "$COMM_ZIP" "Models/GLB format/building-c.glb" "building-c.glb"
           extract_one "$COMM_ZIP" "Models/GLB format/building-skyscraper-b.glb" "building-skyscraper-b.glb"
@@ -154,6 +153,8 @@ jobs:
 
           for f in "$ASSET_ROOT"/*.glb "$ASSET_ROOT/Textures/colormap.png"; do test -s "$f"; done
           sha256sum "$ASSET_ROOT"/*.glb "$ASSET_ROOT/Textures/colormap.png" > projects/GME-2026-0003/artifacts/SELECTED_ASSETS_SHA256.txt
+          echo "Curated asset extraction complete"
+          find "$ASSET_ROOT" -maxdepth 2 -type f | sort
 
       - name: Verify project files
         run: |
