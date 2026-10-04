@@ -2,13 +2,13 @@
   "schema_version": 1,
   "project_id": "GME-2026-0003",
   "name": "Turbo Rush",
-  "version": "1.0.0",
+  "version": "1.8.0",
   "engine": "Godot",
   "engine_version": "4.7.2",
   "platforms": ["android", "ios"],
   "connectivity": "offline_first",
   "renderer": "mobile",
   "orientation": "landscape",
-  "status": "development",
-  "release_gate": {"build":true,"tests":true,"security":true,"compliance":true}
+  "status": "release_candidate",
+  "release_gate": {"build":true,"tests":true,"security":false,"compliance":false}
 }
