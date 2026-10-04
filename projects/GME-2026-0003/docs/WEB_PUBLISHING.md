@@ -1,5 +1,8 @@
 # Turbo Rush Web Publishing
 
+## Release policy (1.8.0)
+Turbo Rush Web is standalone and contains no Aptoide, billing or in-app purchase subsystem.
+
 ## Targets
 - Godot 4.7.2 Web export
 - CrazyGames
@@ -9,7 +12,7 @@
 ## Export
 Use the Web export preset and keep the output file named index.html. Godot exports the HTML, JavaScript, WebAssembly and PCK files together.
 
-The Turbo Rush shell uses Godot's JavaScriptBridge-compatible web integration and loads the CrazyGames v3 SDK on CrazyGames/local development hosts. It exposes a small adapter for startup banners, midgame ads and opt-in rewarded ads.
+The Turbo Rush shell uses Godot's JavaScriptBridge-compatible web integration and loads the official CrazyGames v3 SDK on CrazyGames/local development hosts. It exposes a small adapter for startup banners, midgame ads and opt-in rewarded ads.
 
 ### CrazyGames
 The SDK is loaded and initialized by the custom shell. Startup banners are requested only during the loading/startup window and cleared before the lobby. Midgame ads are requested after a race result, outside active gameplay.
