@@ -23,6 +23,30 @@ const BARRIER_PATH := "res://assets/studio/barrierRed.glb"
 
 var _menu_refresh_queued := false
 
+func vehicle_scene_for_slot(slot:int, car_id:String="") -> PackedScene:
+    # Prefer real CC0 Kenney vehicles for race actors. ResourceLoader caches imports,
+    # so repeated AI/traffic instances do not re-read the GLB bytes from disk.
+    var paths:Array[String]=[
+        HERO_PATH,
+        HERO_ALT_PATH,
+        HERO_SPORT_PATH,
+        HERO_SUV_PATH,
+        "res://assets/studio/race.glb"
+    ]
+    if not car_id.is_empty():
+        var preferred:int=abs(car_id.hash())%paths.size()
+        paths=[paths[preferred]]+paths
+    var index:int=0
+    for path in paths:
+        if not ResourceLoader.exists(path):
+            index+=1
+            continue
+        var packed:PackedScene=load(path) as PackedScene
+        if packed:
+            return packed
+        index+=1
+    return null
+
 func _ready() -> void:
     # Studio assets are activated only after the first playable screen is visible.
     # Loading GLBs from an autoload during boot caused a blank startup on slower phones.
