@@ -512,6 +512,9 @@ func _update_car_fx()->void:
     if brake_fx is MeshInstance3D:
         brake_fx.visible=brake_held
 
+func _show_privacy()->void:
+    _show_only("privacy")
+
 func _build_privacy()->void:
     var c:=_new_screen("privacy","PRIVACY & AD CHOICE")
     var p:Control=c.get_node("Panel")
