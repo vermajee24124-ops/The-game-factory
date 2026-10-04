@@ -1,0 +1,132 @@
+{
+  "bundle": "Turbo_Rush_All_Assets_PUBLIC.zip",
+  "bundle_bytes": 36613197,
+  "bundle_sha256": "7f1cea40ac85a428863b43053f152eede1f23eb477453fe9de25068fd64ebe83",
+  "included": [
+    "kenney_car-kit.zip",
+    "kenney_racing-kit.zip",
+    "kenney_city-kit-roads.zip",
+    "kenney_city-kit-commercial_2.1.zip",
+    "kenney_city-kit-suburban_2.0.zip",
+    "Modular_Racetrack_CC0.zip",
+    "Racing_Cars_Mega_Pack_CC0_Sources.zip",
+    "kenney_city-kit-industrial_2.0.zip"
+  ],
+  "excluded": [
+    "CAR Model by Ignition Labs - 5zUWP5UsLg-.glb",
+    "CAR Model by Ignition Labs - 5zUWP5UsLg-.zip"
+  ],
+  "sources": [
+    {
+      "filename": "kenney_car-kit.zip",
+      "name": "Kenney Car Kit",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "source_page": "https://opengameart.org/content/car-kit",
+      "source_url": "https://opengameart.org/sites/default/files/kenney_car-kit_3.1.zip",
+      "bytes": 4814237,
+      "sha256": "fac7dacac5c7874348cf19729af3ef205f3d366493edaf0a827d93f4fdf3d0c4"
+    },
+    {
+      "filename": "kenney_racing-kit.zip",
+      "name": "Kenney Racing Kit",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "source_page": "https://opengameart.org/content/racing-kit",
+      "source_url": "https://opengameart.org/sites/default/files/Racing%20Kit%20%281.2%29.zip",
+      "bytes": 3744999,
+      "sha256": "103acf8a85a04e94e2d3a9933fbcea12e9422c14d5e364eb013019a882af7f48"
+    },
+    {
+      "filename": "kenney_city-kit-roads.zip",
+      "name": "Kenney City Kit Roads",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "source_page": "https://opengameart.org/content/city-kit-roads",
+      "source_url": "https://opengameart.org/sites/default/files/kenney_city-kit-roads_0.zip",
+      "bytes": 2849382,
+      "sha256": "22058af3d68173a7cf9bda9f0e243a8cef6bd68168c302ebc76327063849674e"
+    },
+    {
+      "filename": "kenney_city-kit-commercial_2.1.zip",
+      "name": "Kenney City Kit Commercial",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "source_page": "https://opengameart.org/content/city-kit-commercial",
+      "source_url": "https://opengameart.org/sites/default/files/kenney_city-kit-commercial_2.1.zip",
+      "bytes": 4096974,
+      "sha256": "f8b09b081c2bb88bcc126e2dec1cb40fd0dad7e7e591b6c26aaefe96fb35276b"
+    },
+    {
+      "filename": "kenney_city-kit-suburban_2.0.zip",
+      "name": "Kenney City Kit Suburban",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "source_page": "https://opengameart.org/content/city-kit-suburban",
+      "source_url": "https://opengameart.org/sites/default/files/kenney_city-kit-suburban_2.0.zip",
+      "bytes": 3038740,
+      "sha256": "5869c35cf30b1c87bdb2d197b6d325eebadd2ef08ea27f04797e8e08d77a9a39"
+    },
+    {
+      "filename": "kenney_city-kit-industrial_2.0.zip",
+      "name": "Kenney City Kit Industrial",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "source_page": "https://opengameart.org/content/city-kit-industrial",
+      "source_url": "https://opengameart.org/sites/default/files/kenney_city-kit-industrial_2.0.zip",
+      "bytes": 5045077,
+      "sha256": "5b381164e5760f3830a2dbee43b972deee38b2a695d091b56e238ab2910c96d2"
+    },
+    {
+      "filename": "racing_assets_v1_oga.zip",
+      "name": "Racing Assets v1",
+      "author": "OpenGameArt contributor",
+      "license": "CC0-1.0",
+      "source_page": "https://opengameart.org/content/racing-assets-v1",
+      "source_url": "https://opengameart.org/sites/default/files/racing_assets_v1_oga.zip",
+      "bytes": 3866434,
+      "sha256": "b69a245d71b68d72ef4226509a1db424441be74562be844935e130ca08763087"
+    },
+    {
+      "filename": "racetrack_collection_for_assetforge.zip",
+      "name": "Modular Racetrack",
+      "author": "Keith at Fertile Soil Productions",
+      "license": "CC0-1.0",
+      "source_page": "https://opengameart.org/content/modular-racetrack-3d-models",
+      "source_url": "https://opengameart.org/sites/default/files/racetrack_collection_for_assetforge.zip",
+      "bytes": 94971,
+      "sha256": "fd2651bddf16f49bab1705514bd00af149a0ddd80a7fd84cf8f28d71a261d231"
+    },
+    {
+      "filename": "kenney_toy-car-kit.zip",
+      "name": "Kenney Toy Car Kit",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "source_page": "https://opengameart.org/content/toy-car-kit",
+      "source_url": "https://opengameart.org/sites/default/files/kenney_toy-car-kit.zip",
+      "bytes": 3365801,
+      "sha256": "d28ed13baf60b3cb4932e2984aeac9d8cdc3449936597e5da962c61ba2dae469"
+    },
+    {
+      "filename": "CarPack.zip",
+      "name": "Low poly Cars",
+      "author": "Quaternius",
+      "license": "CC0-1.0",
+      "source_page": "https://opengameart.org/content/low-poly-cars-0",
+      "source_url": "https://opengameart.org/sites/default/files/CarPack.zip",
+      "bytes": 585105,
+      "sha256": "ca3eebf2213caec864ec9dce5155e5f1591b58e7e1ab38d99ac8de7c43062ec8"
+    },
+    {
+      "filename": "free_low_poly_vehicles_pack_by_rgsdev.zip",
+      "name": "Free Low Poly Vehicles Pack",
+      "author": "rgsdev",
+      "license": "CC0-1.0",
+      "source_page": "https://opengameart.org/content/free-low-poly-vehicles-pack",
+      "source_url": "https://opengameart.org/sites/default/files/free_low_poly_vehicles_pack_by_rgsdev.zip",
+      "bytes": 1443472,
+      "sha256": "9091e478bd211a7cf8b562f04e8f061a2188d323e2fa0878f3f1641e5e67c800"
+    }
+  ],
+  "note": "Public-safe reconstruction from verified CC0 sources; the Racing Cars Mega Pack entry is a source reconstruction, not a byte-for-byte copy."
+}
