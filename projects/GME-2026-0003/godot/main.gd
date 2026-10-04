@@ -1983,6 +1983,21 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
     car.add_child(brake_glow)
     car.set_meta("brake_glow",brake_glow)
 
+    # Replace the primitive body with a real CC0 vehicle model for race actors.
+    # Keep the procedural helper nodes for collision, boost/brake FX and fallback.
+    if car_name!="MENU_HERO":
+        var asset_scene:PackedScene=StudioPolish.vehicle_scene_for_slot(abs(car_name.hash())%5,_car_id)
+        if asset_scene:
+            for visual_child in car.get_children():
+                if visual_child is MeshInstance3D:
+                    visual_child.visible=false
+            var asset_visual:Node3D=asset_scene.instantiate() as Node3D
+            if asset_visual:
+                asset_visual.name="CC0VehicleVisual"
+                asset_visual.position=Vector3(0.0,0.42,0.0)
+                asset_visual.scale=Vector3.ONE*0.92
+                car.add_child(asset_visual)
+
     return car
 
 func _animate_vehicle_wheels(vehicle:Node3D,speed:float,delta:float)->void:
