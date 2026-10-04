@@ -20,7 +20,7 @@ func _defaults()->Dictionary:
         "monetization":{"ads":{"daily":{"date":"1970-01-01","revive_count":0,"double_coins_count":0,"bonus_coins_count":0},"interstitial":{"first_launch_unix":0,"last_shown_unix":0,"results_since_last":0}}},
         "privacy":{"consent_version":1,"consent_status":"unknown","personalized_ads":false,"analytics_allowed":false,"att_status":"not_required","consent_timestamp_unix":0},
         "stats":{"races_started":0,"races_completed":0,"races_won":0,"races_top3":0,"races_wrecked":0,"revives_used":0,"diamond_pickups_collected":0,"chests_opened":0,"coins_earned_lifetime":0,"diamonds_earned_lifetime":0,"coins_spent_lifetime":0,"diamonds_spent_lifetime":0,"ads_revive_used":0,"ads_double_coins_used":0,"ads_bonus_coins_used":0},
-        "integrity":{"checksum":"","checksum_version":1,"debug_save":true}
+        "integrity":{"checksum":"","checksum_version":1,"debug_save":false}
     }
 
 func _payload_without_checksum(source:Dictionary)->String:
