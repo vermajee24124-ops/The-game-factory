@@ -22,9 +22,11 @@ jobs:
         run: python3 projects/GME-2026-0003/tests/turbo_rush_monetization_audit.py
 
   strix:
-    if: ${{ secrets.LLM_API_KEY != '' && secrets.STRIX_LLM != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      STRIX_LLM: ${{ secrets.STRIX_LLM }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
     steps:
       - name: Checkout full history
         uses: actions/checkout@v4
@@ -34,15 +36,21 @@ jobs:
       - name: Install Strix
         run: curl -sSL https://strix.ai/install | bash
 
-      - name: Run Strix quick scan
-        env:
-          STRIX_LLM: ${{ secrets.STRIX_LLM }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-        run: strix -n -t ./ --scan-mode quick --max-budget 10
-
-      - name: Verify Strix completed
+      - name: Run Strix quick scan when credentials are configured
         run: |
           set -euo pipefail
+          if [ -z "$LLM_API_KEY" ] || [ -z "$STRIX_LLM" ]; then
+            echo "Strix not executed: STRIX_LLM and LLM_API_KEY repository secrets are not configured."
+            exit 0
+          fi
+          strix -n -t ./ --scan-mode quick --max-budget 10
+
+      - name: Verify Strix completed when a scan ran
+        run: |
+          set -euo pipefail
+          if [ -z "$LLM_API_KEY" ] || [ -z "$STRIX_LLM" ]; then
+            exit 0
+          fi
           run_json=$(ls -t strix_runs/*/run.json | head -1)
           status=$(jq -r .status "$run_json")
           echo "Strix status: $status"
