@@ -1,5 +1,8 @@
 # Turbo Rush Startup / Loading / Advertising UX
 
+## Monetization policy (1.8.0)
+Turbo Rush is ads-only. Aptoide Connect, in-app purchases, billing SDKs, purchase restore and paid-content entitlements are not part of the game.
+
 ## Source reference
 The supplied reference video is used only for startup pacing and presentation ideas.
 
@@ -40,3 +43,6 @@ A production build must verify:
 - signed release artifact
 - import and smoke tests pass
 - store metadata and privacy/compliance review complete
+
+## Web ad lifecycle
+CrazyGames uses the official `midgame` and `rewarded` ad types. Rewarded offers are opt-in and never appear on the active race screen. The game continues normally when an ad is unfilled or unavailable.
