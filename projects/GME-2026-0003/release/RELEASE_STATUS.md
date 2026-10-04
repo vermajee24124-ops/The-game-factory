@@ -1,6 +1,6 @@
 # Turbo Rush Release Status
 
-## Current 1.0 target
+## Current release
 
 Turbo Rush is a standalone, offline-first level-based racing game. CodeCraft is not required and is not used by the game runtime.
 
@@ -16,44 +16,48 @@ Turbo Rush is a standalone, offline-first level-based racing game. CodeCraft is 
 - rank / chest / bonus / star rewards
 - level unlock and repeat-failure assist
 - 54 cars, 60 wheels, seven upgrade stats, paints and wheels
+- 54 cosmetic skins and 48 collectible cards
 - local JSON save, backup and SHA-256 integrity check
 - landscape mobile UI and touch controls
 - 10,000-level smoke-test coverage
 
-## Release configuration now added
+## Monetization status
 
-- Android package: `com.vermajeeverma.turborush`
-- Support email: `vermagamestudios@gmail.com`
-- Unity Android Game ID: `6195679`
-- Unity iOS Game ID: `6195678`
-- - 54 fixed cosmetic skins, 48 collectible cards, 54 cars and 60 wheels added to the content catalog
-- External billing and Aptoide Connect integration removed in v1.6.0
-- Shared Banner_Android configuration is prepared for top and bottom banner instances during startup/loading only
-- Daily Rewards screen now exposes three optional rewarded-ad claims/day; 90% coin outcomes and 10% diamond outcomes in the game-side reward pool
-- Player can equip one owned skin and up to three owned cards; cards provide small passive modifiers
+- No in-app purchase catalog
+- No billing manager
+- No external payment SDK
+- No paid-content entitlement system
+- Optional rewarded/interstitial/banner advertising only when the applicable platform integration and user choice allow it
+- Core racing and progression remain playable offline
 
-## Still not safe to mark live
+## Web release
 
-The content catalog and store mapping are implemented in the Godot client, but Aptoide purchases are not yet a live transaction path until the native billing bridge and verification flow are installed.
+- Godot 4.7.2 Web export
+- Single-threaded Web preset for broad host compatibility
+- Custom HTML shell supports host-aware CrazyGames integration
+- GameDistribution adapter activates only when a real publisher game ID is configured
+- Generic hosts such as itch.io receive a clean playable Web build without a forced external ad SDK
 
-The following require exact external values or native runtime wiring and therefore are not claimed as live:
+## Android release
 
-- Native Unity Ads bridge and exact Android Ad Unit IDs
-- Native Aptoide Billing bridge and live product registration
-- Server-side purchase validation
-- Background Android notification scheduler
-- Production release signing key
+- Package: `com.vermajeeverma.turborush`
+- arm64-v8a
+- landscape
+- release APK and AAB presets
+- Unity Ads Android bridge packaged through the Godot v2 Android plugin architecture
+- Unity Ads Game ID configured
+- Banner, rewarded and interstitial placements configured as release identifiers in the project
+- consent choice is required before native ads initialize
+- no advertising failure blocks gameplay
 
-## Release gates
+## Production gates
 
-- export the Android APK successfully
-- install and play on a real Android device
-- verify startup logo/loading/lobby flow
-- verify top and bottom banners only during startup/loading
-- verify rewarded and interstitial behavior after native bridge integration
-- verify Aptoide sandbox purchase, cancellation, failure, restore and entitlement delivery
-- verify notification permission/settings behavior
-- complete store metadata, privacy and compliance forms
-- sign the final production build with the publisher-controlled release keystore
+1. Build/import/smoke tests pass.
+2. Release APK/AAB are signed.
+3. APK signature, package, version and hashes are validated.
+4. Web export is generated and structurally validated.
+5. Live ad account/placement configuration is confirmed in the relevant dashboards.
+6. The publisher uses a persistent production signing key for future updates.
+7. Real-device installation and touch/performance testing is completed before public store submission.
 
-The repository's existing Android workflow is a debug build workflow. A debug-signed APK is suitable for device testing but is not the production-store signing credential.
+The CI workflow does not export a generated signing key or password.
