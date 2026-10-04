@@ -1,6 +1,6 @@
 extends Node
 ## Release configuration for Turbo Rush.
-## Only public identifiers are stored here. No billing credentials are used.
+## Only public advertising identifiers are stored here. No payment or billing identifiers are used.
 
 const GAME_NAME := "Turbo Rush"
 const PACKAGE_NAME := "com.vermajeeverma.turborush"
