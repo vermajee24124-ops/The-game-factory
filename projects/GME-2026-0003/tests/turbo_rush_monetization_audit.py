@@ -3,10 +3,11 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parents[1]
 
 SCAN_ROOTS = [
     ROOT / "godot",
-    ROOT / "android_plugins",
+    REPO_ROOT / "android_plugins" / "turbo_unity_ads",
 ]
 
 FORBIDDEN = [
