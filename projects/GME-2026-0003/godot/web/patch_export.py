@@ -89,7 +89,7 @@ html = INDEX.read_text(encoding="utf-8")
 if "window.TurboRushWebAds" not in html:
     html = html.replace("</head>", SDK_BLOCK + "\n</head>", 1)
 
-if "id="turbo-banner-top"" not in html:
+if 'id="turbo-banner-top"' not in html:
     html = html.replace("</body>", BANNER_BLOCK + "</body>", 1)
 
 INDEX.write_text(html, encoding="utf-8")
