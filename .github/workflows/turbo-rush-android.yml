@@ -112,7 +112,7 @@ jobs:
         run: |
           set -euo pipefail
           ASSET_ROOT="projects/GME-2026-0003/godot/assets/studio"
-          mkdir -p "$ASSET_ROOT/Textures" /tmp/turbo-assets
+          mkdir -p "$ASSET_ROOT/Textures" /tmp/turbo-assets projects/GME-2026-0003/artifacts
 
           CAR_ZIP=/tmp/turbo-assets/kenney_car-kit_3.1.zip
           COMM_ZIP=/tmp/turbo-assets/kenney_city-kit-commercial_2.1.zip
@@ -278,11 +278,11 @@ jobs:
             echo "Release APK + release AAB + Web export generated in CI"
             echo "Aptoide Connect removed; in-app purchases removed"
           } > projects/GME-2026-0003/artifacts/BUILD_INFO.txt
-          cp /tmp/turbo-import.log projects/GME-2026-0003/artifacts/import.log
-          test -f /tmp/turbo-smoke.log && cp /tmp/turbo-smoke.log projects/GME-2026-0003/artifacts/smoke.log || true
-          test -f /tmp/turbo-export-release-apk.log && cp /tmp/turbo-export-release-apk.log projects/GME-2026-0003/artifacts/export_release_apk.log || true
-          test -f /tmp/turbo-export-release-aab.log && cp /tmp/turbo-export-release-aab.log projects/GME-2026-0003/artifacts/export_release_aab.log || true
-          test -f /tmp/turbo-export-web.log && cp /tmp/turbo-export-web.log projects/GME-2026-0003/artifacts/export_web.log || true
+          if [ -f /tmp/turbo-import.log ]; then cp /tmp/turbo-import.log projects/GME-2026-0003/artifacts/import.log; fi
+          if [ -f /tmp/turbo-smoke.log ]; then cp /tmp/turbo-smoke.log projects/GME-2026-0003/artifacts/smoke.log; fi
+          if [ -f /tmp/turbo-export-release-apk.log ]; then cp /tmp/turbo-export-release-apk.log projects/GME-2026-0003/artifacts/export_release_apk.log; fi
+          if [ -f /tmp/turbo-export-release-aab.log ]; then cp /tmp/turbo-export-release-aab.log projects/GME-2026-0003/artifacts/export_release_aab.log; fi
+          if [ -f /tmp/turbo-export-web.log ]; then cp /tmp/turbo-export-web.log projects/GME-2026-0003/artifacts/export_web.log; fi
 
       - name: Upload release artifacts
         if: success()
