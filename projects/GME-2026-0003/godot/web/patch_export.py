@@ -1,6 +1,6 @@
 from pathlib import Path
 
-INDEX = Path(__file__).resolve().parents[0] / ".." / "artifacts" / "web" / "index.html"
+INDEX = Path(__file__).resolve().parents[2] / "artifacts" / "web" / "index.html"
 
 SDK_BLOCK = r"""
 <style>
