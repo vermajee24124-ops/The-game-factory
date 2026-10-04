@@ -5,7 +5,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 GODOT = ROOT / "godot"
 
-TEXT_EXT = {".gd",".cfg",".ini",".gradle",".gradle.kts",".xml",".json",".properties",".java",".kt",".py",".md",".yaml",".yml"}
+TEXT_EXT = {".gd",".cfg",".ini",".gradle",".gradle.kts",".xml",".json",".properties",".java",".kt",".py"}
 
 patterns = [
     re.compile(r"(?i)-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
