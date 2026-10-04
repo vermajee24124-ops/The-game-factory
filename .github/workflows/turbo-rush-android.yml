@@ -1,5 +1,5 @@
 name: Turbo Rush Release Build
-# studio release pipeline 1.7.1 - Unity Ads + Web + no billing
+# studio release pipeline 1.8.0 - Unity Ads + Web + no billing
 
 on:
   workflow_dispatch:
@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 90
     env:
       GODOT_VERSION: "4.7.2"
-      GAME_VERSION: "1.7.1"
+      GAME_VERSION: "1.8.0"
       VERSION_CODE: "12"
       ANDROID_PLATFORM: "android-36"
       ANDROID_BUILD_TOOLS: "36.1.0"
@@ -133,6 +133,11 @@ jobs:
           test -f projects/GME-2026-0003/godot/main.gd
           test -f projects/GME-2026-0003/godot/assets/turbo_rush_logo.svg
 
+      - name: Monetization audit
+        run: |
+          set -euo pipefail
+          python3 projects/GME-2026-0003/tests/turbo_rush_monetization_audit.py
+
       - name: Headless import
         run: |
           set -euo pipefail
@@ -180,7 +185,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p projects/GME-2026-0003/artifacts
-          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.7.1-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.8.0-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
 
       - name: Reset Gradle template before AAB
         run: |
@@ -197,7 +202,7 @@ jobs:
       - name: Android release AAB
         run: |
           set -euo pipefail
-          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v1.7.1-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v1.8.0-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
 
       - name: Web release export
         run: |
@@ -210,13 +215,13 @@ jobs:
           grep -q "TurboRushWebAds" projects/GME-2026-0003/artifacts/web/index.html
           grep -q "turbo-banner-top" projects/GME-2026-0003/artifacts/web/index.html
           grep -q "turbo-banner-bottom" projects/GME-2026-0003/artifacts/web/index.html
-          (cd projects/GME-2026-0003/artifacts/web && zip -qr ../TurboRush-v1.7.1-web.zip .)
+          (cd projects/GME-2026-0003/artifacts/web && zip -qr ../TurboRush-v1.8.0-web.zip .)
 
       - name: Validate APK
         run: |
           set -euo pipefail
-          APK="projects/GME-2026-0003/artifacts/TurboRush-v1.7.1-release.apk"
-          AAB="projects/GME-2026-0003/artifacts/TurboRush-v1.7.1-release.aab"
+          APK="projects/GME-2026-0003/artifacts/TurboRush-v1.8.0-release.apk"
+          AAB="projects/GME-2026-0003/artifacts/TurboRush-v1.8.0-release.aab"
           "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging "$APK" | tee projects/GME-2026-0003/artifacts/APK_BADGING.txt
           "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose "$APK" | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
           sha256sum "$APK" | tee projects/GME-2026-0003/artifacts/APK_SHA256.txt
@@ -230,7 +235,7 @@ jobs:
         run: |
           mkdir -p projects/GME-2026-0003/artifacts
           {
-            echo "Turbo Rush v1.7.1"
+            echo "Turbo Rush v1.8.0"
             echo "Godot 4.7.2"
             echo "JDK Temurin 17"
             echo "Android platform 34 + 36"
@@ -252,10 +257,10 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Turbo-Rush-v1.7.1-release
+          name: Turbo-Rush-v1.8.0-release
           path: |
-            projects/GME-2026-0003/artifacts/TurboRush-v1.7.1-release.apk
-            projects/GME-2026-0003/artifacts/TurboRush-v1.7.1-release.aab
+            projects/GME-2026-0003/artifacts/TurboRush-v1.8.0-release.apk
+            projects/GME-2026-0003/artifacts/TurboRush-v1.8.0-release.aab
             projects/GME-2026-0003/artifacts/APK_BADGING.txt
             projects/GME-2026-0003/artifacts/APK_SIGNING.txt
             projects/GME-2026-0003/artifacts/APK_SHA256.txt
@@ -267,7 +272,7 @@ jobs:
             projects/GME-2026-0003/artifacts/export_release_apk.log
             projects/GME-2026-0003/artifacts/export_release_aab.log
             projects/GME-2026-0003/artifacts/export_web.log
-            projects/GME-2026-0003/artifacts/TurboRush-v1.7.1-web.zip
+            projects/GME-2026-0003/artifacts/TurboRush-v1.8.0-web.zip
           if-no-files-found: error
 
 
