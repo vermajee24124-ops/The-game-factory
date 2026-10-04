@@ -1,0 +1,55 @@
+name: Turbo Rush Security
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Turbo Rush static security audit
+        run: python3 projects/GME-2026-0003/tests/turbo_rush_security_audit.py
+
+      - name: Run monetization audit
+        run: python3 projects/GME-2026-0003/tests/turbo_rush_monetization_audit.py
+
+  strix:
+    if: ${{ secrets.LLM_API_KEY != '' && secrets.STRIX_LLM != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Strix
+        run: curl -sSL https://strix.ai/install | bash
+
+      - name: Run Strix quick scan
+        env:
+          STRIX_LLM: ${{ secrets.STRIX_LLM }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: strix -n -t ./ --scan-mode quick --max-budget 10
+
+      - name: Verify Strix completed
+        run: |
+          set -euo pipefail
+          run_json=$(ls -t strix_runs/*/run.json | head -1)
+          status=$(jq -r .status "$run_json")
+          echo "Strix status: $status"
+          test "$status" = "completed"
+
+      - name: Upload Strix SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: strix_runs
