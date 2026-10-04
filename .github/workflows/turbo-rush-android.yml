@@ -146,7 +146,7 @@ jobs:
           download_zip "$SUB_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-suburban_2.0.zip"
           download_zip "$IND_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-industrial_2.0.zip"
           download_zip "$RACING_ZIP" "https://opengameart.org/sites/default/files/Racing%20Kit%20%281.2%29.zip"
-          download_zip "$ROADS_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-roads_2.1.zip"
+          download_zip "$ROADS_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-roads.zip"
           download_zip "$TOY_ZIP" "https://opengameart.org/sites/default/files/kenney_toy-car-kit.zip"
           download_zip "$MOD_ZIP" "https://opengameart.org/sites/default/files/racetrack_collection_for_assetforge_0.zip"
           download_zip "$RACE_ASSETS_ZIP" "https://opengameart.org/sites/default/files/racing_assets_v1_oga.zip"
