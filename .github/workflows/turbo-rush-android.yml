@@ -265,13 +265,4 @@ jobs:
             projects/GME-2026-0003/artifacts/TurboRush-v1.7.1-web.zip
           if-no-files-found: error
 
-      - name: Upload generated signing bootstrap
-        if: steps.signing.outputs.generated == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Turbo-Rush-v1.5.0-signing-bootstrap
-          path: |
-            projects/GME-2026-0003/artifacts/TurboRush-release-keystore.jks
-            projects/GME-2026-0003/artifacts/SIGNING_INFO.txt
-          if-no-files-found: error
 
