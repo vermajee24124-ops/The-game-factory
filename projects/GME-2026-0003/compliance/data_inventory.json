@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "project_id": "GME-2026-0003",
   "data_collected": [],
   "local_data": [
@@ -14,5 +14,5 @@
     "advertising_requests",
     "advertising_delivery_metadata"
   ],
-  "notes": "No in-app purchase, payment, purchase entitlement, or external billing data is stored by Turbo Rush 1.7. The Android advertising bridge is non-personalized by default. Re-audit platform consent and advertising SDK behavior before public release."
+  "notes": "The core game has no payment, account or external billing data path. Android advertising is non-personalized in the current runtime configuration and is initialized only after the player has made the applicable in-game choice."
 }
