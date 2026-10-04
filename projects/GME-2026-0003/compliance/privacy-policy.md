@@ -17,11 +17,11 @@ The core game stores game progress on the player's device, including:
 
 The core save system is not designed to store names, email addresses, phone numbers, passwords, precise location, contacts or message content.
 
-## Optional online services
+## Optional advertising
 
-Ads, in-app purchases, analytics and platform consent services are optional integrations. Their data handling depends on the specific SDKs and platform services enabled in the published build.
+Advertising is optional and host/platform specific. Its data handling depends on the actual advertising SDK and platform configuration enabled in the published build.
 
-The published privacy notice must be updated whenever a production SDK is added.
+The published privacy notice must be updated whenever the production advertising configuration changes.
 
 ## Children's privacy
 
