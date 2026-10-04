@@ -26,7 +26,7 @@ Implemented:
 
 ## Monetization
 
-Turbo Rush has no in-app purchase system, no external billing integration and no paid-content entitlement path. Cars, wheels, skins, cards, currencies and upgrades are earned through gameplay.
+Turbo Rush 1.8.0 is ads-only. It has no Aptoide Connect, no in-app purchase system, no billing SDK/permission, no purchase restore flow and no paid-content entitlement path. Cars, wheels, skins, cards, currencies and upgrades are earned through gameplay. Web ads are host-aware for CrazyGames/GameDistribution; generic Web/itch.io remains playable without an advertising SDK.
 
 ## Run
 
