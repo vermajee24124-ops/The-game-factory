@@ -1,5 +1,5 @@
 name: Turbo Rush Release Build
-# studio release pipeline 1.8.0 - Unity Ads + Web + no billing
+# studio release pipeline 1.9.0 - Unity Ads + Web + no billing + expanded CC0 asset library
 
 on:
   workflow_dispatch:
@@ -18,8 +18,8 @@ jobs:
     timeout-minutes: 90
     env:
       GODOT_VERSION: "4.7.2"
-      GAME_VERSION: "1.8.0"
-      VERSION_CODE: "12"
+      GAME_VERSION: "1.9.0"
+      VERSION_CODE: "14"
       ANDROID_PLATFORM: "android-36"
       ANDROID_BUILD_TOOLS: "36.1.0"
       ANDROID_CMDLINE_TOOLS: "11076708"
@@ -108,54 +108,92 @@ jobs:
           printf '%s\n' "4.7.2.stable" > projects/GME-2026-0003/godot/android/.build_version
           test -f projects/GME-2026-0003/godot/android/.build_version
 
-      - name: Fetch curated assets from the supplied CC0 asset library
+      - name: Fetch and index the supplied CC0 racing asset library
         run: |
           set -euo pipefail
-          ASSET_ROOT="projects/GME-2026-0003/godot/assets/studio"
-          mkdir -p "$ASSET_ROOT/Textures" /tmp/turbo-assets projects/GME-2026-0003/artifacts
+          ASSET_ROOT="projects/GME-2026-0003/godot/assets"
+          STUDIO_ROOT="$ASSET_ROOT/studio"
+          LIB_ROOT="$ASSET_ROOT/library"
+          mkdir -p "$STUDIO_ROOT/Textures" "$LIB_ROOT" /tmp/turbo-assets projects/GME-2026-0003/artifacts
+
+          download_zip() {
+            local out="$1"; local url="$2"
+            curl -L --fail --retry 3 -o "$out" "$url"
+            test -s "$out"
+          }
+
+          extract_runtime_tree() {
+            local zip="$1"; local dest="$2"
+            mkdir -p "$dest"
+            unzip -q "$zip" -d "$dest"
+            find "$dest" -type f ! \(               -iname '*.glb' -o -iname '*.gltf' -o -iname '*.bin' -o               -iname '*.obj' -o -iname '*.mtl' -o -iname '*.png' -o               -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp'             \) -delete
+          }
 
           CAR_ZIP=/tmp/turbo-assets/kenney_car-kit_3.1.zip
+          RACING_ZIP=/tmp/turbo-assets/kenney_racing-kit.zip
+          ROADS_ZIP=/tmp/turbo-assets/kenney_city-kit-roads_2.1.zip
           COMM_ZIP=/tmp/turbo-assets/kenney_city-kit-commercial_2.1.zip
           SUB_ZIP=/tmp/turbo-assets/kenney_city-kit-suburban_2.0.zip
           IND_ZIP=/tmp/turbo-assets/kenney_city-kit-industrial_2.0.zip
+          TOY_ZIP=/tmp/turbo-assets/kenney_toy-car-kit.zip
+          MOD_ZIP=/tmp/turbo-assets/modular_racetrack.zip
+          RACE_ASSETS_ZIP=/tmp/turbo-assets/racing_assets_v1.zip
+          QUATERNIUS_ZIP=/tmp/turbo-assets/quaternius_carpach.zip
+          RGSDEV_ZIP=/tmp/turbo-assets/rgsdev_vehicles.zip
 
-          curl -L --fail --retry 3 -o "$CAR_ZIP" "https://opengameart.org/sites/default/files/kenney_car-kit_3.1.zip"
-          curl -L --fail --retry 3 -o "$COMM_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-commercial_2.1.zip"
-          curl -L --fail --retry 3 -o "$SUB_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-suburban_2.0.zip"
-          curl -L --fail --retry 3 -o "$IND_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-industrial_2.0.zip"
+          download_zip "$CAR_ZIP" "https://opengameart.org/sites/default/files/kenney_car-kit_3.1.zip"
+          download_zip "$COMM_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-commercial_2.1.zip"
+          download_zip "$SUB_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-suburban_2.0.zip"
+          download_zip "$IND_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-industrial_2.0.zip"
+          download_zip "$RACING_ZIP" "https://opengameart.org/sites/default/files/Racing%20Kit%20%281.2%29.zip"
+          download_zip "$ROADS_ZIP" "https://opengameart.org/sites/default/files/kenney_city-kit-roads_2.1.zip"
+          download_zip "$TOY_ZIP" "https://opengameart.org/sites/default/files/kenney_toy-car-kit.zip"
+          download_zip "$MOD_ZIP" "https://opengameart.org/sites/default/files/racetrack_collection_for_assetforge_0.zip"
+          download_zip "$RACE_ASSETS_ZIP" "https://opengameart.org/sites/default/files/racing_assets_v1_oga.zip"
+          download_zip "$QUATERNIUS_ZIP" "https://opengameart.org/sites/default/files/CarPack.zip"
+          download_zip "$RGSDEV_ZIP" "https://opengameart.org/sites/default/files/free_low_poly_vehicles_pack_by_rgsdev.zip"
 
-          extract_one() {
-            local zip="$1"; local src="$2"; local dst="$3"
-            unzip -p "$zip" "$src" > "$ASSET_ROOT/$dst"
-            test -s "$ASSET_ROOT/$dst"
-          }
+          extract_runtime_tree "$CAR_ZIP" "$LIB_ROOT/kenney_car_kit"
+          extract_runtime_tree "$RACING_ZIP" "$LIB_ROOT/kenney_racing_kit"
+          extract_runtime_tree "$ROADS_ZIP" "$LIB_ROOT/kenney_city_kit_roads"
+          extract_runtime_tree "$COMM_ZIP" "$LIB_ROOT/kenney_city_kit_commercial"
+          extract_runtime_tree "$SUB_ZIP" "$LIB_ROOT/kenney_city_kit_suburban"
+          extract_runtime_tree "$IND_ZIP" "$LIB_ROOT/kenney_city_kit_industrial"
+          extract_runtime_tree "$TOY_ZIP" "$LIB_ROOT/kenney_toy_car_kit"
+          extract_runtime_tree "$MOD_ZIP" "$LIB_ROOT/modular_racetrack"
+          extract_runtime_tree "$RACE_ASSETS_ZIP" "$LIB_ROOT/racing_assets_v1"
+          extract_runtime_tree "$QUATERNIUS_ZIP" "$LIB_ROOT/quaternius_carpack"
+          extract_runtime_tree "$RGSDEV_ZIP" "$LIB_ROOT/rgsdev_vehicles"
 
-          extract_one "$CAR_ZIP" "Models/GLB format/race-future.glb" "race-future.glb"
-          extract_one "$CAR_ZIP" "Models/GLB format/sedan-sports.glb" "sedan-sports.glb"
-          extract_one "$CAR_ZIP" "Models/GLB format/hatchback-sports.glb" "hatchback-sports.glb"
-          extract_one "$CAR_ZIP" "Models/GLB format/suv-luxury.glb" "suv-luxury.glb"
-          extract_one "$CAR_ZIP" "Models/GLB format/race.glb" "race.glb"
-          extract_one "$CAR_ZIP" "Models/GLB format/wheel-racing.glb" "wheel-racing.glb"
-          extract_one "$CAR_ZIP" "Models/GLB format/ambulance.glb" "ambulance.glb"
-          extract_one "$CAR_ZIP" "Models/GLB format/police.glb" "police.glb"
-          extract_one "$CAR_ZIP" "Models/GLB format/firetruck.glb" "firetruck.glb"
-          extract_one "$CAR_ZIP" "Models/GLB format/Textures/colormap.png" "Textures/colormap.png"
+          # Curated fast-path assets used by the first playable scene and race.
+          cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/race-future.glb" "$STUDIO_ROOT/race-future.glb"
+          cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/sedan-sports.glb" "$STUDIO_ROOT/sedan-sports.glb"
+          cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/hatchback-sports.glb" "$STUDIO_ROOT/hatchback-sports.glb"
+          cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/suv-luxury.glb" "$STUDIO_ROOT/suv-luxury.glb"
+          cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/race.glb" "$STUDIO_ROOT/race.glb"
+          cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/wheel-racing.glb" "$STUDIO_ROOT/wheel-racing.glb"
+          cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/ambulance.glb" "$STUDIO_ROOT/ambulance.glb"
+          cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/police.glb" "$STUDIO_ROOT/police.glb"
+          cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/firetruck.glb" "$STUDIO_ROOT/firetruck.glb"
+          cp -r "$LIB_ROOT/kenney_car_kit/Models/GLB format/Textures/." "$STUDIO_ROOT/Textures/"
 
-          curl -L --fail --retry 3 -o "$ASSET_ROOT/grandStandCovered.glb" "https://raw.githubusercontent.com/georg-doc/kayfabizarro/378b209355b13304e3cff656ec0806ca5b89df28/media/3D_Assets/kenney_racing-kit/Models/GLTF%20format/grandStandCovered.glb"
-          curl -L --fail --retry 3 -o "$ASSET_ROOT/barrierRed.glb" "https://raw.githubusercontent.com/georg-doc/kayfabizarro/378b209355b13304e3cff656ec0806ca5b89df28/media/3D_Assets/kenney_racing-kit/Models/GLTF%20format/barrierRed.glb"
-          test -s "$ASSET_ROOT/grandStandCovered.glb"
-          test -s "$ASSET_ROOT/barrierRed.glb"
+          # Current Racing Kit references used for circuit dressing.
+          find "$LIB_ROOT/kenney_racing_kit" -type f -iname 'grandStandCovered.glb' -exec cp {} "$STUDIO_ROOT/grandStandCovered.glb" \;
+          find "$LIB_ROOT/kenney_racing_kit" -type f -iname 'barrierRed.glb' -exec cp {} "$STUDIO_ROOT/barrierRed.glb" \;
 
-          extract_one "$COMM_ZIP" "Models/GLB format/building-c.glb" "building-c.glb"
-          extract_one "$COMM_ZIP" "Models/GLB format/building-skyscraper-b.glb" "building-skyscraper-b.glb"
-          extract_one "$SUB_ZIP" "Models/GLB format/building-type-a.glb" "building-type-a.glb"
-          extract_one "$IND_ZIP" "Models/GLB format/shipping-container-a.glb" "shipping-container-a.glb"
+          cp "$LIB_ROOT/kenney_city_kit_commercial/Models/GLB format/building-c.glb" "$STUDIO_ROOT/building-c.glb"
+          cp "$LIB_ROOT/kenney_city_kit_commercial/Models/GLB format/building-skyscraper-b.glb" "$STUDIO_ROOT/building-skyscraper-b.glb"
+          cp "$LIB_ROOT/kenney_city_kit_suburban/Models/GLB format/building-type-a.glb" "$STUDIO_ROOT/building-type-a.glb"
+          cp "$LIB_ROOT/kenney_city_kit_industrial/Models/GLB format/shipping-container-a.glb" "$STUDIO_ROOT/shipping-container-a.glb"
 
-          for f in "$ASSET_ROOT"/*.glb "$ASSET_ROOT/Textures/colormap.png"; do test -s "$f"; done
-          sha256sum "$ASSET_ROOT"/*.glb "$ASSET_ROOT/Textures/colormap.png" > projects/GME-2026-0003/artifacts/SELECTED_ASSETS_SHA256.txt
-          echo "Curated asset extraction complete"
-          find "$ASSET_ROOT" -maxdepth 2 -type f | sort
-
+          find "$STUDIO_ROOT" -type f -name '*.glb' -size +0c -print0 | sort -z | xargs -0 sha256sum > projects/GME-2026-0003/artifacts/SELECTED_ASSETS_SHA256.txt
+          {
+            echo "Expanded CC0 asset library:";
+            find "$LIB_ROOT" -type f \( -iname '*.glb' -o -iname '*.gltf' -o -iname '*.obj' \) | sort;
+          } > projects/GME-2026-0003/artifacts/ASSET_LIBRARY_INDEX.txt
+          echo "Asset model count:"
+          find "$LIB_ROOT" -type f \( -iname '*.glb' -o -iname '*.gltf' -o -iname '*.obj' \) | wc -l
+          echo "Expanded CC0 asset extraction complete"
       - name: Verify project files
         run: |
           set -euo pipefail
@@ -168,6 +206,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 projects/GME-2026-0003/tests/turbo_rush_monetization_audit.py
+          python3 projects/GME-2026-0003/tests/turbo_rush_security_audit.py
 
       - name: Headless import
         run: |
@@ -216,7 +255,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p projects/GME-2026-0003/artifacts
-          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.8.0-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.9.0-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
 
       - name: Reset Gradle template before AAB
         run: |
@@ -233,7 +272,7 @@ jobs:
       - name: Android release AAB
         run: |
           set -euo pipefail
-          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v1.8.0-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v1.9.0-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
 
       - name: Web release export
         run: |
@@ -246,13 +285,13 @@ jobs:
           grep -q "TurboRushWebAds" projects/GME-2026-0003/artifacts/web/index.html
           grep -q "turbo-banner-top" projects/GME-2026-0003/artifacts/web/index.html
           grep -q "turbo-banner-bottom" projects/GME-2026-0003/artifacts/web/index.html
-          (cd projects/GME-2026-0003/artifacts/web && zip -qr ../TurboRush-v1.8.0-web.zip .)
+          (cd projects/GME-2026-0003/artifacts/web && zip -qr ../TurboRush-v1.9.0-web.zip .)
 
       - name: Validate APK
         run: |
           set -euo pipefail
-          APK="projects/GME-2026-0003/artifacts/TurboRush-v1.8.0-release.apk"
-          AAB="projects/GME-2026-0003/artifacts/TurboRush-v1.8.0-release.aab"
+          APK="projects/GME-2026-0003/artifacts/TurboRush-v1.9.0-release.apk"
+          AAB="projects/GME-2026-0003/artifacts/TurboRush-v1.9.0-release.aab"
           "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging "$APK" | tee projects/GME-2026-0003/artifacts/APK_BADGING.txt
           "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose "$APK" | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
           sha256sum "$APK" | tee projects/GME-2026-0003/artifacts/APK_SHA256.txt
@@ -266,13 +305,16 @@ jobs:
         run: |
           mkdir -p projects/GME-2026-0003/artifacts
           {
-            echo "Turbo Rush v1.8.0"
+            echo "Turbo Rush v1.9.0"
             echo "Godot 4.7.2"
             echo "JDK Temurin 17"
             echo "Android platform 34 + 36"
             echo "Android build-tools 34.0.0 + 36.1.0"
             echo "CodeCraft disabled"
             echo "Branded Android splash configured"
+            echo "Startup hang guard + post-boot asset loading enabled"
+            echo "Lightweight racing minimap enabled"
+            echo "Expanded CC0 asset library indexed in ASSET_LIBRARY_INDEX.txt"
             echo "54 cars / 60 wheels / 54 skins / 48 cards"
             echo "External billing disabled; no Aptoide Connect integration"
             echo "Release APK + release AAB + Web export generated in CI"
@@ -288,22 +330,23 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Turbo-Rush-v1.8.0-release
+          name: Turbo-Rush-v1.9.0-release
           path: |
-            projects/GME-2026-0003/artifacts/TurboRush-v1.8.0-release.apk
-            projects/GME-2026-0003/artifacts/TurboRush-v1.8.0-release.aab
+            projects/GME-2026-0003/artifacts/TurboRush-v1.9.0-release.apk
+            projects/GME-2026-0003/artifacts/TurboRush-v1.9.0-release.aab
             projects/GME-2026-0003/artifacts/APK_BADGING.txt
             projects/GME-2026-0003/artifacts/APK_SIGNING.txt
             projects/GME-2026-0003/artifacts/APK_SHA256.txt
             projects/GME-2026-0003/artifacts/AAB_STRUCTURE.txt
             projects/GME-2026-0003/artifacts/AAB_SHA256.txt
             projects/GME-2026-0003/artifacts/BUILD_INFO.txt
+            projects/GME-2026-0003/artifacts/ASSET_LIBRARY_INDEX.txt
             projects/GME-2026-0003/artifacts/import.log
             projects/GME-2026-0003/artifacts/smoke.log
             projects/GME-2026-0003/artifacts/export_release_apk.log
             projects/GME-2026-0003/artifacts/export_release_aab.log
             projects/GME-2026-0003/artifacts/export_web.log
-            projects/GME-2026-0003/artifacts/TurboRush-v1.8.0-web.zip
+            projects/GME-2026-0003/artifacts/TurboRush-v1.9.0-web.zip
           if-no-files-found: error
 
 
