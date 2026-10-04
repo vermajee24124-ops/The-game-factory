@@ -1,5 +1,5 @@
-name: Turbo Rush Android Build
-# studio release pipeline 1.7.0 - Unity Ads bridge + no billing
+name: Turbo Rush Release Build
+# studio release pipeline 1.7.1 - Unity Ads + Web + no billing
 
 on:
   workflow_dispatch:
@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 90
     env:
       GODOT_VERSION: "4.7.2"
+      GAME_VERSION: "1.7.1"
+      VERSION_CODE: "12"
       ANDROID_PLATFORM: "android-36"
       ANDROID_BUILD_TOOLS: "36.1.0"
       ANDROID_CMDLINE_TOOLS: "11076708"
@@ -171,23 +173,14 @@ jobs:
           echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$KEYSTORE_USER" >> "$GITHUB_ENV"
           echo "generated=$GENERATED" >> "$GITHUB_OUTPUT"
           if [ "$GENERATED" = "true" ]; then
-            mkdir -p projects/GME-2026-0003/artifacts
-            cp "$KEYSTORE_PATH" projects/GME-2026-0003/artifacts/TurboRush-release-keystore.jks
-            {
-              echo "Turbo Rush release signing bootstrap"
-              echo "Keystore: TurboRush-release-keystore.jks"
-              echo "Alias: $KEYSTORE_USER"
-              echo "Password: $KEYSTORE_PASS"
-              echo "IMPORTANT: Keep this keystore and password private. They are required to sign future updates with the same app identity."
-              echo "For future GitHub Actions runs, add the keystore as TURBO_RUSH_KEYSTORE_BASE64 and store the password/alias as TURBO_RUSH_KEYSTORE_PASSWORD / TURBO_RUSH_KEYSTORE_ALIAS."
-            } > projects/GME-2026-0003/artifacts/SIGNING_INFO.txt
+            echo "Temporary signing key generated for this CI artifact; it is not exported." > "$RUNNER_TEMP/signing_note.txt"
           fi
 
       - name: Android release APK
         run: |
           set -euo pipefail
           mkdir -p projects/GME-2026-0003/artifacts
-          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.7.0-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.7.1-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
 
       - name: Reset Gradle template before AAB
         run: |
@@ -204,7 +197,7 @@ jobs:
       - name: Android release AAB
         run: |
           set -euo pipefail
-          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v1.7.0-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v1.7.1-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
 
       - name: Web release export
         run: |
@@ -212,13 +205,13 @@ jobs:
           mkdir -p projects/GME-2026-0003/artifacts/web
           "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Web" ../artifacts/web/index.html 2>&1 | tee /tmp/turbo-export-web.log
           test -s projects/GME-2026-0003/artifacts/web/index.html
-          (cd projects/GME-2026-0003/artifacts/web && zip -qr ../TurboRush-v1.7.0-web.zip .)
+          (cd projects/GME-2026-0003/artifacts/web && zip -qr ../TurboRush-v1.7.1-web.zip .)
 
       - name: Validate APK
         run: |
           set -euo pipefail
-          APK="projects/GME-2026-0003/artifacts/TurboRush-v1.6.0-release.apk"
-          AAB="projects/GME-2026-0003/artifacts/TurboRush-v1.6.0-release.aab"
+          APK="projects/GME-2026-0003/artifacts/TurboRush-v1.7.1-release.apk"
+          AAB="projects/GME-2026-0003/artifacts/TurboRush-v1.7.1-release.aab"
           "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging "$APK" | tee projects/GME-2026-0003/artifacts/APK_BADGING.txt
           "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose "$APK" | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
           sha256sum "$APK" | tee projects/GME-2026-0003/artifacts/APK_SHA256.txt
@@ -232,7 +225,7 @@ jobs:
         run: |
           mkdir -p projects/GME-2026-0003/artifacts
           {
-            echo "Turbo Rush v1.7.0"
+            echo "Turbo Rush v1.7.1"
             echo "Godot 4.7.2"
             echo "JDK Temurin 17"
             echo "Android platform 34 + 36"
@@ -242,6 +235,7 @@ jobs:
             echo "54 cars / 60 wheels / 54 skins / 48 cards"
             echo "External billing disabled; no Aptoide Connect integration"
             echo "Release APK + release AAB + Web export generated in CI"
+            echo "Aptoide Connect removed; in-app purchases removed"
           } > projects/GME-2026-0003/artifacts/BUILD_INFO.txt
           cp /tmp/turbo-import.log projects/GME-2026-0003/artifacts/import.log
           test -f /tmp/turbo-smoke.log && cp /tmp/turbo-smoke.log projects/GME-2026-0003/artifacts/smoke.log || true
@@ -253,10 +247,10 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Turbo-Rush-v1.7.0-release
+          name: Turbo-Rush-v1.7.1-release
           path: |
-            projects/GME-2026-0003/artifacts/TurboRush-v1.6.0-release.apk
-            projects/GME-2026-0003/artifacts/TurboRush-v1.6.0-release.aab
+            projects/GME-2026-0003/artifacts/TurboRush-v1.7.1-release.apk
+            projects/GME-2026-0003/artifacts/TurboRush-v1.7.1-release.aab
             projects/GME-2026-0003/artifacts/APK_BADGING.txt
             projects/GME-2026-0003/artifacts/APK_SIGNING.txt
             projects/GME-2026-0003/artifacts/APK_SHA256.txt
@@ -268,7 +262,7 @@ jobs:
             projects/GME-2026-0003/artifacts/export_release_apk.log
             projects/GME-2026-0003/artifacts/export_release_aab.log
             projects/GME-2026-0003/artifacts/export_web.log
-            projects/GME-2026-0003/artifacts/TurboRush-v1.6.0-web.zip
+            projects/GME-2026-0003/artifacts/TurboRush-v1.7.1-web.zip
           if-no-files-found: error
 
       - name: Upload generated signing bootstrap
