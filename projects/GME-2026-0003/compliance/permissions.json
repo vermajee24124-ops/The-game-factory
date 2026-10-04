@@ -1,6 +1,6 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "project_id": "GME-2026-0003",
   "core_runtime_permissions": [],
-  "notes": "Native ad, billing, consent and platform SDK integrations may add permissions; re-audit before release."
+  "notes": "The base game requests no dangerous or sensitive permission. The Android advertising adapter uses network access when the player has allowed optional advertising."
 }
