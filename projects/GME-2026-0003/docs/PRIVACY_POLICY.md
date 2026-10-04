@@ -1,6 +1,6 @@
 # Turbo Rush Privacy Policy
 
-**Last updated: 1 October 2026**
+**Last updated: 4 October 2026**
 
 Turbo Rush is an offline-first mobile racing game.
 
@@ -10,13 +10,9 @@ Turbo Rush stores game progress, settings, race statistics, currency balances an
 
 ## Advertising
 
-When Unity Ads is enabled in a release build, the app may request advertising services. Advertising behavior depends on the user's consent and the applicable privacy framework. The app should pass the appropriate consent and age-related signals to Unity Ads before or during initialization.
+When Unity Ads is enabled in a release build, the app may request advertising services. Advertising behavior depends on the user's consent and the applicable privacy framework. The app records a local choice for optional non-personalized advertising before the native advertising adapter initializes.
 
-The game may use contextual advertising when personalized advertising is not permitted or not selected.
-
-## Purchases
-
-Turbo Rush 1.6.0 does not include in-app purchases or an external billing service.
+The game does not enable personalized advertising in its current configuration.
 
 ## Notifications
 
@@ -34,4 +30,4 @@ Unity Ads is a third-party advertising service when its native adapter is enable
 
 ## Changes
 
-This policy may be updated when the app's data, advertising, billing or notification behavior changes.
+This policy may be updated when the app's data, advertising or notification behavior changes.
