@@ -11,8 +11,12 @@ const WHITE := Color("#EAF4FF")
 
 const HERO_PATH := "res://assets/studio/race-future.glb"
 const HERO_ALT_PATH := "res://assets/studio/sedan-sports.glb"
+const HERO_SPORT_PATH := "res://assets/studio/hatchback-sports.glb"
+const HERO_SUV_PATH := "res://assets/studio/suv-luxury.glb"
 const BUILDING_PATH := "res://assets/studio/building-c.glb"
 const SKYSCRAPER_PATH := "res://assets/studio/building-skyscraper-b.glb"
+const SUBURBAN_BUILDING_PATH := "res://assets/studio/building-type-a.glb"
+const INDUSTRIAL_PROP_PATH := "res://assets/studio/shipping-container-a.glb"
 const LIGHT_PATH := "res://assets/studio/light-square-double.glb"
 const STAND_PATH := "res://assets/studio/grandStandCovered.glb"
 const BARRIER_PATH := "res://assets/studio/barrierRed.glb"
@@ -67,10 +71,19 @@ func enhance_menu(stage:Node3D) -> void:
     var car_scene:PackedScene = _optional_scene(HERO_PATH)
     if existing_car:
         var selected := str(existing_car.get("name"))
-        if not selected.is_empty() and abs(selected.hash()) % 3 == 1:
+        var variant := abs(selected.hash()) % 4
+        if variant == 1:
             var alt := _optional_scene(HERO_ALT_PATH)
             if alt:
                 car_scene = alt
+        elif variant == 2:
+            var sport := _optional_scene(HERO_SPORT_PATH)
+            if sport:
+                car_scene = sport
+        elif variant == 3:
+            var suv := _optional_scene(HERO_SUV_PATH)
+            if suv:
+                car_scene = suv
 
     var car := car_scene.instantiate() as Node3D
     if car:
@@ -163,6 +176,8 @@ func _dress_with_cc0_assets(g:Node3D, points:Array, widths:Array, env:String) ->
 
     var building := _optional_scene(BUILDING_PATH)
     var skyscraper := _optional_scene(SKYSCRAPER_PATH)
+    var suburban_building := _optional_scene(SUBURBAN_BUILDING_PATH)
+    var industrial_prop := _optional_scene(INDUSTRIAL_PROP_PATH)
     var road_light := _optional_scene(LIGHT_PATH)
     var stand := _optional_scene(STAND_PATH)
     var barrier := _optional_scene(BARRIER_PATH)
@@ -182,6 +197,19 @@ func _dress_with_cc0_assets(g:Node3D, points:Array, widths:Array, env:String) ->
             var sample := _sample(points, widths, idx)
             var packed:PackedScene = skyscraper if n % 2 == 0 else building
             _add_asset(asset_root, packed, sample["position"], sample["side"], float(sample["width"]), 0.0, 5.6 if n % 2 == 0 else 7.2, -1.0 if n % 2 == 0 else 1.0, n)
+            count += 1
+
+    if env == "industrial_night":
+        for n in range(4):
+            var idx := clampi(int(float(n + 1) * float(points.size() - 1) / 5.0), 4, points.size() - 4)
+            var sample := _sample(points, widths, idx)
+            _add_asset(asset_root, industrial_prop, sample["position"], sample["side"], float(sample["width"]), 0.0, 1.7, -1.0 if n % 2 == 0 else 1.0, 40 + n)
+            count += 1
+    elif env in ["mountain_pass", "snowline", "desert_canyon"]:
+        for n in range(4):
+            var idx := clampi(int(float(n + 1) * float(points.size() - 1) / 5.0), 4, points.size() - 4)
+            var sample := _sample(points, widths, idx)
+            _add_asset(asset_root, suburban_building, sample["position"], sample["side"], float(sample["width"]), 0.0, 2.6, -1.0 if n % 2 == 0 else 1.0, 55 + n)
             count += 1
 
     if highway:
