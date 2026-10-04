@@ -45,6 +45,10 @@ var loading_screen:Control
 var loading_logo:TextureRect
 var loading_status:Label
 var loading_progress:ProgressBar
+var loading_continue:Button
+var startup_active:=false
+var startup_elapsed:=0.0
+var minimap:Control
 var position_label:Label
 var progress_bar:ProgressBar
 var boost_bar:ProgressBar
@@ -96,21 +100,19 @@ func _ready()->void:
     HapticsSystem.enabled=bool(SaveSystem.data["settings"]["haptics_enabled"])
     _setup_world()
     _build_menu_stage()
-    StudioPolish.enhance_menu(menu_stage)
     _setup_ui()
 
+    # Do not load heavy GLB assets or initialize native ads before first paint.
+    # The previous boot path could leave slower Android devices on the loading screen.
     if OS.has_feature("web"):
-        WebAdsManager.init()
-        AdsManager.init()
-        await _run_startup_sequence()
+        _begin_startup_sequence()
         return
 
     var consent_status := str(SaveSystem.data.get("privacy", {}).get("consent_status", "unknown"))
     if consent_status == "unknown":
         _show_privacy()
     else:
-        AdsManager.init()
-        await _run_startup_sequence()
+        _begin_startup_sequence()
 
 func _setup_world()->void:
     world_root=Node3D.new()
@@ -536,8 +538,7 @@ func _build_privacy()->void:
         SaveSystem.data["privacy"]["personalized_ads"]=false
         SaveSystem.data["privacy"]["consent_timestamp_unix"]=Time.get_unix_time_from_system()
         SaveSystem.save_now()
-        AdsManager.init()
-        await _run_startup_sequence()
+        _begin_startup_sequence()
     )
 
     var deny:=_button(p,"CONTINUE WITHOUT ADS",Vector2(650,82),false)
@@ -548,7 +549,7 @@ func _build_privacy()->void:
         SaveSystem.data["privacy"]["consent_timestamp_unix"]=Time.get_unix_time_from_system()
         SaveSystem.save_now()
         AdsManager.set_online(false)
-        await _run_startup_sequence()
+        _begin_startup_sequence()
     )
 
     var note:=_label(p,"Choice: non-personalized ads only. No purchases or external billing are used.",20,palette.secondary)
@@ -600,16 +601,26 @@ func _build_loading_screen()->void:
     loading_progress.show_percentage=false
     loading_screen.add_child(loading_progress)
 
-func _run_startup_sequence()->void:
+    loading_continue=_button(loading_screen,"CONTINUE",Vector2(280,64),true)
+    loading_continue.position=Vector2(820,955)
+    loading_continue.add_theme_font_size_override("font_size",20)
+    loading_continue.pressed.connect(func():_finish_startup_sequence(true))
+
+func _begin_startup_sequence()->void:
+    if startup_active:
+        return
+    startup_active=true
+    startup_elapsed=0.0
     _show_only("main_menu")
     for k in screens.keys():
         screens[k].visible=false
     if loading_screen:
         loading_screen.visible=true
+    call_deferred("_run_startup_sequence")
 
-    # Ads may appear only while this startup/loading screen is active.
-    # The native adapter must itself confirm connectivity and consent.
-    AdsManager.show_loading_banners()
+func _run_startup_sequence()->void:
+    if not startup_active:
+        return
 
     var steps=[
         ["LOADING TURBO RUSH...",10],
@@ -619,21 +630,50 @@ func _run_startup_sequence()->void:
         ["READY TO RACE",100]
     ]
     for step in steps:
+        if not startup_active:
+            return
         loading_status.text=str(step[0])
         loading_progress.value=float(step[1])
-        await get_tree().create_timer(0.34).timeout
+        await get_tree().process_frame
+        await get_tree().process_frame
 
-    # Never make the player wait for an ad response.
-    AdsManager.hide_loading_banners()
-    loading_screen.visible=false
+    _finish_startup_sequence(false)
 
-    if not bool(SaveSystem.data["profile"].get("onboarding_completed", false)):
+func _finish_startup_sequence(skipped:bool)->void:
+    if not startup_active:
+        return
+    startup_active=false
+    if loading_screen:
+        loading_screen.visible=false
+
+    if OS.has_feature("web"):
+        WebAdsManager.init()
+        AdsManager.init()
+    else:
+        var consent_status:=str(SaveSystem.data.get("privacy",{}).get("consent_status","unknown"))
+        if consent_status=="non_personalized":
+            call_deferred("_init_ads_after_boot")
+
+    if not bool(SaveSystem.data["profile"].get("onboarding_completed",false)):
         _show_onboarding()
     else:
         _show_main_menu()
 
+    # Heavy studio assets are deliberately post-boot work.
+    call_deferred("_activate_studio_showroom")
+
+func _init_ads_after_boot()->void:
+    AdsManager.init()
+
+func _activate_studio_showroom()->void:
+    await get_tree().process_frame
+    if startup_active or menu_stage==null or not is_instance_valid(menu_stage):
+        return
+    if current_screen=="main_menu" or current_screen=="onboarding":
+        StudioPolish.enhance_menu(menu_stage)
+
+
 func _show_main_menu()->void:
-    AdsManager.hide_loading_banners()
     var selected_id:=str(SaveSystem.data["progression"]["cars"]["selected"])
     var selected_car:Dictionary=GameConfig.car(selected_id)
     if menu_car and is_instance_valid(menu_car):
@@ -678,6 +718,7 @@ func _build_onboarding()->void:
 func _build_main_menu()->void:
     var c:=_new_screen("main_menu","TURBO RUSH")
     var p:Control=c.get_node("Panel")
+    p.add_theme_stylebox_override("panel",_style(Color(0.043,0.063,0.125,0.78),0))
 
     var logo:=TextureRect.new()
     logo.name="MenuLogo"
@@ -934,6 +975,17 @@ func _build_race_hud()->void:
     var boost:=_button(hud,"BOOST",Vector2(200,118),true)
     boost.position=Vector2(1600,735)
     boost.pressed.connect(func():_try_boost())
+
+    var mini_title:=_label(hud,"TRACK",17,palette.muted)
+    mini_title.position=Vector2(1518,126)
+    mini_title.size=Vector2(280,26)
+    mini_title.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
+
+    minimap=preload("res://ui/Minimap.gd").new()
+    minimap.position=Vector2(1515,154)
+    minimap.size=Vector2(285,220)
+    minimap.mouse_filter=Control.MOUSE_FILTER_IGNORE
+    hud.add_child(minimap)
 
     var pause:=_button(hud,"Ⅱ",Vector2(88,64),false)
     pause.position=Vector2(38,122)
@@ -1301,6 +1353,9 @@ func _start_race(level:int)->void:
     RaceSession.reset(current_level,level_def)
     _clear_race_world()
     _build_race_world()
+    if minimap:
+        minimap.set_track(path_points)
+        minimap.set_progress(0.0,float(level_def.track_length_m))
     state="COUNTDOWN"
     RaceSession.state="COUNTDOWN"
     countdown_clock=0.0
@@ -2011,6 +2066,11 @@ func _process(delta:float)->void:
     if menu_car and is_instance_valid(menu_car) and current_screen!="race":
         menu_spin+=delta
         menu_car.rotation.y=deg_to_rad(-28.0)+sin(menu_spin*0.32)*0.12
+    if startup_active and loading_screen and loading_screen.visible:
+        startup_elapsed+=delta
+        if startup_elapsed>=6.0:
+            _finish_startup_sequence(true)
+
     if impact_shake>0.0:
         impact_shake=maxf(0.0,impact_shake-delta*4.0)
     for i in range(pickups.size()):
@@ -2098,6 +2158,8 @@ func _update_race(delta:float)->void:
     position_label.text="%d/6" % live_position
     position_label.add_theme_color_override("font_color",palette.success if live_position==1 else (palette.warning if live_position>=5 else palette.text))
     progress_bar.value=player_progress/float(level_def.track_length_m)
+    if minimap:
+        minimap.set_progress(player_progress,float(level_def.track_length_m))
     boost_bar.value=boost_energy
     damage_bar.value=damage
     coin_label.text="COINS %d" % RaceSession.track_coins_collected
