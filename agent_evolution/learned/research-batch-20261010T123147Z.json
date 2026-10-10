@@ -1,0 +1,73 @@
+{
+  "generated_at": "20261010T123147Z",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "skills": [
+    {
+      "name": "character_body_kinematic_controller",
+      "domain": "2D/3D Physics & Movement",
+      "skill": "Implement robust kinematic character controllers with slope handling, floor snapping, and wall collisions using Godot 4 CharacterBody nodes.",
+      "tools": [
+        "godot_cli",
+        "gdscript_runtime",
+        "project_settings"
+      ],
+      "procedure": "1. Extend CharacterBody3D or CharacterBody2D in GDScript.\n2. In _physics_process(delta), calculate desired horizontal velocity using input vectors and lerp/move_toward for acceleration/deceleration.\n3. Apply gravity to velocity.y when not is_on_floor() using ProjectSettings.get_setting('physics/3d/default_gravity') or a custom gravity constant.\n4. Configure floor parameters: floor_stop_on_slope, floor_max_angle, and floor_snap_length.\n5. Call move_and_slide() without parameters (Godot 4 mutates internal velocity).\n6. Query get_slide_collision_count() and get_slide_collision() to react to collisions or moving platforms.",
+      "verification": "Execute scene in headless mode for 120 frames using a virtual input runner. Assert is_on_floor() returns true on ground and horizontal position matches expected displacement without jitter.",
+      "pitfalls": "Do not pass velocity as an argument to move_and_slide() (deprecated from Godot 3). Forgetting to adjust floor_snap_length can cause jumping glitches or failure to snap when walking down slopes.",
+      "benchmark_prompt": "Create a CharacterBody3D controller in GDScript that walks on uneven terrain (up to 45 degree slope) without sliding down when idle, snaps to steps within 0.2m, and jumps only when is_on_floor() is true."
+    },
+    {
+      "name": "animation_tree_state_machine_setup",
+      "domain": "Animation & Skeletal Control",
+      "skill": "Author complex state-driven character animations via AnimationTree and AnimationNodeStateMachine playback.",
+      "tools": [
+        "godot_cli",
+        "gdscript_runtime"
+      ],
+      "procedure": "1. Instance an AnimationPlayer node with registered animations and an AnimationTree node pointing to the player's tree_root.\n2. Set the tree_root to an AnimationNodeStateMachine and set active = true on the AnimationTree.\n3. Add AnimationNodeAnimation or blend spaces to the state machine.\n4. Define transitions using AnimationNodeStateMachineTransition, configuring xfade_time and advance_mode (INPUT or AUTO).\n5. Retrieve the playback object in script via $AnimationTree.get('parameters/playback') typed as AnimationNodeStateMachinePlayback.\n6. Drive states via playback.travel('StateName') or direct property assignments.",
+      "verification": "Trigger animation states programmatically. Assert playback.get_current_node() transitions to the target state within the expected xfade duration.",
+      "pitfalls": "Failing to set tree.active = true prevents playback. Accessing parameters/playback before the tree enters the scene tree causes null reference errors.",
+      "benchmark_prompt": "Construct a programmatic AnimationTree on a character model that contains 'Idle', 'Run', and 'Jump' states in an AnimationNodeStateMachine. Write a GDScript harness verifying seamless transition from Idle to Run on simulated velocity > 0.1."
+    },
+    {
+      "name": "astar_grid_pathfinding_2d",
+      "domain": "AI & Navigation",
+      "skill": "Build fast 2D grid pathfinding using AStarGrid2D with obstacle baking and dynamic avoidance.",
+      "tools": [
+        "godot_cli",
+        "gdscript_runtime"
+      ],
+      "procedure": "1. Instantiate AStarGrid2D.\n2. Define region: set size, cell_size, and offset.\n3. Configure default diagonal mode via diagonal_mode (e.g., DIAGONAL_MODE_NEVER or DIAGONAL_MODE_AT_LEAST_ONE_WALKABLE).\n4. Call update() to allocate the grid structure.\n5. Mark non-walkable tiles using set_point_solid(Vector2i, true) according to TileMap or physics layers.\n6. Calculate path using get_point_path(start_coord, end_coord) or get_id_path(start_coord, end_coord) convertable to world space via global grid offsets.",
+      "verification": "Compute a path between two coordinates obstructed by a solid U-shaped wall. Assert that returned path points bypass the wall and none match any solid coordinate.",
+      "pitfalls": "Calling get_point_path() before calling update() results in empty paths. Using world coordinates instead of Vector2i grid coordinates directly with get_point_path causes invalid lookups unless converted.",
+      "benchmark_prompt": "Write a GDScript utility class that initializes an AStarGrid2D for a 32x32 world (cell size 16x16), marks a 5-cell wall as solid, and computes the shortest valid path between opposite sides."
+    },
+    {
+      "name": "polyphonic_audio_sfx_pool",
+      "domain": "Audio Systems",
+      "skill": "Manage high-performance, low-latency concurrent sound effects using AudioStreamPolyphonic and AudioStreamPlaybackPolyphonic.",
+      "tools": [
+        "godot_cli",
+        "gdscript_runtime"
+      ],
+      "procedure": "1. Create an AudioStreamPlayer node and assign an AudioStreamPolyphonic resource to its stream property.\n2. Set polyphony limit on the AudioStreamPolyphonic resource (e.g., polyphony = 32).\n3. Play the AudioStreamPlayer on ready to initiate the polyphonic playback pipeline.\n4. Retrieve playback via player.get_stream_playback() typed as AudioStreamPlaybackPolyphonic.\n5. Trigger one-off sound effects using playback.play_stream(sound_resource, from_offset, volume_db, pitch_scale).\n6. Cache returned stream playback IDs to allow runtime attenuation, pitch shifting, or early stopping via playback.stop_stream(id).",
+      "verification": "Trigger 16 concurrent sounds in a single frame. Assert no node duplication occurs and AudioServer reports active playback without dropouts or errors in engine logs.",
+      "pitfalls": "Calling play_stream() before calling AudioStreamPlayer.play() will raise an error because the playback object is null or not active. Re-creating AudioStreamPlayer nodes instead of using polyphonic streams leads to node thrashing and audio pops.",
+      "benchmark_prompt": "Implement an AudioManager class in GDScript using AudioStreamPolyphonic that can trigger overlapping impact sounds with randomized pitch (0.9 to 1.1) and provides a method to immediately mute/stop a specific sound instance ID."
+    },
+    {
+      "name": "area_detector_overlap_query",
+      "domain": "2D/3D Physics & Collision",
+      "skill": "Implement collision query triggers and spatial queries using Area3D/Area2D with accurate layer masking.",
+      "tools": [
+        "godot_cli",
+        "gdscript_runtime"
+      ],
+      "procedure": "1. Create an Area3D (or Area2D) node with child CollisionShape3D.\n2. Explicitly define collision_layer and collision_mask bitmasks using bit shifts (1 << layer_index) or set_collision_mask_value(layer_index, true).\n3. Set monitoring = true to detect other bodies/areas, and monitorable = true if other areas need to detect this node.\n4. Connect signals body_entered, body_exited, area_entered, or area_exited to handling callables.\n5. When immediate state checks are needed, call get_overlapping_bodies() or get_overlapping_areas() instead of relying exclusively on asynchronous signals.",
+      "verification": "Spawn an Area3D and a CharacterBody3D on matched layers. Step the physics simulation using PhysicsServer3D or scene stepping. Verify body_entered fires and get_overlapping_bodies() contains the CharacterBody3D.",
+      "pitfalls": "Layer indexing in UI is 1-based (Layer 1 to 32) while bitmask shifting in code is 0-based ((1 << (layer - 1))). get_overlapping_bodies() returns an empty array on the exact frame an Area is instanced before the physics frame steps.",
+      "benchmark_prompt": "Configure an Area3D trigger zone in GDScript that only monitors collision layer 3, ignores layer 1, and emits a custom signal 'player_detected(player: CharacterBody3D)' whenever a valid player enters."
+    }
+  ]
+}
