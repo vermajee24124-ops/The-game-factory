@@ -1,0 +1,1194 @@
+{
+  "generated_at": "20261010T214424Z",
+  "model": "offline-fallback",
+  "provider": "local-extractor",
+  "skills": [
+    {
+      "name": "curriculum_2d",
+      "domain": "2D",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for 2D tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 2D task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "AStar2D",
+        "AStarGrid2D",
+        "AnimatableBody2D",
+        "AnimatedSprite2D",
+        "AnimatedTexture",
+        "AnimationNodeBlendSpace2D",
+        "Area2D",
+        "AtlasTexture",
+        "AudioListener2D",
+        "AudioStreamPlayer2D",
+        "BackBufferCopy",
+        "Bone2D",
+        "CPUParticles2D",
+        "Camera2D",
+        "CameraTexture",
+        "CanvasGroup",
+        "CanvasModulate",
+        "CanvasTexture",
+        "CapsuleShape2D",
+        "CharacterBody2D"
+      ]
+    },
+    {
+      "name": "curriculum_3d",
+      "domain": "3D",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for 3D tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 3D task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "AStar3D",
+        "AimModifier3D",
+        "AnimatableBody3D",
+        "AnimatedSprite3D",
+        "Area3D",
+        "AreaLight3D",
+        "ArrayOccluder3D",
+        "AudioListener3D",
+        "AudioStreamPlayer3D",
+        "BaseMaterial3D",
+        "BoneAttachment3D",
+        "BoneConstraint3D",
+        "BoneTwistDisperser3D",
+        "BoxOccluder3D",
+        "BoxShape3D",
+        "CCDIK3D",
+        "CPUParticles3D",
+        "Camera3D",
+        "CapsuleShape3D",
+        "ChainIK3D"
+      ]
+    },
+    {
+      "name": "curriculum_rendering",
+      "domain": "Rendering",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Rendering tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Rendering task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "PhysicsServer3DRenderingServerHandler",
+        "RenderingDevice",
+        "RenderingServer"
+      ]
+    },
+    {
+      "name": "curriculum_physics",
+      "domain": "Physics",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Physics tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Physics task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "CharacterBody2D",
+        "CharacterBody3D",
+        "PhysicalBone3D",
+        "PhysicsBody2D",
+        "PhysicsBody3D",
+        "PhysicsDirectBodyState2D",
+        "PhysicsDirectBodyState2DExtension",
+        "PhysicsDirectBodyState3D",
+        "PhysicsDirectBodyState3DExtension",
+        "PhysicsDirectSpaceState2D",
+        "PhysicsDirectSpaceState2DExtension",
+        "PhysicsDirectSpaceState3D",
+        "PhysicsDirectSpaceState3DExtension",
+        "PhysicsMaterial",
+        "PhysicsPointQueryParameters2D",
+        "PhysicsPointQueryParameters3D",
+        "PhysicsRayQueryParameters2D",
+        "PhysicsRayQueryParameters3D",
+        "PhysicsServer2D",
+        "PhysicsServer2DExtension"
+      ]
+    },
+    {
+      "name": "curriculum_animation",
+      "domain": "Animation",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Animation tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Animation task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "Animation",
+        "AnimationLibrary",
+        "AnimationMixer",
+        "AnimationNode",
+        "AnimationNodeAdd2",
+        "AnimationNodeAdd3",
+        "AnimationNodeAnimation",
+        "AnimationNodeBlend2",
+        "AnimationNodeBlend3",
+        "AnimationNodeBlendSpace1D",
+        "AnimationNodeBlendSpace2D",
+        "AnimationNodeBlendTree",
+        "AnimationNodeExtension",
+        "AnimationNodeOneShot",
+        "AnimationNodeOutput",
+        "AnimationNodeStateMachine",
+        "AnimationNodeStateMachinePlayback",
+        "AnimationNodeStateMachineTransition",
+        "AnimationNodeSub2",
+        "AnimationNodeSync"
+      ]
+    },
+    {
+      "name": "curriculum_audio",
+      "domain": "Audio",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Audio tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Audio task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "AudioBusLayout",
+        "AudioEffect",
+        "AudioEffectAmplify",
+        "AudioEffectBandLimitFilter",
+        "AudioEffectBandPassFilter",
+        "AudioEffectCapture",
+        "AudioEffectChorus",
+        "AudioEffectCompressor",
+        "AudioEffectDelay",
+        "AudioEffectDistortion",
+        "AudioEffectEQ",
+        "AudioEffectEQ10",
+        "AudioEffectEQ21",
+        "AudioEffectEQ6",
+        "AudioEffectFilter",
+        "AudioEffectHardLimiter",
+        "AudioEffectHighPassFilter",
+        "AudioEffectHighShelfFilter",
+        "AudioEffectInstance",
+        "AudioEffectLimiter"
+      ]
+    },
+    {
+      "name": "curriculum_ui",
+      "domain": "UI",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for UI tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 UI task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "ResourceUID"
+      ]
+    },
+    {
+      "name": "curriculum_navigation",
+      "domain": "Navigation",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Navigation tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Navigation task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "NavigationAgent2D",
+        "NavigationAgent3D",
+        "NavigationLink2D",
+        "NavigationLink3D",
+        "NavigationMesh",
+        "NavigationMeshGenerator",
+        "NavigationMeshSourceGeometryData2D",
+        "NavigationMeshSourceGeometryData3D",
+        "NavigationObstacle2D",
+        "NavigationObstacle3D",
+        "NavigationPathQueryParameters2D",
+        "NavigationPathQueryParameters3D",
+        "NavigationPathQueryResult2D",
+        "NavigationPathQueryResult3D",
+        "NavigationPolygon",
+        "NavigationRegion2D",
+        "NavigationRegion3D",
+        "NavigationServer2D",
+        "NavigationServer2DManager",
+        "NavigationServer3D"
+      ]
+    },
+    {
+      "name": "curriculum_shaders",
+      "domain": "Shaders",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Shaders tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Shaders task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "RDShaderSPIRV",
+        "RDShaderSource"
+      ]
+    },
+    {
+      "name": "curriculum_materials",
+      "domain": "Materials",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Materials tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Materials task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": []
+    },
+    {
+      "name": "curriculum_particles",
+      "domain": "Particles",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Particles tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Particles task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "CPUParticles2D",
+        "CPUParticles3D",
+        "GPUParticles2D",
+        "GPUParticles3D",
+        "GPUParticlesAttractor3D",
+        "GPUParticlesAttractorBox3D",
+        "GPUParticlesAttractorSphere3D",
+        "GPUParticlesAttractorVectorField3D",
+        "GPUParticlesCollision3D",
+        "GPUParticlesCollisionBox3D",
+        "GPUParticlesCollisionHeightField3D",
+        "GPUParticlesCollisionSDF3D",
+        "GPUParticlesCollisionSphere3D"
+      ]
+    },
+    {
+      "name": "curriculum_import",
+      "domain": "Import",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Import tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Import task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "EditorFileSystemImportFormatSupportQuery",
+        "EditorImportPlugin",
+        "EditorSceneFormatImporter",
+        "EditorScenePostImport",
+        "EditorScenePostImportPlugin",
+        "ImporterMesh",
+        "ImporterMeshInstance3D",
+        "ResourceImporter",
+        "ResourceImporterBMFont",
+        "ResourceImporterBitMap",
+        "ResourceImporterCSVTranslation",
+        "ResourceImporterDynamicFont",
+        "ResourceImporterImage",
+        "ResourceImporterImageFont",
+        "ResourceImporterLayeredTexture",
+        "ResourceImporterOBJ",
+        "ResourceImporterSVG",
+        "ResourceImporterScene",
+        "ResourceImporterShaderFile",
+        "ResourceImporterTexture"
+      ]
+    },
+    {
+      "name": "curriculum_export",
+      "domain": "Export",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Export tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Export task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "EditorExportPlatform",
+        "EditorExportPlatformAppleEmbedded",
+        "EditorExportPlatformExtension",
+        "EditorExportPlatformPC",
+        "EditorExportPlugin",
+        "EditorExportPreset"
+      ]
+    },
+    {
+      "name": "curriculum_networking",
+      "domain": "Networking",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Networking tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Networking task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": []
+    },
+    {
+      "name": "curriculum_multiplayer",
+      "domain": "Multiplayer",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Multiplayer tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Multiplayer task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "MultiplayerAPI",
+        "MultiplayerAPIExtension",
+        "MultiplayerPeer",
+        "MultiplayerPeerExtension"
+      ]
+    },
+    {
+      "name": "curriculum_xr",
+      "domain": "XR",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for XR tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 XR task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "XRAnchor3D",
+        "XRBodyModifier3D",
+        "XRBodyTracker",
+        "XRCamera3D",
+        "XRController3D",
+        "XRControllerTracker",
+        "XRFaceModifier3D",
+        "XRFaceTracker",
+        "XRHandModifier3D",
+        "XRHandTracker",
+        "XRInterface",
+        "XRInterfaceExtension",
+        "XRNode3D",
+        "XROrigin3D",
+        "XRPose",
+        "XRPositionalTracker",
+        "XRServer",
+        "XRTracker",
+        "XRVRS"
+      ]
+    },
+    {
+      "name": "curriculum_gdscript",
+      "domain": "GDScript",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for GDScript tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 GDScript task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": []
+    },
+    {
+      "name": "curriculum_editor",
+      "domain": "Editor",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Editor tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Editor task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "EditorCommandPalette",
+        "EditorContextMenuPlugin",
+        "EditorDebuggerPlugin",
+        "EditorDebuggerSession",
+        "EditorDock",
+        "EditorExportPlatform",
+        "EditorExportPlatformAppleEmbedded",
+        "EditorExportPlatformExtension",
+        "EditorExportPlatformPC",
+        "EditorExportPlugin",
+        "EditorExportPreset",
+        "EditorFeatureProfile",
+        "EditorFileDialog",
+        "EditorFileSystem",
+        "EditorFileSystemDirectory",
+        "EditorFileSystemImportFormatSupportQuery",
+        "EditorImportPlugin",
+        "EditorInspector",
+        "EditorInspectorPlugin",
+        "EditorInterface"
+      ]
+    },
+    {
+      "name": "curriculum_debugging",
+      "domain": "Debugging",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Debugging tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Debugging task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": []
+    },
+    {
+      "name": "curriculum_profiling",
+      "domain": "Profiling",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Profiling tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Profiling task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": []
+    },
+    {
+      "name": "curriculum_optimization",
+      "domain": "Optimization",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Optimization tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Optimization task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": []
+    },
+    {
+      "name": "curriculum_asset_pipeline",
+      "domain": "Asset Pipeline",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Asset Pipeline tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Asset Pipeline task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": []
+    },
+    {
+      "name": "curriculum_cli",
+      "domain": "CLI",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for CLI tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 CLI task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": [
+        "HTTPClient"
+      ]
+    },
+    {
+      "name": "curriculum_plugins",
+      "domain": "Plugins",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Plugins tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Plugins task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": []
+    },
+    {
+      "name": "curriculum_mcp",
+      "domain": "MCP",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for MCP tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 MCP task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": []
+    },
+    {
+      "name": "curriculum_runtime_automation",
+      "domain": "Runtime Automation",
+      "skill": "Use verified Godot 4.7.2 API evidence and live ClassDB inspection for Runtime Automation tasks; prefer small verified edits and escalate uncertain work.",
+      "tools": [
+        "godot.api.summary",
+        "godot.api.query_classes",
+        "godot.api.class_info",
+        "project.summary",
+        "scene.tree",
+        "scene.node_info",
+        "scene.verify_property",
+        "scene.save"
+      ],
+      "procedure": [
+        "Identify the relevant Godot domain.",
+        "Inspect the current project and live API.",
+        "Select only the required executable tools.",
+        "Apply the smallest change.",
+        "Read back the result and save the scene when appropriate.",
+        "Run a smoke test for meaningful changes."
+      ],
+      "verification": [
+        "The requested target exists.",
+        "The used class/property/method is present in live ClassDB when applicable.",
+        "The final scene/project state matches the request.",
+        "No unrelated files or nodes changed."
+      ],
+      "pitfalls": [
+        "Never invent Godot APIs.",
+        "Do not assume a community addon is built in.",
+        "Do not skip read-back verification after writes.",
+        "Escalate complex multimodal or architecture tasks."
+      ],
+      "benchmark_prompt": "Complete a representative Godot 4.7.2 Runtime Automation task using API inspection, minimal edits, verification and save.",
+      "curriculum_class_examples": []
+    }
+  ]
+}
