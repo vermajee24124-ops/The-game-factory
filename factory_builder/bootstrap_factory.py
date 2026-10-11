@@ -23,7 +23,7 @@ TARGETS = [
  ("game_factory/cli.py", "CLI supports --idea, --phase, --state-path, --budget-minutes, --resume and --max-cycles; dispatches to orchestrator and exits nonzero on required test failure."),
  ("games/01_runner_classic/project.godot", "Valid Godot 4.7.2 project.godot for an original procedural 3D runner demo; main scene res://scenes/Main.tscn; Compatibility renderer."),
  ("games/01_runner_classic/scenes/Main.tscn", "Valid Godot 4.7.2 scene with coherent stylized procedural track, camera, light, player, obstacles and res://scripts/main.gd."),
- ("games/01_runner_classic/scripts/main.gd", "Valid playable GDScript 3D runner: move forward, lane/jump/dodge controls, obstacle collision/restart, score HUD, coherent materials and camera; no copied IP/external assets.")
+ ("games/01_runner_classic/scripts/main.gd", "Valid playable Godot 4.7 GDScript 3D runner: forward movement, lane/jump/dodge controls, obstacle collision/restart, score HUD, coherent materials/camera and original procedural demo sound. Generate an AudioStreamPlayer, load res://assets/demo_sfx.wav, play it at startup and trigger it on a gameplay action. This WAV is procedurally created by factory_builder/generate_demo_audio.py. No copied IP/external assets.")
 ]
 SPECS = {
  "01_GAME_DESIGN_DOCUMENT.md": "# Game Design Document\n\nIdea: {idea}\n\nDefine core loop, controls, audience, progression, fail/retry/reward and at least three original evolutions. Never clone a named game.",
