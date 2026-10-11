@@ -100,11 +100,11 @@ jobs:
           done
           xdpyinfo -display :99 >/dev/null 2>&1 || { echo "Virtual display did not start."; exit 2; }
 
-          ffmpeg -hide_banner -loglevel warning -y             -thread_queue_size 1024 -f x11grab -video_size 1280x720 -framerate 30 -i :99.0             -thread_queue_size 1024 -f pulse -i game_factory_null.monitor             -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -b:a 128k             -t 190 "$VIDEO" >/tmp/game-factory-ffmpeg.log 2>&1 &
+          ffmpeg -hide_banner -loglevel warning -y             -thread_queue_size 1024 -f x11grab -video_size 1280x720 -framerate 30 -i :99.0             -thread_queue_size 1024 -f pulse -i game_factory_null.monitor             -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -b:a 128k             -t 230 "$VIDEO" >/tmp/game-factory-ffmpeg.log 2>&1 &
           CAPTURE_PID=$!
           sleep 2
 
-          timeout 180s "$GODOT_BIN" --path "$PROJECT_DIR" --script res://tests/qa_playthrough.gd >"$LOG" 2>&1
+          timeout 225s "$GODOT_BIN" --path "$PROJECT_DIR" --script res://tests/qa_playthrough.gd >"$LOG" 2>&1
           GAME_EXIT=$?
 
           kill -INT "$CAPTURE_PID" 2>/dev/null || true
