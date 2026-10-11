@@ -11,8 +11,8 @@ patterns = [
     re.compile(r"(?i)-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
     re.compile(r"(?i)(?:api[_-]?key|secret|token|password)\s*[:=]\s*['\"][^'\"]{16,}['\"]"),
     re.compile(r"(?i)sk-[A-Za-z0-9_-]{16,}"),
-    re.compile(r"(?i)AIza[0-9A-Za-z_-]{20,}"),
-    re.compile(r"(?i)gh[pousr]_[A-Za-z0-9_]{20,}"),
+    re.compile(r"(?i)" + "AI" + "za" + r"[0-9A-Za-z_-]{20,}"),
+    re.compile(r"(?i)gh[pousr]" + "_" + r"[A-Za-z0-9_]{20,}"),
 ]
 
 problems=[]
