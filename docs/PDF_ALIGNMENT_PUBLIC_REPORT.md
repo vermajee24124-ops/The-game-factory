@@ -88,7 +88,7 @@ Policy:
 - `research/final_gameplay_qa.py` and `.github/workflows/final-gameplay-qa.yml` implement final-only video/audio review after deterministic checks and a project-specific Godot autoplay script succeed. The workflow reserves no more than 18 requests per model per rolling 24 hours in a private Hugging Face ledger and performs no model retries.
 - The private archive helper checks that the Hugging Face destination is private before uploading allowlisted video/report artifacts.
 
-These files have been committed, but the workflows have **not yet been executed end to end**. The current Turbo Rush project still needs a genuine `projects/GME-2026-0003/godot/tests/qa_playthrough.gd` to exercise the gameplay loop. Until that project-specific test is implemented and verified, final Gemini QA stops before any model call.
+These files have been committed, but the workflows have **not yet been executed end to end**. A project-specific `projects/GME-2026-0003/godot/tests/qa_playthrough.gd` has now been added for Turbo Rush. It navigates the real UI, starts a race, simulates steering/boost input, and requires a completed results state. It has not yet been proven to pass a real CI run. Final Gemini QA must remain blocked until this test and the video/audio capture succeed.
 
 ## 8. CPU runner, duration and checkpoints
 
