@@ -1,8 +1,10 @@
 # Construction Task for OpenBot/OpenDot-Style Builder Agent
 
 **Target repository:** `vermajee24124-ops/The-game-factory`  
-**Primary reference:** `docs/PDF_ALIGNMENT_PUBLIC_REPORT.md`  
+**Primary source:** `docs/reference/AI_AGENT_GODOT_GAME_STUDIO_PDF_EXTRACT.md`  
+**Implementation contract:** `docs/GODOT_GAME_STUDIO_BLUEPRINT.md`  
 **Secret/quotas rulebook:** `docs/SECRETS_AND_QUOTAS.md`  
+**Previous readiness audit:** `docs/PDF_ALIGNMENT_PUBLIC_REPORT.md`  
 **Persistent contract:** `docs/FACTORY_CONTRACT.md`
 
 ## Mission
@@ -15,7 +17,7 @@ Work inside the target repository with the connected GitHub permissions actually
 
 1. Do not ask the user to hand-write code, install each tool manually or connect every component one by one. Automate routine setup where access and runner limits allow it.
 2. Do not report success based on a model response, a created folder, a return message or a shell command alone. Require reproducible tests and saved evidence.
-3. Keep Gemini out of routine coding, research, agent evolution and fix/retest loops. Only `.github/workflows/final-gameplay-qa.yml` may use `GEMINI_API_KEY`, and only after a real gameplay playthrough and valid video/audio capture have succeeded. Keep the private rolling-24-hour reservation guard; do not bypass it or retry models automatically.
+3. Keep Gemini out of routine coding, research, agent evolution and fix/retest loops. `GEMINI_API_KEY` may appear only in the dedicated QA steps of `.github/workflows/02_run_factory_relay.yml` and in the legacy `.github/workflows/final-gameplay-qa.yml`, after deterministic gameplay tests and valid visual/audio capture. Never place it in NVIDIA coding/repair steps. Phase 2 must run `factory_builder/gemini_quota_guard.py` before each Gemini call; do not bypass the rolling-24-hour ledger or retry model/quota errors automatically.
 4. Use NVIDIA NIM as the preferred coding/reasoning provider when available. Respect the repository's conservative limit of 35 calls/minute. Keep model IDs configurable and verify endpoint availability before relying on them.
 5. Keep private credentials out of source code, generated game code, public artifacts, commit messages and logs. Hugging Face tokens and API keys belong in GitHub Actions Secrets only.
 6. Do not auto-install a community tool or import an asset unless compatibility, permissions and licensing have been checked. Preserve source URLs and license metadata. Publicly accessible does not mean approved for commercial use or model training.
@@ -60,7 +62,7 @@ The 90/100 score is only an additional quality target. Missing core gameplay, cr
 ### D. Make the final Gemini gate safe
 - Keep the current final-only workflow manual until each project has a valid autoplay script.
 - Capture the actual completed playthrough into a video file with both video and audio streams; verify file duration and stream presence.
-- Only then reserve daily quota in the private Hugging Face ledger and call each configured Gemini review model once in sequence. No automatic retries. Keep the private full report/video archive, but expose only a non-sensitive run-status artifact on GitHub.
+- For Phase 2, reserve the exact model in `game_factory/gemini_usage_ledger.json` (default cap: eight requests per exact model in a rolling 24 hours), then make at most one call for each requested QA modality. The legacy final-QA workflow uses its separate private Hugging Face quota/archive ledger. Never retry quota/auth/model-not-found errors automatically. Keep large clips as workflow artifacts or in a configured private archive; expose only safe summaries where appropriate.
 - Review observations should include timestamps and actionable fixes. The game agent, not Gemini, performs playback. Gemini is a reviewer, not proof of a perfect or store-approved game.
 
 ### E. Keep live research and learning economical
@@ -72,7 +74,7 @@ The 90/100 score is only an additional quality target. Missing core gameplay, cr
 ### F. Private storage and release outputs
 - Use GitHub for source, small reports and workflow definitions.
 - Use a private Hugging Face dataset repo for large gameplay recordings, reports and approved packaged artifacts after confirming that the destination is private and the token has write permission.
-- Do not add tokens, private data or large binaries to public commits. Do not claim 40-50 GB of storage unless the account's live quota verifies it.
+- Do not add tokens, private data or large gameplay video binaries to public commits. Prefer workflow artifacts and/or a configured private archive for recordings. Do not claim 40-50 GB of storage unless the account's live quota verifies it.
 - Produce a clear output manifest with game project, build status, links to artifacts, license manifest, QA summary, security/compliance findings and unresolved blockers.
 
 ## Completion criteria
