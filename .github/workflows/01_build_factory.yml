@@ -74,6 +74,7 @@ jobs:
           echo "Construction credential is configured."
 
       - name: Let the PDF-informed construction meta-agent assemble the factory
+        id: construct
         timeout-minutes: 150
         env:
           NVIDIA_BUILDER_KEY: ${{ secrets.NVIDIA_BUILDER_KEY }}
@@ -144,18 +145,18 @@ jobs:
           print("Factory construction smoke checks passed.")
           PY
 
-      - name: Commit the factory and verified demo to the repository
-        if: success()
+      - name: Checkpoint generated factory files even when later validation fails
+        if: always() && steps.construct.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add game_factory specs games/01_runner_classic deliverables/qa_reports/builder_report.json deliverables/qa_reports/demo-capture.json deliverables/qa_reports/demo-godot.log deliverables/qa_reports/demo-import.log deliverables/gameplay_clips/demo.mp4 deliverables/screenshots/demo.png
+          git add -A game_factory specs games/01_runner_classic deliverables/qa_reports deliverables/gameplay_clips deliverables/screenshots
           if git diff --cached --quiet; then
             echo "No generated-file changes to commit."
           else
-            git commit -m "factory: build and verify autonomous Godot studio"
+            git commit -m "factory: checkpoint construction attempt (validation report included)"
             git push origin HEAD:main
           fi
 
