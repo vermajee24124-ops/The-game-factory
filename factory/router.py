@@ -14,10 +14,9 @@ class Provider:
 
 
 PROVIDERS: tuple[Provider, ...] = (
-    Provider("omniroute", None, 100, frozenset({"text", "code", "reasoning", "multimodal", "routing"})),
+    Provider("nvidia", "NVIDIA_API_KEY", 100, frozenset({"text", "code", "reasoning", "multimodal"})),
+    Provider("omniroute", None, 95, frozenset({"text", "code", "reasoning", "multimodal", "routing"})),
     Provider("z-ai", "Z_AI_API_KEY", 95, frozenset({"text", "code", "reasoning"})),
-    Provider("gemini", "GEMINI_API_KEY", 90, frozenset({"text", "code", "reasoning", "multimodal"})),
-    Provider("nvidia", "NVIDIA_API_KEY", 80, frozenset({"text", "code", "reasoning", "multimodal"})),
     Provider("nararouter", "NARAROUTER_API_KEY", 70, frozenset({"text", "code", "reasoning"})),
     Provider("huggingface", "HF_TOKEN", 60, frozenset({"inference", "models", "datasets", "multimodal"})),
 )
