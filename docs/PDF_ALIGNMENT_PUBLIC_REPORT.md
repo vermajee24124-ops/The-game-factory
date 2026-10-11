@@ -86,7 +86,7 @@ Policy:
 - The previous scheduled Gemini video-research workflow has been paused. The SuperAgent evolution workflow is manual-only and does not receive Gemini credentials. The regular game-factory workflow also no longer receives the Gemini key, and the general model router excludes Gemini; the dedicated final-review script is the only new workflow path that uses it.
 - `research/watch_official_sources.py` and `.github/workflows/live-research-watch.yml` provide a weekly/manual public-source metadata watch without LLM calls.
 - `research/final_gameplay_qa.py` and `.github/workflows/final-gameplay-qa.yml` implement final-only video/audio review after deterministic checks and a project-specific Godot autoplay script succeed. The workflow reserves no more than 18 requests per model per rolling 24 hours in a private Hugging Face ledger and performs no model retries.
-- The private archive helper checks that the Hugging Face destination is private before uploading allowlisted video/report artifacts.
+- The private archive helper checks that the Hugging Face destination is private and confirms write access with a temporary upload/delete probe before spending Gemini quota. The final review script attempts to delete the Gemini-hosted video after all reviews, and records cleanup failures.
 
 These files have been committed, but the workflows have **not yet been executed end to end**. A project-specific `projects/GME-2026-0003/godot/tests/qa_playthrough.gd` has now been added for Turbo Rush. It navigates the real UI, starts a race, simulates steering/boost input, and requires a completed results state. It has not yet been proven to pass a real CI run. Final Gemini QA must remain blocked until this test and the video/audio capture succeed.
 
