@@ -1,0 +1,291 @@
+name: Phase 2 - Autonomous Game Factory Relay
+
+on:
+  workflow_dispatch:
+    inputs:
+      game_idea:
+        description: "Short original game idea (use the same idea to resume its run)"
+        required: true
+        default: "Original 3D cyberpunk runner with gravity-shift lanes and reactive sound"
+        type: string
+      auto_continue:
+        description: "Dispatch another bounded run while work remains and safety gates permit it"
+        required: true
+        default: true
+        type: boolean
+      continuation_count:
+        description: "Internal handoff counter; leave 0 for a new run"
+        required: true
+        default: "0"
+        type: string
+      max_continuations:
+        description: "Hard safety cap on automatic handoffs"
+        required: true
+        default: "16"
+        type: string
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: autonomous-game-factory-relay
+  cancel-in-progress: false
+
+jobs:
+  game-factory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 285
+    env:
+      PYTHONUNBUFFERED: "1"
+      FACTORY_IDEA: ${{ inputs.game_idea }}
+      CONTINUATION_COUNT: ${{ inputs.continuation_count }}
+      MAX_CONTINUATIONS: ${{ inputs.max_continuations }}
+      AUTO_CONTINUE: ${{ inputs.auto_continue }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify Phase 1 built the permanent factory
+        id: factory_ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f game_factory/cli.py || { echo "Factory CLI missing. Run Phase 1 - Build Autonomous Godot Game Factory first."; exit 2; }
+          test -f game_factory/orchestrator.py || { echo "Factory orchestrator missing. Run Phase 1 first."; exit 2; }
+          test -f game_factory/state_manager.py || { echo "Resumable state manager missing. Run Phase 1 first."; exit 2; }
+          echo "Factory modules exist; execution checks still run below."
+
+      - name: Create a stable state path for this game idea
+        id: paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          STATE_ID="$(python - "$FACTORY_IDEA" <<'PY'
+          import hashlib, re, sys
+          idea = sys.argv[1].strip()
+          slug = re.sub(r"[^a-z0-9]+", "-", idea.lower()).strip("-")[:48] or "game"
+          digest = hashlib.sha256(idea.encode("utf-8")).hexdigest()[:10]
+          print(f"{slug}-{digest}")
+          PY
+          )"
+          STATE_PATH="game_factory/runs/$STATE_ID/factory_state.json"
+          mkdir -p "$(dirname "$STATE_PATH")"
+          echo "STATE_ID=$STATE_ID" >> "$GITHUB_ENV"
+          echo "STATE_PATH=$STATE_PATH" >> "$GITHUB_ENV"
+          echo "State path: $STATE_PATH"
+
+      - name: Install CPU software-rendering and audiovisual capture tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y xvfb pulseaudio ffmpeg libgl1-mesa-dri libglx-mesa0 libegl1 mesa-utils unzip curl git x11-utils
+          python -m pip install --disable-pip-version-check --upgrade pip
+          python -m pip install --disable-pip-version-check requests
+
+      - name: Install pinned Godot version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="4.7.2"
+          if [ -f game_factory/engine.lock ]; then
+            CANDIDATE="$(awk '$1 == "version:" {print $2; exit}' game_factory/engine.lock)"
+            if [ -n "$CANDIDATE" ]; then VERSION="$CANDIDATE"; fi
+          fi
+          mkdir -p "/tmp/godot/$VERSION"
+          curl -L --fail --retry 3 --retry-delay 2 \
+            -o "/tmp/godot/$VERSION/godot.zip" \
+            "https://github.com/godotengine/godot-builds/releases/download/$VERSION-stable/Godot_v$VERSION-stable_linux.x86_64.zip"
+          unzip -q -o "/tmp/godot/$VERSION/godot.zip" -d "/tmp/godot/$VERSION"
+          test -f "/tmp/godot/$VERSION/Godot_v$VERSION-stable_linux.x86_64"
+          sudo install -m 0755 "/tmp/godot/$VERSION/Godot_v$VERSION-stable_linux.x86_64" /usr/local/bin/godot
+          godot --version
+          echo "GODOT_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Preflight coding credential without printing it
+        env:
+          NVIDIA_FACTORY_KEY: ${{ secrets.NVIDIA_FACTORY_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$NVIDIA_FACTORY_KEY" || { echo "Missing NVIDIA_FACTORY_KEY. Add it under Settings -> Secrets and variables -> Actions."; exit 2; }
+          echo "Factory coding credential is configured."
+
+      - name: Develop or resume using NVIDIA only
+        id: develop
+        timeout-minutes: 210
+        env:
+          NVIDIA_FACTORY_KEY: ${{ secrets.NVIDIA_FACTORY_KEY }}
+          NVIDIA_BASE_URL: ${{ vars.NVIDIA_BASE_URL }}
+          NVIDIA_FACTORY_MODEL: ${{ vars.NVIDIA_FACTORY_MODEL }}
+          FACTORY_IDEA: ${{ inputs.game_idea }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          export NVIDIA_BASE_URL="${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}"
+          ARGS=(--idea "$FACTORY_IDEA" --phase develop --state-path "$STATE_PATH" --budget-minutes 210 --resume)
+          if [ -n "$NVIDIA_FACTORY_MODEL" ]; then export NVIDIA_MODEL="$NVIDIA_FACTORY_MODEL"; fi
+          python -m game_factory.cli "${ARGS[@]}"
+
+      - name: Deterministic Godot validation and media capture (no API keys)
+        id: capture
+        if: steps.develop.outcome == 'success'
+        timeout-minutes: 20
+        env:
+          FACTORY_IDEA: ${{ inputs.game_idea }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m game_factory.cli --idea "$FACTORY_IDEA" --phase capture --state-path "$STATE_PATH" --budget-minutes 15 --resume
+
+      - name: Inspect a verified screenshot (Gemini key only in this step)
+        id: visual_qa
+        if: steps.capture.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 12
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_SCREENSHOT_MODEL: ${{ vars.GEMINI_SCREENSHOT_MODEL }}
+          FACTORY_IDEA: ${{ inputs.game_idea }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GEMINI_API_KEY" || { echo "Missing GEMINI_API_KEY; screenshot review is blocked and no Gemini request was sent."; exit 2; }
+          python -m game_factory.cli --idea "$FACTORY_IDEA" --phase visual-qa --state-path "$STATE_PATH" --budget-minutes 10 --resume
+
+      - name: Inspect valid gameplay video and audio (Gemini key only in this step)
+        id: video_qa
+        if: steps.capture.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 15
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_VIDEO_MODEL: ${{ vars.GEMINI_VIDEO_MODEL }}
+          FACTORY_IDEA: ${{ inputs.game_idea }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GEMINI_API_KEY" || { echo "Missing GEMINI_API_KEY; video/audio review is blocked and no Gemini request was sent."; exit 2; }
+          python -m game_factory.cli --idea "$FACTORY_IDEA" --phase video-audio-qa --state-path "$STATE_PATH" --budget-minutes 12 --resume
+
+      - name: Repair recorded failures using NVIDIA only
+        id: repair
+        if: always() && steps.develop.outcome == 'success' && (steps.capture.outcome != 'success' || steps.visual_qa.outcome != 'success' || steps.video_qa.outcome != 'success')
+        continue-on-error: true
+        timeout-minutes: 40
+        env:
+          NVIDIA_FACTORY_KEY: ${{ secrets.NVIDIA_FACTORY_KEY }}
+          NVIDIA_BASE_URL: ${{ vars.NVIDIA_BASE_URL }}
+          NVIDIA_FACTORY_MODEL: ${{ vars.NVIDIA_FACTORY_MODEL }}
+          FACTORY_IDEA: ${{ inputs.game_idea }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          export NVIDIA_BASE_URL="${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}"
+          if [ -n "$NVIDIA_FACTORY_MODEL" ]; then export NVIDIA_MODEL="$NVIDIA_FACTORY_MODEL"; fi
+          python -m game_factory.cli --idea "$FACTORY_IDEA" --phase repair --state-path "$STATE_PATH" --budget-minutes 35 --resume
+
+      - name: Final deterministic verification (no API keys)
+        id: verify
+        if: always() && steps.develop.outcome == 'success'
+        timeout-minutes: 25
+        env:
+          FACTORY_IDEA: ${{ inputs.game_idea }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m game_factory.cli --idea "$FACTORY_IDEA" --phase verify --state-path "$STATE_PATH" --budget-minutes 20 --resume
+
+      - name: Commit resumable state and safe deliverables
+        if: always() && steps.factory_ready.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A game_factory specs games deliverables
+          if git diff --cached --quiet; then
+            echo "No state or deliverable changes to commit."
+          else
+            if [ "${{ steps.verify.outcome }}" = "success" ]; then
+              MESSAGE="factory: checkpoint verified game run $STATE_ID"
+            else
+              MESSAGE="factory: checkpoint pending game run $STATE_ID"
+            fi
+            git commit -m "$MESSAGE"
+            git push origin HEAD:main
+          fi
+
+      - name: Upload evidence for this relay run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: factory-run-${{ inputs.continuation_count }}
+          if-no-files-found: warn
+          path: |
+            game_factory/runs/
+            game_factory/factory_state.json
+            specs/
+            games/
+            deliverables/
+            !**/.godot/
+
+      - name: Dispatch another bounded relay if work remains
+        if: always() && steps.factory_ready.outcome == 'success' && inputs.auto_continue == true
+        env:
+          GH_DISPATCH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          NEXT_CONTINUATION: ${{ inputs.continuation_count }}
+          MAX_CONTINUATIONS: ${{ inputs.max_continuations }}
+          FACTORY_IDEA: ${{ inputs.game_idea }}
+          STATE_PATH: ${{ env.STATE_PATH }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHOULD_CONTINUE="$(python - "$STATE_PATH" "$NEXT_CONTINUATION" "$MAX_CONTINUATIONS" <<'PY'
+          import json, sys
+          from pathlib import Path
+          path=Path(sys.argv[1])
+          try:
+              current=int(sys.argv[2]); maximum=max(0,min(int(sys.argv[3]),20))
+          except ValueError:
+              print("no"); raise SystemExit(0)
+          if not path.is_file():
+              print("no"); raise SystemExit(0)
+          try: state=json.loads(path.read_text(encoding="utf-8"))
+          except Exception:
+              print("no"); raise SystemExit(0)
+          status=str(state.get("status","")).lower()
+          qa=state.get("qa",{}) if isinstance(state.get("qa",{}),dict) else {}
+          complete=(state.get("complete") is True or state.get("is_complete") is True
+                    or status in ("complete","completed","finished","done")
+                    or (qa.get("status") in ("passed","complete","verified")
+                        and state.get("phase") in ("complete","finished","done")))
+          print("no" if complete or current>=maximum else "yes")
+          PY
+          )"
+          if [ "$SHOULD_CONTINUE" != "yes" ]; then
+            echo "Factory complete/state unavailable/continuation cap reached; no automatic handoff."
+            exit 0
+          fi
+          NEXT="$((NEXT_CONTINUATION + 1))"
+          PAYLOAD="$(python - "$FACTORY_IDEA" "$NEXT" "$MAX_CONTINUATIONS" <<'PY'
+          import json, sys
+          print(json.dumps({"ref":"main","inputs":{"game_idea":sys.argv[1],"auto_continue":"true","continuation_count":sys.argv[2],"max_continuations":sys.argv[3]}}))
+          PY
+          )"
+          HTTP="$(curl --silent --show-error --output /tmp/dispatch-response.json --write-out "%{http_code}" \
+            -X POST -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_DISPATCH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/$GH_REPOSITORY/actions/workflows/02_run_factory_relay.yml/dispatches" \
+            -d "$PAYLOAD")"
+          if [ "$HTTP" != "204" ]; then
+            echo "Automatic handoff failed (HTTP $HTTP). State was checkpointed; rerun manually if needed."
+            cat /tmp/dispatch-response.json
+            exit 0
+          fi
+          echo "Scheduled bounded continuation $NEXT of at most $MAX_CONTINUATIONS."
