@@ -21,7 +21,7 @@ PROVIDERS = (
     ProviderConfig("omniroute", "OMNIROUTE_API_KEY", 95, ("text", "code", "reasoning", "routing", "multimodal")),
     ProviderConfig("z-ai", "Z_AI_API_KEY", 95, ("text", "code", "reasoning")),
     ProviderConfig("nararouter", "NARAROUTER_API_KEY", 70, ("text", "code", "reasoning")),
-    ProviderConfig("huggingface", "HF_TOKEN", 60, ("models", "datasets", "inference", "multimodal")),
+    ProviderConfig("huggingface", "HF_INFERENCE_TOKEN", 60, ("models", "datasets", "inference", "multimodal")),
 )
 
 
