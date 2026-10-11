@@ -1,0 +1,178 @@
+name: Final Gameplay Video and Audio QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: "Project ID to play through and review"
+        required: true
+        default: "GME-2026-0003"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: final-gameplay-qa-${{ inputs.project_id }}
+  cancel-in-progress: false
+
+jobs:
+  play-record-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PROJECT_ID: ${{ inputs.project_id }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate project and real automated playthrough
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$PROJECT_ID" =~ ^GME-[0-9]{4}-[0-9]{4}$ ]]; then
+            echo "Invalid project ID format."
+            exit 2
+          fi
+          PROJECT_DIR="projects/$PROJECT_ID/godot"
+          test -f "$PROJECT_DIR/project.godot" || { echo "Godot project not found."; exit 2; }
+          test -f "projects/$PROJECT_ID/engine.lock" || { echo "engine.lock not found."; exit 2; }
+          if [ ! -f "$PROJECT_DIR/tests/qa_playthrough.gd" ]; then
+            echo "BLOCKED before Gemini: this game has no project-specific Godot tests/qa_playthrough.gd."
+            echo "Create a genuine input-driven playthrough that exercises the main gameplay loop, checks outcomes, and exits nonzero on failure. Do not replace it with a fake screenshot-only test."
+            exit 3
+          fi
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      - name: Check final-only AI and private archive credentials
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_PRIVATE_REPO_ID: ${{ vars.HF_PRIVATE_REPO_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GEMINI_API_KEY" || { echo "GEMINI_API_KEY missing; no playthrough or Gemini calls will run."; exit 2; }
+          test -n "$HF_TOKEN" || { echo "HF_TOKEN missing; configure private archival before spending final-review quota."; exit 2; }
+          test -n "$HF_PRIVATE_REPO_ID" || { echo "Repository variable HF_PRIVATE_REPO_ID missing."; exit 2; }
+          python -m pip install --disable-pip-version-check huggingface_hub
+          python scripts/archive_final_qa_to_hf.py --project-id "$PROJECT_ID" --check-only
+
+      - name: Install virtual display, software renderer, audio and capture tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb pulseaudio ffmpeg libgl1-mesa-dri libglx-mesa0 libegl1 libx11-6 x11-utils unzip curl
+
+      - name: Install the project's pinned Godot version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(awk '$1 == "version:" {print $2; exit}' "projects/$PROJECT_ID/engine.lock")"
+          test -n "$VERSION" || { echo "Could not read the pinned Godot version."; exit 2; }
+          mkdir -p "/tmp/godot/$VERSION"
+          curl -L --fail --retry 3             -o "/tmp/godot/$VERSION/godot.zip"             "https://github.com/godotengine/godot/releases/download/${VERSION}-stable/Godot_v${VERSION}-stable_linux.x86_64.zip"
+          unzip -q -o "/tmp/godot/$VERSION/godot.zip" -d "/tmp/godot/$VERSION"
+          chmod +x "/tmp/godot/$VERSION/Godot_v${VERSION}-stable_linux.x86_64"
+          echo "GODOT_BIN=/tmp/godot/$VERSION/Godot_v${VERSION}-stable_linux.x86_64" >> "$GITHUB_ENV"
+
+      - name: Play the game and record video with audio
+        shell: bash
+        run: |
+          set -uo pipefail
+          QA_DIR="reports/final_qa/$PROJECT_ID"
+          mkdir -p "$QA_DIR"
+          VIDEO="$QA_DIR/gameplay-final.mp4"
+          LOG="$QA_DIR/godot-playthrough.log"
+
+          pulseaudio --start --exit-idle-time=-1 || true
+          pactl load-module module-null-sink sink_name=game_factory_null sink_properties=device.description=GameFactoryNullSink >/tmp/pulse-module.txt
+          pactl set-default-sink game_factory_null
+
+          Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset >/tmp/xvfb.log 2>&1 &
+          XVFB_PID=$!
+          export DISPLAY=:99
+          export LIBGL_ALWAYS_SOFTWARE=1
+          trap 'kill "$XVFB_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 15); do
+            xdpyinfo -display :99 >/dev/null 2>&1 && break
+            sleep 1
+          done
+          xdpyinfo -display :99 >/dev/null 2>&1 || { echo "Virtual display did not start."; exit 2; }
+
+          ffmpeg -hide_banner -loglevel warning -y             -thread_queue_size 1024 -f x11grab -video_size 1280x720 -framerate 30 -i :99.0             -thread_queue_size 1024 -f pulse -i game_factory_null.monitor             -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -b:a 128k             -t 190 "$VIDEO" >/tmp/game-factory-ffmpeg.log 2>&1 &
+          CAPTURE_PID=$!
+          sleep 2
+
+          timeout 180s "$GODOT_BIN" --path "$PROJECT_DIR" --script res://tests/qa_playthrough.gd >"$LOG" 2>&1
+          GAME_EXIT=$?
+
+          kill -INT "$CAPTURE_PID" 2>/dev/null || true
+          wait "$CAPTURE_PID" 2>/dev/null || true
+          if [ "$GAME_EXIT" -ne 0 ]; then
+            echo "Automated playthrough failed (exit $GAME_EXIT). Gemini quota will not be used."
+            tail -n 120 "$LOG" || true
+            exit "$GAME_EXIT"
+          fi
+          test -s "$VIDEO" || { echo "Video capture missing; Gemini quota will not be used."; exit 4; }
+
+          VIDEO_STREAM="$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 "$VIDEO" | head -n 1)"
+          AUDIO_STREAM="$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$VIDEO" | head -n 1)"
+          DURATION="$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$VIDEO" | head -n 1)"
+          test -n "$VIDEO_STREAM" || { echo "No video stream; Gemini quota will not be used."; exit 4; }
+          test -n "$AUDIO_STREAM" || { echo "No audio stream; Gemini quota will not be used."; exit 4; }
+          python - "$DURATION" <<'PY'
+          import sys
+          try:
+              duration = float(sys.argv[1])
+          except (IndexError, ValueError):
+              raise SystemExit("Could not read recording duration.")
+          if duration < 5:
+              raise SystemExit("Recording is shorter than five seconds; Gemini quota will not be used.")
+          PY
+          echo "Recorded playable QA clip: video=$VIDEO_STREAM audio=$AUDIO_STREAM duration=$DURATION seconds"
+
+      - name: Review final gameplay with Gemini (one call per model; no retries)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_FINAL_MODELS: "gemini-3.8-flash,gemini-3.7-flash,gemini-3.6-flash"
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'google-genai>=1.0.0'
+          python research/final_gameplay_qa.py             --project-id "$PROJECT_ID"             --video "reports/final_qa/$PROJECT_ID/gameplay-final.mp4"             --output "reports/final_qa/$PROJECT_ID/gemini-final-review.json"             --models "$GEMINI_FINAL_MODELS"
+
+      - name: Upload video and full QA report to private Hugging Face dataset
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_PRIVATE_REPO_ID: ${{ vars.HF_PRIVATE_REPO_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check huggingface_hub
+          python scripts/archive_final_qa_to_hf.py             --project-id "$PROJECT_ID"             --file "reports/final_qa/$PROJECT_ID/gameplay-final.mp4"             --file "reports/final_qa/$PROJECT_ID/godot-playthrough.log"             --file "reports/final_qa/$PROJECT_ID/gemini-final-review.json"
+
+      - name: Make a non-sensitive run summary
+        if: always()
+        env:
+          PROJECT_ID: ${{ inputs.project_id }}
+        shell: bash
+        run: |
+          mkdir -p reports/final_qa/"$PROJECT_ID"
+          python - "$PROJECT_ID" "reports/final_qa/$PROJECT_ID/status-summary.txt" <<'PY'
+          import json, sys
+          from pathlib import Path
+          project_id, output = sys.argv[1], Path(sys.argv[2])
+          report = Path("reports/final_qa") / project_id / "gemini-final-review.json"
+          lines = [f"Project: {project_id}", "Full recording and detailed model feedback are intended for the private Hugging Face archive."]
+          if report.exists():
+              data = json.loads(report.read_text(encoding="utf-8"))
+              lines.append(f"Review status: {data.get('overall_status', 'unknown')}")
+              lines.append(f"Video SHA-256: {data.get('video_sha256', 'not recorded')}")
+              for item in data.get("reviews", []):
+                  lines.append(f"Model {item.get('model')}: {item.get('status')}; score={item.get('score', 'not supplied')}")
+          else:
+              lines.append("A full Gemini review report was not produced.")
+          output.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          print("\n".join(lines))
+          PY
