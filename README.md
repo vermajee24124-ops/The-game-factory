@@ -50,7 +50,7 @@ See `docs/AI_SUPERAGENT_ARCHITECTURE.md`.
 
 ## Autonomous Game Factory plan and operations
 
-This repository is being expanded toward the two-phase design in the 112-page planning PDF: a builder agent constructs the durable factory, then the factory independently accepts one-line game ideas. Read the public implementation/readiness report before treating the factory as complete:
+This repository is being expanded toward the two-phase design in the uploaded 26-page Godot game-studio PDF: a builder agent constructs the durable factory, then the factory independently accepts one-line game ideas. The complete extracted source text is available in `docs/reference/AI_AGENT_GODOT_GAME_STUDIO_PDF_EXTRACT.md`; its original PDF page-layout images are not embedded here. Read the public implementation/readiness report before treating the factory as complete:
 
 - [Public PDF-alignment and readiness report](docs/PDF_ALIGNMENT_PUBLIC_REPORT.md)
 - [Construction task for OpenBot/OpenDot-style builder agents](docs/CONSTRUCTION_AGENT_TASK.md)
@@ -83,7 +83,7 @@ The uploaded 26-page Godot-studio PDF's extracted text and implementation contra
 Open **Actions → Phase 1 - Build Autonomous Godot Game Factory → Run workflow**. It uses `NVIDIA_BUILDER_KEY` only in the construction step, installs Godot 4.7.2 and CPU audiovisual test dependencies, asks the bounded meta-agent to create the permanent `game_factory/` modules and seven planning specs, and validates an original demo. Failed validation creates a pending checkpoint/report instead of being described as completion.
 
 ### Phase 2 — Run a game idea through the persistent factory
-After Phase 1 has successfully produced and tested `game_factory/cli.py`, `orchestrator.py` and `state_manager.py`, open **Actions → Phase 2 - Autonomous Game Factory Relay → Run workflow**. It separates NVIDIA coding/repair steps from Gemini screenshot/video/audio review steps, saves per-idea state, and can dispatch bounded follow-up runs. The default is at most 16 automatic handoffs; provider quota, runner time, access or validation failures can stop earlier.
+After Phase 1 has successfully produced and tested `game_factory/cli.py`, `orchestrator.py` and `state_manager.py`, open **Actions → Phase 2 - Autonomous Game Factory Relay → Run workflow**. It separates NVIDIA coding/repair steps from Gemini screenshot/video/audio review steps, saves per-idea state, and can dispatch bounded follow-up runs. The default is at most 16 automatic handoffs; provider quota, runner time, access or validation failures can stop earlier. Before each QA call, a committed rolling-24-hour ledger caps requests at eight per exact model. Captured videos are workflow artifacts, not committed into the public Git history.
 
 ### Required repository secrets
 - `NVIDIA_BUILDER_KEY` — Phase 1 construction only.
