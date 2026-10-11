@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: final-gameplay-qa-${{ inputs.project_id }}
+  group: final-gameplay-qa-global
   cancel-in-progress: false
 
 jobs:
@@ -131,6 +131,16 @@ jobs:
               raise SystemExit("Recording is shorter than five seconds; Gemini quota will not be used.")
           PY
           echo "Recorded playable QA clip: video=$VIDEO_STREAM audio=$AUDIO_STREAM duration=$DURATION seconds"
+
+      - name: Reserve daily Gemini review allowance in private ledger
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_PRIVATE_REPO_ID: ${{ vars.HF_PRIVATE_REPO_ID }}
+          GEMINI_FINAL_MODELS: "gemini-3.8-flash,gemini-3.7-flash,gemini-3.6-flash"
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/final_qa_quota_guard.py --project-id "$PROJECT_ID" --models "$GEMINI_FINAL_MODELS"
 
       - name: Review final gameplay with Gemini (one call per model; no retries)
         env:
