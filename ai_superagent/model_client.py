@@ -56,7 +56,7 @@ class LLMConfig:
             _clean(os.getenv('NVIDIA_API_KEY', '')),
             _clean(os.getenv('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')).rstrip('/'),
             _clean(os.getenv('NVIDIA_MODEL', 'meta/llama-3.3-70b-instruct')) or 'meta/llama-3.3-70b-instruct',
-            _clean(os.getenv('GEMINI_API_KEY', '')),
+            '',  # Reserved for the dedicated final-video QA script only.
             _clean(os.getenv('GEMINI_TEXT_MODEL', 'gemini-3.8-flash')) or 'gemini-3.8-flash',
             _clean(os.getenv('HF_TOKEN', '')),
             _clean(os.getenv('HF_MODEL', 'openai/gpt-oss-20b:fastest')) or 'openai/gpt-oss-20b:fastest',
@@ -73,7 +73,7 @@ class OpenAICompatibleClient:
         return any([
             c.local_base_url,
             c.freellm_base_url and c.freellm_api_key,
-            c.nara_api_key, c.zai_api_key, c.nvidia_api_key, c.gemini_api_key, c.hf_token,
+            c.nara_api_key, c.zai_api_key, c.nvidia_api_key, c.hf_token,
         ])
 
     @staticmethod
@@ -128,7 +128,6 @@ class OpenAICompatibleClient:
             ('nvidia', c.nvidia_api_key, c.nvidia_base_url, c.nvidia_model),
             ('zai', c.zai_api_key, c.zai_base_url, c.zai_model),
             ('nara', c.nara_api_key, c.nara_base_url, c.nara_model),
-            ('gemini', c.gemini_api_key, '', c.gemini_model),
             ('huggingface', c.hf_token, 'https://router.huggingface.co/v1', c.hf_model),
             ('freellmapi', c.freellm_api_key, c.freellm_base_url, c.freellm_model),
         ]
