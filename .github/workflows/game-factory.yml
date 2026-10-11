@@ -166,7 +166,7 @@ jobs:
     env:
       NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
       NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
-      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_INFERENCE_TOKEN: ${{ secrets.HF_INFERENCE_TOKEN }}
       Z_AI_API_KEY: ${{ secrets.Z_AI_API_KEY }}
     steps:
       - name: Checkout
