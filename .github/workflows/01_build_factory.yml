@@ -1,0 +1,174 @@
+name: Phase 1 - Build Autonomous Godot Game Factory
+
+on:
+  workflow_dispatch:
+    inputs:
+      game_idea:
+        description: "Original demo-game idea used to verify the permanent factory"
+        required: true
+        default: "Original 3D cyberpunk runner with gravity-shift lanes and reactive sound"
+        type: string
+      rebuild_generated_files:
+        description: "Replace generated factory/demo files (leave off on first run)"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: autonomous-game-factory-construction
+  cancel-in-progress: false
+
+jobs:
+  build-factory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PYTHONUNBUFFERED: "1"
+      FACTORY_IDEA: ${{ inputs.game_idea }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install CPU rendering, audio, and Godot dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y xvfb pulseaudio ffmpeg libgl1-mesa-dri libglx-mesa0 libegl1 mesa-utils unzip curl git x11-utils
+          python -m pip install --disable-pip-version-check --upgrade pip
+          python -m pip install --disable-pip-version-check requests
+
+      - name: Install pinned Godot 4.7.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/godot-4.7.2
+          curl -L --fail --retry 3 --retry-delay 2 \
+            -o /tmp/godot-4.7.2/godot.zip \
+            https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          unzip -q -o /tmp/godot-4.7.2/godot.zip -d /tmp/godot-4.7.2
+          test -f /tmp/godot-4.7.2/Godot_v4.7.2-stable_linux.x86_64
+          sudo install -m 0755 /tmp/godot-4.7.2/Godot_v4.7.2-stable_linux.x86_64 /usr/local/bin/godot
+          godot --version
+
+      - name: Verify builder credentials without exposing their values
+        env:
+          NVIDIA_BUILDER_KEY: ${{ secrets.NVIDIA_BUILDER_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$NVIDIA_BUILDER_KEY" ]; then
+            echo "Missing repository secret NVIDIA_BUILDER_KEY. Add it in Settings -> Secrets and variables -> Actions, then rerun this workflow."
+            exit 2
+          fi
+          echo "Construction credential is configured."
+
+      - name: Let the PDF-informed construction meta-agent assemble the factory
+        timeout-minutes: 150
+        env:
+          NVIDIA_BUILDER_KEY: ${{ secrets.NVIDIA_BUILDER_KEY }}
+          NVIDIA_BASE_URL: ${{ vars.NVIDIA_BASE_URL }}
+          NVIDIA_BUILDER_MODEL: ${{ vars.NVIDIA_BUILDER_MODEL }}
+          NVIDIA_BUILDER_MAX_CALLS: "24"
+          FACTORY_IDEA: ${{ inputs.game_idea }}
+          FORCE_REBUILD: ${{ inputs.rebuild_generated_files }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$NVIDIA_BASE_URL" ]; then
+            export NVIDIA_BASE_URL="https://integrate.api.nvidia.com/v1"
+          fi
+          args=(--idea "$FACTORY_IDEA" --max-calls "$NVIDIA_BUILDER_MAX_CALLS")
+          if [ -n "$NVIDIA_BUILDER_MODEL" ]; then args+=(--model "$NVIDIA_BUILDER_MODEL"); fi
+          if [ "$FORCE_REBUILD" = "true" ]; then args+=(--force); fi
+          python factory_builder/bootstrap_factory.py "${args[@]}"
+
+      - name: Generate the original procedural demo sound effect
+        run: python factory_builder/generate_demo_audio.py
+
+      - name: Compile construction agent and generated Python modules
+        run: |
+          set -euo pipefail
+          python -m compileall -q factory_builder game_factory
+          test -f specs/01_GAME_DESIGN_DOCUMENT.md
+          test -f specs/02_SCENE_TREE_ARCHITECTURE.md
+          test -f specs/03_STATE_MACHINE_SPEC.md
+          test -f specs/04_PROCEDURAL_TRACK_ALGO.md
+          test -f specs/05_ASSET_AND_PALETTE_MANIFEST.md
+          test -f specs/06_SECURITY_AND_PERFORMANCE_BUDGET.md
+          test -f specs/07_PLAY_STORE_COMPLIANCE.md
+          test -f games/01_runner_classic/project.godot
+          test -f games/01_runner_classic/scenes/Main.tscn
+          test -f games/01_runner_classic/scripts/main.gd
+
+      - name: Import the Godot project and check gameplay audio wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p deliverables/qa_reports
+          godot --headless --path games/01_runner_classic --editor --quit 2>&1 | tee deliverables/qa_reports/demo-import.log
+          test -s games/01_runner_classic/project.godot
+          grep -q "demo_sfx.wav" games/01_runner_classic/scripts/main.gd
+          grep -q "AudioStreamPlayer" games/01_runner_classic/scripts/main.gd
+
+      - name: Capture real demo screenshot and audiovisual gameplay clip
+        run: python factory_builder/verify_demo.py --project games/01_runner_classic --duration 10
+
+      - name: Run safety, syntax, and evidence validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q factory_builder game_factory factory
+          git diff --check
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = Path("deliverables/qa_reports/builder_report.json")
+          capture = Path("deliverables/qa_reports/demo-capture.json")
+          assert report.is_file(), "Builder report missing"
+          assert json.loads(report.read_text(encoding="utf-8"))["status"] == "generated_pending_validation"
+          data = json.loads(capture.read_text(encoding="utf-8"))
+          assert data["status"] == "passed", data
+          assert data["checks"].get("video_stream") and data["checks"].get("audio_stream")
+          assert float(data["checks"].get("audio_peak_db", -100)) > -55
+          print("Factory construction smoke checks passed.")
+          PY
+
+      - name: Commit the factory and verified demo to the repository
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add game_factory specs games/01_runner_classic deliverables/qa_reports/builder_report.json deliverables/qa_reports/demo-capture.json deliverables/qa_reports/demo-godot.log deliverables/qa_reports/demo-import.log deliverables/gameplay_clips/demo.mp4 deliverables/screenshots/demo.png
+          if git diff --cached --quiet; then
+            echo "No generated-file changes to commit."
+          else
+            git commit -m "factory: build and verify autonomous Godot studio"
+            git push origin HEAD:main
+          fi
+
+      - name: Upload construction evidence, even when a check fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-factory-construction-evidence
+          if-no-files-found: warn
+          path: |
+            deliverables/qa_reports/
+            deliverables/gameplay_clips/demo.mp4
+            deliverables/screenshots/demo.png
+            specs/
+            games/01_runner_classic/
+            !games/01_runner_classic/.godot/
