@@ -159,6 +159,8 @@ jobs:
             echo "No generated-file changes to commit."
           else
             git commit -m "factory: checkpoint construction attempt (validation report included)"
+            git fetch origin main
+            git rebase origin/main
             git push origin HEAD:main
           fi
 
