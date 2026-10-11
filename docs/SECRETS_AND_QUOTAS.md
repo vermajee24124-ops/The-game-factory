@@ -45,6 +45,8 @@ Gemini is reserved for final gameplay review:
 
 The player/autotest script plays the game; Gemini only reviews the recorded result. A video-review answer is not a guarantee that a game has no bugs.
 
+Before sending reviews, the workflow reserves one request per selected model in a daily usage ledger stored in the private Hugging Face dataset. The workflow is globally serialized, and the guard caps reservations at 18 calls per model per UTC day, leaving two requests below the screenshot's 20-RPD figure. Reservations are not automatically refunded after failures, which favors avoiding accidental quota overruns over retries.
+
 ## NVIDIA quota rule
 
 The PDF's planning figure is 40 requests/minute. The factory should use a conservative internal ceiling of 35 requests/minute, serial requests and bounded backoff. This does not increase or bypass the provider's limit.
