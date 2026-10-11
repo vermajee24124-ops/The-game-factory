@@ -233,6 +233,7 @@ jobs:
           python -m game_factory.cli --idea "$FACTORY_IDEA" --phase verify --state-path "$STATE_PATH" --budget-minutes 15 --resume
 
       - name: Commit resumable state and safe deliverables
+        id: save_state
         if: always() && steps.factory_ready.outcome == 'success'
         continue-on-error: true
         shell: bash
@@ -270,7 +271,7 @@ jobs:
             !**/.godot/
 
       - name: Dispatch another bounded relay if work remains
-        if: always() && steps.factory_ready.outcome == 'success' && inputs.auto_continue == true
+        if: always() && steps.factory_ready.outcome == 'success' && steps.save_state.outcome == 'success' && inputs.auto_continue == true
         env:
           GH_DISPATCH_TOKEN: ${{ github.token }}
           GH_REPOSITORY: ${{ github.repository }}
