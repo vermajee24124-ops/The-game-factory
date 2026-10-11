@@ -2,12 +2,12 @@
 
 Set these in the repository's **Settings -> Secrets and variables -> Actions**. Never paste real keys into chat, commit them to Git, place them in a public report, or print them in workflow logs.
 
-## Required for the current manual factory workflows
+## Existing/legacy workflows — only needed if you run those workflows separately
 
 | Name | Required? | Purpose |
 |---|---|---|
-| `NVIDIA_API_KEY` | Recommended for AI coding/reasoning steps | NVIDIA NIM API key. Keep the exact model configured in the workflow/provider adapter supported by your account. |
-| `GEMINI_API_KEY` | Only for the manual **Final Gameplay QA** workflow | Reserved for the final recorded gameplay video + audio review. Do not expose it to ordinary research or coding jobs. |
+| `NVIDIA_API_KEY` | Optional legacy alias | Needed only for older `game-factory.yml` / `ai-superagent-evolve.yml` workflows if they are used separately. It is not required to start the new Phase 1/Phase 2 workflows described below. |
+| `GEMINI_API_KEY` | Reused by new Phase 2 and the older manual **Final Gameplay QA** workflow | Only exposed to dedicated screenshot/video/audio QA steps after deterministic tests and actual capture. Never expose it to ordinary research, coding or repair jobs. |
 | `HF_TOKEN` | Required for private final-QA archive | Dedicated Hugging Face write token used only by the private archive/quota-guard steps. Do not expose it to code-generation or runtime game code. |
 | `HF_INFERENCE_TOKEN` | Optional | Separate read/inference-scoped Hugging Face token used by the model router. Do not use the archive write token for inference. |
 | `FREELLMAPI_BASE_URL` | Optional, for manual SuperAgent evolution | OpenAI-compatible API base URL for the selected gateway. |
@@ -38,7 +38,7 @@ Hugging Face storage quotas vary by account and can change. Check the storage pa
 
 The Google AI Studio screenshot provided for this project on 2026-10-11 showed 20 requests/day for each of the listed Gemini 3.8 Flash, 3.7 Flash and 3.6 Flash model entries, with a displayed 5 RPM per entry. Treat this as a dated snapshot, not a permanent quota guarantee.
 
-Gemini is reserved for final gameplay review:
+Gemini is reserved for visual and gameplay review, not routine coding/research:
 1. Run deterministic validation and the game's real automated playthrough first.
 2. Capture a valid video with audio.
 3. Only if that succeeds, call each selected Gemini model once, sequentially, to inspect the same recording.
@@ -46,7 +46,7 @@ Gemini is reserved for final gameplay review:
 
 The player/autotest script plays the game; Gemini only reviews the recorded result. A video-review answer is not a guarantee that a game has no bugs.
 
-Before sending reviews, the workflow reserves one request per selected model in a rolling-24-hour usage ledger stored in the private Hugging Face dataset. The workflow is globally serialized, and the guard caps reservations at 18 calls per model per rolling 24 hours, leaving two requests below the screenshot's 20-RPD figure. Reservations are not automatically refunded after failures, which favors avoiding accidental quota overruns over retries.
+Before sending reviews, the legacy Final Gameplay QA workflow reserves each configured model in its private Hugging Face rolling-24-hour ledger, with an 18-call/model cap based on that dated 20-RPD screenshot. The new Phase 2 relay uses the committed non-secret `game_factory/gemini_usage_ledger.json` with a safer eight-request/model rolling-24-hour cap. Both workflows share a concurrency group. Reservations are not automatically refunded after failures, which favors avoiding accidental quota overruns over retries.
 
 ## NVIDIA quota rule
 
