@@ -1,18 +1,8 @@
 name: AI SuperAgent Evolution
 
 on:
+  # Manual-only so background learning does not consume visual-QA Gemini quota.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'ai_superagent/**'
-      - 'addons/godot_ai_superagent/**'
-      - 'knowledge/**'
-      - 'research/**'
-      - 'modal/**'
-      - '.github/workflows/ai-superagent-evolve.yml'
-  schedule:
-    - cron: '23 */6 * * *'
 
 permissions:
   contents: write
@@ -31,8 +21,6 @@ jobs:
       FREELLMAPI_MODEL: ${{ secrets.FREELLMAPI_MODEL }}
       NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
       NVIDIA_MODEL: 'z-ai/glm-5.3-flash'
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      GEMINI_TEXT_MODEL: 'gemini-3.8-flash'
       Z_AI_API_KEY: ${{ secrets.Z_AI_API_KEY }}
       Z_AI_MODEL: 'glm-5.3-flash'
       NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
@@ -100,8 +88,6 @@ jobs:
       FREELLMAPI_MODEL: ${{ secrets.FREELLMAPI_MODEL }}
       NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
       NVIDIA_MODEL: 'z-ai/glm-5.3-flash'
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      GEMINI_TEXT_MODEL: 'gemini-3.8-flash'
       Z_AI_API_KEY: ${{ secrets.Z_AI_API_KEY }}
       Z_AI_MODEL: 'glm-5.3-flash'
       NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
