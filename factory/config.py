@@ -20,7 +20,6 @@ PROVIDERS = (
     ProviderConfig("nvidia", "NVIDIA_API_KEY", 100, ("text", "code", "reasoning", "multimodal")),
     ProviderConfig("omniroute", "OMNIROUTE_API_KEY", 95, ("text", "code", "reasoning", "routing", "multimodal")),
     ProviderConfig("z-ai", "Z_AI_API_KEY", 95, ("text", "code", "reasoning")),
-    ProviderConfig("nvidia", "NVIDIA_API_KEY", 80, ("text", "code", "reasoning", "multimodal")),
     ProviderConfig("nararouter", "NARAROUTER_API_KEY", 70, ("text", "code", "reasoning")),
     ProviderConfig("huggingface", "HF_TOKEN", 60, ("models", "datasets", "inference", "multimodal")),
 )
