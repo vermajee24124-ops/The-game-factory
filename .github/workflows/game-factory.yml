@@ -33,7 +33,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
       NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -165,7 +164,6 @@ jobs:
     permissions:
       contents: write
     env:
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
       NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
