@@ -146,13 +146,15 @@ jobs:
           PY
 
       - name: Checkpoint generated factory files even when later validation fails
-        if: always() && steps.construct.outcome == 'success'
+        if: always() && steps.construct.outcome != 'skipped'
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A game_factory specs games/01_runner_classic deliverables/qa_reports deliverables/gameplay_clips deliverables/screenshots
+          for path in game_factory specs games/01_runner_classic deliverables/qa_reports deliverables/gameplay_clips deliverables/screenshots; do
+            if [ -e "$path" ]; then git add -A -- "$path"; fi
+          done
           if git diff --cached --quiet; then
             echo "No generated-file changes to commit."
           else
