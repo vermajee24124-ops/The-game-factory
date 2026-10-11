@@ -17,9 +17,9 @@ PROVIDERS = (
     # without a provider secret when configured with no-auth/free providers.
     # If an authenticated OmniRoute endpoint is used later, its API key can be
     # supplied through OMNIROUTE_API_KEY without changing the orchestrator.
-    ProviderConfig("omniroute", "OMNIROUTE_API_KEY", 100, ("text", "code", "reasoning", "routing", "multimodal")),
+    ProviderConfig("nvidia", "NVIDIA_API_KEY", 100, ("text", "code", "reasoning", "multimodal")),
+    ProviderConfig("omniroute", "OMNIROUTE_API_KEY", 95, ("text", "code", "reasoning", "routing", "multimodal")),
     ProviderConfig("z-ai", "Z_AI_API_KEY", 95, ("text", "code", "reasoning")),
-    ProviderConfig("gemini", "GEMINI_API_KEY", 90, ("text", "code", "reasoning", "multimodal")),
     ProviderConfig("nvidia", "NVIDIA_API_KEY", 80, ("text", "code", "reasoning", "multimodal")),
     ProviderConfig("nararouter", "NARAROUTER_API_KEY", 70, ("text", "code", "reasoning")),
     ProviderConfig("huggingface", "HF_TOKEN", 60, ("models", "datasets", "inference", "multimodal")),
