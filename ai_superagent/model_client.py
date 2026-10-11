@@ -58,7 +58,7 @@ class LLMConfig:
             _clean(os.getenv('NVIDIA_MODEL', 'meta/llama-3.3-70b-instruct')) or 'meta/llama-3.3-70b-instruct',
             '',  # Reserved for the dedicated final-video QA script only.
             _clean(os.getenv('GEMINI_TEXT_MODEL', 'gemini-3.8-flash')) or 'gemini-3.8-flash',
-            _clean(os.getenv('HF_TOKEN', '')),
+            _clean(os.getenv('HF_INFERENCE_TOKEN', '')),
             _clean(os.getenv('HF_MODEL', 'openai/gpt-oss-20b:fastest')) or 'openai/gpt-oss-20b:fastest',
         )
 
