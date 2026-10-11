@@ -1,0 +1,45 @@
+name: Game Factory Live Research Watch
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 5 * * 0' # weekly, Sunday 05:17 UTC; public metadata only
+
+permissions:
+  contents: write
+
+concurrency:
+  group: game-factory-live-research
+  cancel-in-progress: false
+
+jobs:
+  live-watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Fetch current public project metadata
+        run: python research/watch_official_sources.py
+
+      - name: Persist the dated research snapshot
+        run: |
+          git config user.name "Game-Factory-Research-Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/live_watch_latest.json research/live_watch_latest.md
+          if git diff --cached --quiet; then
+            echo "Research snapshot has no changes."
+            exit 0
+          fi
+          git commit -m "research: refresh public Godot AI/tool watch"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
