@@ -47,3 +47,22 @@ Keep the supplied Godot-4.7.2 knowledge file under `knowledge/Godot-4.7.2-Exhaus
 The foundation is ready for the next expansion: runtime screenshots, input simulation, profiler/log ingestion, visual regression, broader Godot tool coverage, asset-generation adapters, and a real GPU trainer.
 
 See `docs/AI_SUPERAGENT_ARCHITECTURE.md`.
+
+## Autonomous Game Factory plan and operations
+
+This repository is being expanded toward the two-phase design in the 112-page planning PDF: a builder agent constructs the durable factory, then the factory independently accepts one-line game ideas. Read the public implementation/readiness report before treating the factory as complete:
+
+- [Public PDF-alignment and readiness report](docs/PDF_ALIGNMENT_PUBLIC_REPORT.md)
+- [Construction task for OpenBot/OpenDot-style builder agents](docs/CONSTRUCTION_AGENT_TASK.md)
+- [Secrets, quota and private storage setup](docs/SECRETS_AND_QUOTAS.md)
+- [Persistent factory contract](docs/FACTORY_CONTRACT.md)
+
+## Added quota-safe workflows
+
+- **Live Research Watch**: weekly/manual public Godot, GitHub and Hugging Face metadata checks; does not call an LLM.
+- **Final Gameplay Video and Audio QA**: manual only. It requires a project-specific Godot autoplay test, a valid video/audio recording, a private Hugging Face archive, and a private rolling-24-hour quota reservation before calling Gemini 3.8/3.7/3.6 Flash once each.
+- **Routine code/evolution workflows** no longer receive the Gemini secret. NVIDIA NIM is preferred for general coding/reasoning, subject to account/model availability and the configured quota guard.
+
+To enable private QA artifact storage, add the GitHub repository variable `HF_PRIVATE_REPO_ID` and the `HF_TOKEN` Actions secret. Add `GEMINI_API_KEY` only as a GitHub Actions secret, never to source code or chat. See the quota guide for all names.
+
+**Honest status:** the repository contains meaningful foundations and the new safety/reporting paths, but the complete factory has not yet demonstrated the full multi-genre end-to-end acceptance test. Final Gemini review intentionally stops before any model call when the project's genuine `godot/tests/qa_playthrough.gd` is missing or the recording fails.
