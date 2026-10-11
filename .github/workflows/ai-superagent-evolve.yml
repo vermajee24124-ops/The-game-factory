@@ -25,7 +25,7 @@ jobs:
       Z_AI_MODEL: 'glm-5.3-flash'
       NARAROUTER_API_KEY: ${{ secrets.NARAROUTER_API_KEY }}
       NARA_MODEL: 'deepseek-v4-flash'
-      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_INFERENCE_TOKEN: ${{ secrets.HF_INFERENCE_TOKEN }}
       HF_MODEL: 'openai/gpt-oss-20b:fastest'
     steps:
       - uses: actions/checkout@v4
