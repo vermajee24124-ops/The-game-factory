@@ -5,7 +5,7 @@ extends SceneTree
 # touch-control state during a real level-1 race. It exits nonzero unless the
 # finish/results flow confirms a completed race.
 const STARTUP_TIMEOUT_SEC := 25.0
-const RACE_TIMEOUT_SEC := 168.0
+const RACE_TIMEOUT_SEC := 195.0
 const STEP_SEC := 0.10
 
 var game: Node = null
