@@ -104,8 +104,11 @@ jobs:
           CAPTURE_PID=$!
           sleep 2
 
-          timeout 225s "$GODOT_BIN" --path "$PROJECT_DIR" --script res://tests/qa_playthrough.gd >"$LOG" 2>&1
-          GAME_EXIT=$?
+          if timeout 225s "$GODOT_BIN" --path "$PROJECT_DIR" --script res://tests/qa_playthrough.gd >"$LOG" 2>&1; then
+            GAME_EXIT=0
+          else
+            GAME_EXIT=$?
+          fi
 
           kill -INT "$CAPTURE_PID" 2>/dev/null || true
           wait "$CAPTURE_PID" 2>/dev/null || true
