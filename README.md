@@ -65,4 +65,4 @@ This repository is being expanded toward the two-phase design in the 112-page pl
 
 To enable private QA artifact storage, add the GitHub repository variable `HF_PRIVATE_REPO_ID` and the `HF_TOKEN` Actions secret. Add `GEMINI_API_KEY` only as a GitHub Actions secret, never to source code or chat. See the quota guide for all names.
 
-**Honest status:** the repository contains meaningful foundations and the new safety/reporting paths, but the complete factory has not yet demonstrated the full multi-genre end-to-end acceptance test. Final Gemini review intentionally stops before any model call when the project's genuine `godot/tests/qa_playthrough.gd` is missing or the recording fails.
+**Honest status:** the repository contains meaningful foundations and the new safety/reporting paths, but the complete factory has not yet demonstrated the full multi-genre end-to-end acceptance test. A real Turbo Rush `godot/tests/qa_playthrough.gd` now exists, but it still needs to pass CI. Final Gemini review stops before any model call if that playthrough or the video/audio recording fails.
