@@ -140,11 +140,35 @@ jobs:
           set -euo pipefail
           python -m game_factory.cli --idea "$FACTORY_IDEA" --phase capture --state-path "$STATE_PATH" --budget-minutes 15 --resume
 
-      - name: Inspect a verified screenshot (Gemini key only in this step)
-        id: visual_qa
+      - name: Preflight Gemini review credential without making any API request
+        id: gemini_preflight
         if: steps.capture.outcome == 'success'
         continue-on-error: true
-        timeout-minutes: 12
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GEMINI_API_KEY" || { echo "Missing GEMINI_API_KEY; no Gemini request will be sent."; exit 2; }
+          echo "Gemini QA credential is configured."
+
+      - name: Reserve rolling-24-hour screenshot QA quota (no Gemini key here)
+        id: reserve_visual
+        if: steps.capture.outcome == 'success' && steps.gemini_preflight.outcome == 'success'
+        continue-on-error: true
+        env:
+          GEMINI_SCREENSHOT_MODEL: ${{ vars.GEMINI_SCREENSHOT_MODEL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          MODEL="${GEMINI_SCREENSHOT_MODEL:-gemma-3-27b-it}"
+          python factory_builder/gemini_quota_guard.py --model "$MODEL" --kind screenshot --max-per-model-24h 8
+
+      - name: Inspect a verified screenshot (Gemini key only in this step)
+        id: visual_qa
+        if: steps.capture.outcome == 'success' && steps.gemini_preflight.outcome == 'success' && steps.reserve_visual.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 10
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_SCREENSHOT_MODEL: ${{ vars.GEMINI_SCREENSHOT_MODEL }}
@@ -152,14 +176,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$GEMINI_API_KEY" || { echo "Missing GEMINI_API_KEY; screenshot review is blocked and no Gemini request was sent."; exit 2; }
-          python -m game_factory.cli --idea "$FACTORY_IDEA" --phase visual-qa --state-path "$STATE_PATH" --budget-minutes 10 --resume
+          python -m game_factory.cli --idea "$FACTORY_IDEA" --phase visual-qa --state-path "$STATE_PATH" --budget-minutes 8 --resume
+
+      - name: Reserve rolling-24-hour video/audio QA quota (no Gemini key here)
+        id: reserve_video
+        if: steps.capture.outcome == 'success' && steps.gemini_preflight.outcome == 'success'
+        continue-on-error: true
+        env:
+          GEMINI_VIDEO_MODEL: ${{ vars.GEMINI_VIDEO_MODEL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          MODEL="${GEMINI_VIDEO_MODEL:-gemini-3.1-flash-lite}"
+          python factory_builder/gemini_quota_guard.py --model "$MODEL" --kind video-audio --max-per-model-24h 8
 
       - name: Inspect valid gameplay video and audio (Gemini key only in this step)
         id: video_qa
-        if: steps.capture.outcome == 'success'
+        if: steps.capture.outcome == 'success' && steps.gemini_preflight.outcome == 'success' && steps.reserve_video.outcome == 'success'
         continue-on-error: true
-        timeout-minutes: 15
+        timeout-minutes: 12
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_VIDEO_MODEL: ${{ vars.GEMINI_VIDEO_MODEL }}
@@ -167,12 +202,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$GEMINI_API_KEY" || { echo "Missing GEMINI_API_KEY; video/audio review is blocked and no Gemini request was sent."; exit 2; }
-          python -m game_factory.cli --idea "$FACTORY_IDEA" --phase video-audio-qa --state-path "$STATE_PATH" --budget-minutes 12 --resume
+          python -m game_factory.cli --idea "$FACTORY_IDEA" --phase video-audio-qa --state-path "$STATE_PATH" --budget-minutes 10 --resume
 
       - name: Repair recorded failures using NVIDIA only
         id: repair
-        if: always() && steps.develop.outcome == 'success' && (steps.capture.outcome != 'success' || steps.visual_qa.outcome != 'success' || steps.video_qa.outcome != 'success')
+        if: always() && steps.develop.outcome == 'success' && (steps.capture.outcome != 'success' || (steps.reserve_visual.outcome == 'success' && steps.visual_qa.outcome == 'failure') || (steps.reserve_video.outcome == 'success' && steps.video_qa.outcome == 'failure'))
         continue-on-error: true
         timeout-minutes: 30
         env:
@@ -216,6 +250,8 @@ jobs:
               MESSAGE="factory: checkpoint pending game run $STATE_ID"
             fi
             git commit -m "$MESSAGE"
+            git fetch origin main
+            git rebase origin/main
             git push origin HEAD:main
           fi
 
