@@ -79,7 +79,7 @@ class Agent:
    s=re.sub(r"\s*"+re.escape(fence)+r"$","",s)
   return s.strip()+"\n"
  def summarize(self,source):
-  sysmsg="Extract engineering requirements faithfully. Mark incomplete/outdated snippets as items to verify; never invent facts."
+  sysmsg="Extract engineering requirements faithfully. Think through requirements deeply and use the maximum reasoning configuration actually supported by this model endpoint; do not invent unsupported API parameters. Mark incomplete/outdated snippets as items to verify; never invent facts."
   chunks=[source[i:i+10500] for i in range(0,len(source),10500)]
   if len(chunks)>8: raise AgentError("PDF text too large; inspect source chunks before API use.")
   summaries=[]
@@ -91,7 +91,7 @@ class Agent:
   if not path.startswith(("game_factory/","specs/","games/01_runner_classic/")) or ".." in Path(path).parts or Path(path).is_absolute(): raise AgentError("Unsafe generated path rejected.")
   p=ROOT/path
   if p.exists() and not force: print("[builder] keeping existing",path); return "preserved"
-  system="You are a senior Godot 4.7.2/Python engineer. Output the entire contents of exactly one file, no markdown or explanation. Use safe paths, timeouts, bounded retries, no secrets in generated code and no shell=True. Never copy commercial IP."
+  system="You are a senior Godot 4.7.2/Python engineer. Think deeply and use the highest reasoning/thinking configuration genuinely supported by the selected model API; verify parameter support before emitting it, and never invent generic max-thinking settings. Output the entire contents of exactly one file, no markdown or explanation. Use safe paths, timeouts, bounded retries, no secrets in generated code and no shell=True. Never copy commercial IP."
   user=f"TARGET FILE: {path}\nPURPOSE/CONTRACT: {purpose}\nGAME IDEA: {idea}\nPDF IMPLEMENTATION SUMMARY:\n{summary}\nFull source extract: docs/reference/AI_AGENT_GODOT_GAME_STUDIO_PDF_EXTRACT.md. Verify uncertain code snippets rather than copying them."
   data=self.clean(self.ask(system,user,3900))
   if len(data)>MAX_FILE_SIZE: raise AgentError("Generated file exceeds size limit.")
