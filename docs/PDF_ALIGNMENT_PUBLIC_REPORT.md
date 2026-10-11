@@ -81,19 +81,28 @@ Policy:
 - Models are reviewers, not players. A project-specific Godot autoplayer/test harness must play through the actual game. Video review complements, but does not replace, deterministic tests or real-device testing.
 - Record the video hash, runtime duration, model ID, review time, findings and evidence. A review response is not a guarantee of perfection.
 
-## 7. CPU runner, duration and checkpoints
+## 7. Changes now installed in this repository
+
+- The previous scheduled Gemini video-research workflow has been paused. The SuperAgent evolution workflow is manual-only and does not receive Gemini credentials. The regular game-factory workflow also no longer receives the Gemini key, and the general model router excludes Gemini; the dedicated final-review script is the only new workflow path that uses it.
+- `research/watch_official_sources.py` and `.github/workflows/live-research-watch.yml` provide a weekly/manual public-source metadata watch without LLM calls.
+- `research/final_gameplay_qa.py` and `.github/workflows/final-gameplay-qa.yml` implement final-only video/audio review after deterministic checks and a project-specific Godot autoplay script succeed. The workflow reserves no more than 18 requests per model per rolling 24 hours in a private Hugging Face ledger and performs no model retries.
+- The private archive helper checks that the Hugging Face destination is private before uploading allowlisted video/report artifacts.
+
+These files have been committed, but the workflows have **not yet been executed end to end**. The current Turbo Rush project still needs a genuine `projects/GME-2026-0003/godot/tests/qa_playthrough.gd` to exercise the gameplay loop. Until that project-specific test is implemented and verified, final Gemini QA stops before any model call.
+
+## 8. CPU runner, duration and checkpoints
 
 Use headless Godot for import/script checks. Use a virtual display and software rendering only for appropriate screenshot/video checks; CPU-based 3D rendering may be slow, so benchmark it rather than promising a fixed frame rate. Use a virtual audio sink for recorded game audio where supported.
 
 Split long work into bounded sessions, checkpoint the repository and durable state, and resume from verified state. GitHub Actions jobs have execution limits and free-usage quotas; this architecture does not assume an unlimited server. Keep source/configuration in Git, short reports as files, and large media/model outputs in an external private store when needed.
 
-## 8. Private Hugging Face storage
+## 9. Private Hugging Face storage
 
 Use a private Hugging Face Hub dataset repository for large QA recordings, packaged builds, verified datasets and non-secret reports only when the user has configured it. Use `HF_TOKEN` as a GitHub Actions Secret and `HF_PRIVATE_REPO_ID` as a repository variable or secret if preferred. Never add an access token to Git, workflow logs, reports or generated game source. Do not publish private assets without the user's explicit choice.
 
 The user's estimate of 40-50 GB should be checked against the account's current storage/quota page before bulk upload. This report does not guarantee that amount of storage for every account or that all artifacts are stored by GitHub.
 
-## 9. Security and license boundaries
+## 10. Security and license boundaries
 
 - Secrets only in GitHub Actions Secrets; no tokens in public files, commits, game resources or logs.
 - Use least-privilege repository permissions. Never expose a general-purpose credential to untrusted generated code or pull requests.
@@ -101,13 +110,13 @@ The user's estimate of 40-50 GB should be checked against the account's current 
 - Record third-party asset/model license, source and required attribution before use.
 - Security, failed builds, missing legal/compliance evidence, or failed required gameplay tests block a release. Do not claim store approval.
 
-## 10. Current repository readiness (honest status)
+## 11. Current repository readiness (honest status)
 
 The repository already contains a persistent project registry, a Godot AI SuperAgent foundation, a Godot knowledge base, factory modules, a factory contract, research scripts and build/security workflow foundations. The current README itself identifies runtime screenshots, input simulation, profiler/log ingestion, visual regression and broader tool coverage as next expansions.
 
 This means the repository is a meaningful foundation, **not proof that the full two-phase studio-grade Game Factory has already passed end-to-end acceptance**. In particular, each genre still needs an effective project-specific autoplayer and evidence-based runtime QA; video capture must be verified; Android signing/store requirements may need user-provided configuration. A green code/static scan alone is not a complete gameplay test.
 
-## 11. Acceptance definition
+## 12. Acceptance definition
 
 Call the factory operational only after it can, without manually editing generated project code:
 
