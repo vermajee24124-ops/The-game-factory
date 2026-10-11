@@ -18,7 +18,7 @@ PROVIDERS: tuple[Provider, ...] = (
     Provider("omniroute", None, 95, frozenset({"text", "code", "reasoning", "multimodal", "routing"})),
     Provider("z-ai", "Z_AI_API_KEY", 95, frozenset({"text", "code", "reasoning"})),
     Provider("nararouter", "NARAROUTER_API_KEY", 70, frozenset({"text", "code", "reasoning"})),
-    Provider("huggingface", "HF_TOKEN", 60, frozenset({"inference", "models", "datasets", "multimodal"})),
+    Provider("huggingface", "HF_INFERENCE_TOKEN", 60, frozenset({"inference", "models", "datasets", "multimodal"})),
 )
 
 
