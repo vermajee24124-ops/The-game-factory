@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: final-gameplay-qa-global
+  group: gemini-review-global
   cancel-in-progress: false
 
 jobs:
