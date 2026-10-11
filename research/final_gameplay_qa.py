@@ -210,10 +210,28 @@ def main() -> int:
         report["overall_status"] = "reviewed" if any_success else "blocked"
         args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
+    # Remove the uploaded copy after all configured models have reviewed it.
+    # The private HF archive remains the durable record; deletion failures are reported.
+    try:
+        client.files.delete(name=uploaded.name)
+        report["file_processing"]["cleanup_status"] = "deleted_from_gemini"
+    except Exception as exc:
+        report["file_processing"]["cleanup_status"] = "cleanup_failed"
+        report["file_processing"]["cleanup_error_type"] = type(exc).__name__
+        report["file_processing"]["cleanup_error"] = str(exc)[:500]
+
     report["completed_at"] = utc_now()
     success_count = sum(1 for x in report["reviews"] if x["status"] == "success")
-    report["overall_status"] = "reviewed" if success_count else "blocked"
-    args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    failed_count = len(report["reviews"]) - success_count
+    if success_count == len(models):
+        report["overall_status"] = "reviewed"
+    elif success_count:
+        report["overall_status"] = "partial"
+    else:
+        report["overall_status"] = "blocked"
+    report["successful_reviews"] = success_count
+    report["failed_reviews"] = failed_count
+    args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
     print(f"Saved final QA report: {args.output}; successful_reviews={success_count}/{len(models)}.")
     # Any successful review produces useful evidence, but this script never labels a build "perfect".
     return 0 if success_count else 1
