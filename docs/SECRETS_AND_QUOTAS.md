@@ -8,7 +8,8 @@ Set these in the repository's **Settings -> Secrets and variables -> Actions**. 
 |---|---|---|
 | `NVIDIA_API_KEY` | Recommended for AI coding/reasoning steps | NVIDIA NIM API key. Keep the exact model configured in the workflow/provider adapter supported by your account. |
 | `GEMINI_API_KEY` | Only for the manual **Final Gameplay QA** workflow | Reserved for the final recorded gameplay video + audio review. Do not expose it to ordinary research or coding jobs. |
-| `HF_TOKEN` | Optional | Hugging Face token with write access to the private dataset repository used for artifact archiving. Add only when the archive workflow is configured. |
+| `HF_TOKEN` | Required for private final-QA archive | Dedicated Hugging Face write token used only by the private archive/quota-guard steps. Do not expose it to code-generation or runtime game code. |
+| `HF_INFERENCE_TOKEN` | Optional | Separate read/inference-scoped Hugging Face token used by the model router. Do not use the archive write token for inference. |
 | `FREELLMAPI_BASE_URL` | Optional, for manual SuperAgent evolution | OpenAI-compatible API base URL for the selected gateway. |
 | `FREELLMAPI_API_KEY` | Optional, paired with the URL above | Gateway API key. |
 | `FREELLMAPI_MODEL` | Optional, paired with the gateway | Exact model/routing name supported by the selected gateway. |
@@ -29,7 +30,7 @@ Create a **private** Hugging Face dataset repository from your Hugging Face acco
 
 - `HF_PRIVATE_REPO_ID` = `your-huggingface-username/your-private-dataset-name`
 
-Then add `HF_TOKEN` as a secret. The token needs write permission to that repository. Do not send the token in a chat. Keep unpublished game assets, gameplay recordings and reports private. The archive helper must upload only explicitly approved artifact files and must never upload environment files, tokens, or unrelated repository source. Before final Gemini calls, the workflow runs a tiny temporary upload/delete test to confirm the private repository is writable. After review, the Gemini-hosted upload is deleted where the API permits it; the durable recording/report is retained in the private Hugging Face archive.
+Then add `HF_TOKEN` as a secret with write permission for the private dataset. Keep a separate optional `HF_INFERENCE_TOKEN` for read/inference model calls. Do not send either token in a chat. Keep unpublished game assets, gameplay recordings and reports private. The archive helper must upload only explicitly approved artifact files and must never upload environment files, tokens, or unrelated repository source. Before final Gemini calls, the workflow runs a tiny temporary upload/delete test to confirm the private repository is writable. After review, the Gemini-hosted upload is deleted where the API permits it; the durable recording/report is retained in the private Hugging Face archive.
 
 Hugging Face storage quotas vary by account and can change. Check the storage page in your account before depending on 40-50 GB.
 
