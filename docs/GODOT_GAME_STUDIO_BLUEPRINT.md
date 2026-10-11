@@ -34,6 +34,10 @@ Generate and keep these under `specs/` before substantial game code is written:
 6. `06_SECURITY_AND_PERFORMANCE_BUDGET.md`: threat model, persistence, network assumptions, mobile/CPU budgets and measured profiling results. A target of 60 FPS is a goal, never a guarantee.
 7. `07_PLAY_STORE_COMPLIANCE.md`: current target SDK/store rules, permissions, privacy/consent, architecture, export configuration and release checklist. Re-verify official current store rules; never hard-code an obsolete year/API level as permanently current.
 
+## Reasoning configuration
+
+- **Reasoning configuration:** use the maximum reasoning/thinking setting genuinely supported by the selected NVIDIA or Gemini model/API. Verify the exact current model documentation first; do not assume every model accepts one universal `max_thinking` field. Record the configured setting and stop safely if an explicitly configured setting is rejected.
+
 ## Mandatory development loop
 1. Research mechanics, camera, progression, usability complaints and genre trends from multiple accessible public sources. Record source links, retrieval timestamps and confidence.
 2. Deconstruct references and evolve them; never copy commercial game assets, proprietary code, logos, exact UI layouts, music, characters or levels. Build an originality matrix and add at least three distinguishable mechanics/theme/progression changes.
