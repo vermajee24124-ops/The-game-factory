@@ -152,7 +152,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          for path in game_factory specs games/01_runner_classic deliverables/qa_reports deliverables/gameplay_clips deliverables/screenshots; do
+          for path in game_factory specs games/01_runner_classic deliverables/qa_reports deliverables/screenshots; do
             if [ -e "$path" ]; then git add -A -- "$path"; fi
           done
           if git diff --cached --quiet; then
