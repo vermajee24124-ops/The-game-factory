@@ -29,7 +29,7 @@ Create a **private** Hugging Face dataset repository from your Hugging Face acco
 
 - `HF_PRIVATE_REPO_ID` = `your-huggingface-username/your-private-dataset-name`
 
-Then add `HF_TOKEN` as a secret. The token needs write permission to that repository. Do not send the token in a chat. Keep unpublished game assets, gameplay recordings and reports private. The archive helper must upload only explicitly approved artifact files and must never upload environment files, tokens, or unrelated repository source.
+Then add `HF_TOKEN` as a secret. The token needs write permission to that repository. Do not send the token in a chat. Keep unpublished game assets, gameplay recordings and reports private. The archive helper must upload only explicitly approved artifact files and must never upload environment files, tokens, or unrelated repository source. Before final Gemini calls, the workflow runs a tiny temporary upload/delete test to confirm the private repository is writable. After review, the Gemini-hosted upload is deleted where the API permits it; the durable recording/report is retained in the private Hugging Face archive.
 
 Hugging Face storage quotas vary by account and can change. Check the storage page in your account before depending on 40-50 GB.
 
