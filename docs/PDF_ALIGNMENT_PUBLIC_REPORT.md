@@ -98,7 +98,7 @@ Split long work into bounded sessions, checkpoint the repository and durable sta
 
 ## 9. Private Hugging Face storage
 
-Use a private Hugging Face Hub dataset repository for large QA recordings, packaged builds, verified datasets and non-secret reports only when the user has configured it. Use `HF_TOKEN` as a GitHub Actions Secret and `HF_PRIVATE_REPO_ID` as a repository variable or secret if preferred. Never add an access token to Git, workflow logs, reports or generated game source. Do not publish private assets without the user's explicit choice.
+Use a private Hugging Face Hub dataset repository for large QA recordings, packaged builds, verified datasets and non-secret reports only when the user has configured it. Use a dedicated write-scoped `HF_TOKEN` only in private archive/quota-guard steps, `HF_INFERENCE_TOKEN` for optional read/inference calls, and `HF_PRIVATE_REPO_ID` as a repository variable. Never expose a write token to generated code, add tokens to Git/logs/reports, or publish private assets without the user's explicit choice.
 
 The user's estimate of 40-50 GB should be checked against the account's current storage/quota page before bulk upload. This report does not guarantee that amount of storage for every account or that all artifacts are stored by GitHub.
 
