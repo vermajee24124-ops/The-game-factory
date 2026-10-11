@@ -142,16 +142,6 @@ jobs:
           python -m pip install --disable-pip-version-check 'google-genai>=1.0.0'
           python research/final_gameplay_qa.py             --project-id "$PROJECT_ID"             --video "reports/final_qa/$PROJECT_ID/gameplay-final.mp4"             --output "reports/final_qa/$PROJECT_ID/gemini-final-review.json"             --models "$GEMINI_FINAL_MODELS"
 
-      - name: Upload video and full QA report to private Hugging Face dataset
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_PRIVATE_REPO_ID: ${{ vars.HF_PRIVATE_REPO_ID }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install --disable-pip-version-check huggingface_hub
-          python scripts/archive_final_qa_to_hf.py             --project-id "$PROJECT_ID"             --file "reports/final_qa/$PROJECT_ID/gameplay-final.mp4"             --file "reports/final_qa/$PROJECT_ID/godot-playthrough.log"             --file "reports/final_qa/$PROJECT_ID/gemini-final-review.json"
-
       - name: Make a non-sensitive run summary
         if: always()
         env:
@@ -173,6 +163,42 @@ jobs:
                   lines.append(f"Model {item.get('model')}: {item.get('status')}; score={item.get('score', 'not supplied')}")
           else:
               lines.append("A full Gemini review report was not produced.")
-          output.write_text("\n".join(lines) + "\n", encoding="utf-8")
-          print("\n".join(lines))
+          output.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+          print("\\n".join(lines))
           PY
+
+      - name: Archive private video and report to Hugging Face
+        if: always()
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_PRIVATE_REPO_ID: ${{ vars.HF_PRIVATE_REPO_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$HF_TOKEN" ] || [ -z "$HF_PRIVATE_REPO_ID" ]; then
+            echo "Private archive not configured; no private artifact upload attempted."
+            exit 0
+          fi
+          QA_DIR="reports/final_qa/$PROJECT_ID"
+          ARGS=(--project-id "$PROJECT_ID")
+          FILE_COUNT=0
+          for FILE in "$QA_DIR/gameplay-final.mp4" "$QA_DIR/gemini-final-review.json" "$QA_DIR/status-summary.txt"; do
+            if [ -f "$FILE" ]; then
+              ARGS+=(--file "$FILE")
+              FILE_COUNT=$((FILE_COUNT + 1))
+            fi
+          done
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "No QA artifacts to archive."
+            exit 0
+          fi
+          python -m pip install --disable-pip-version-check huggingface_hub
+          python scripts/archive_final_qa_to_hf.py "${ARGS[@]}"
+
+      - name: Publish non-sensitive workflow summary artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-qa-status-${{ inputs.project_id }}
+          path: reports/final_qa/${{ inputs.project_id }}/status-summary.txt
+          if-no-files-found: ignore
