@@ -55,3 +55,36 @@ The PDF's planning figure is 40 requests/minute. The factory should use a conser
 ## Verify setup without exposing secrets
 
 After adding secrets, run a manual workflow and inspect only whether each credential is detected/configured. Never echo a value, print full headers, or dump environment variables into logs.
+
+
+## New two-phase builder + permanent factory workflow
+
+These are the three credentials for the new manual workflows:
+
+| Name | GitHub setting | Required for | Exactly how it is used |
+|---|---|---|---|
+| `NVIDIA_BUILDER_KEY` | **Repository secret** | Phase 1 only | Construction meta-agent reads the committed PDF text extract, summarizes the requirements, creates `game_factory/`, seven planning specs, and an original demo. This key is scoped to the builder step and is never passed to the permanent game runtime. |
+| `NVIDIA_FACTORY_KEY` | **Repository secret** | Phase 2 | Permanent factory's research, coding and repair phases. It is not passed to screenshot/video QA steps or the commit step. |
+| `GEMINI_API_KEY` | **Repository secret** | Phase 2 visual/audio QA only | Used only after deterministic Godot checks and valid screenshot/video/audio capture succeed. It must not be used for general research, code generation, or repair. |
+
+Optional configuration (these are **repository variables**, not secrets):
+- `NVIDIA_BASE_URL`: normally leave unset; default is `https://integrate.api.nvidia.com/v1`.
+- `NVIDIA_BUILDER_MODEL`: optional exact native NVIDIA NIM model ID if automatic model discovery does not find a working one.
+- `NVIDIA_FACTORY_MODEL`: optional exact model ID for permanent factory coding.
+- `GEMINI_SCREENSHOT_MODEL`: optional image-capable model override. Default policy is to try the PDF's Gemma image-review model only if the API currently exposes it.
+- `GEMINI_VIDEO_MODEL`: optional video/audio model override. PDF baseline is `gemini-3.1-flash-lite`; model availability and accepted thinking settings must be checked by the runtime.
+
+Do not create placeholder values for missing secrets. Add the actual API keys directly in GitHub. Never paste them into ChatGPT or commit them to a file. The Actions-provided `GITHUB_TOKEN` is automatic; do not create a user-generated PAT for these workflows.
+
+### Running the two phases
+1. Open **Settings → Secrets and variables → Actions → New repository secret** and add `NVIDIA_BUILDER_KEY`, `NVIDIA_FACTORY_KEY`, and `GEMINI_API_KEY` (case-sensitive).
+2. Open **Actions → Phase 1 - Build Autonomous Godot Game Factory → Run workflow**. Use the default original demo idea for the first run. Leave `rebuild_generated_files` off initially.
+3. Only after Phase 1 has saved a factory CLI, state manager, demo project and validation evidence, open **Actions → Phase 2 - Autonomous Game Factory Relay → Run workflow**, enter your game idea, and leave `auto_continue` enabled if you want bounded continuation.
+4. Review the workflow's report/artifacts and the saved `game_factory/runs/<idea-id>/factory_state.json`. A workflow can fail or stop with a resumable checkpoint; a saved file or model response is not proof that the game passed.
+
+### Important safety and runtime boundaries
+- Phase 1 and Phase 2 are manual entry points; Phase 2's automatic handoff is bounded by `max_continuations` (default 16). It will not provide an unlimited background worker and may stop because of quota, runtime, permission, or test failures.
+- The construction workflow runs on GitHub's hosted CPU runner; Godot headless mode validates scripts/scenes, while Xvfb/Mesa and FFmpeg are required for actual visual/gameplay capture. Audio QA must not proceed on a silent or missing audio stream.
+- An image/video model only provides review evidence. It does not certify that a game is bug-free or store-compliant. Android AAB creation requires a working Godot export preset, templates, JDK/SDK, signing and a passing export test.
+- The repository currently has **public** visibility. Any committed game source, screenshot, logs, or gameplay media under `games/` and `deliverables/` can be publicly visible; do not use it to store confidential unreleased material unless repository visibility and artifact handling are made private first.
+- The uploaded PDF's extracted text has been added at `docs/reference/AI_AGENT_GODOT_GAME_STUDIO_PDF_EXTRACT.md` with the implementation contract at `docs/GODOT_GAME_STUDIO_BLUEPRINT.md`. The repository contains the text extract, not the original PDF binary or its page-layout screenshots.
