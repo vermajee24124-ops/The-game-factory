@@ -227,3 +227,5 @@ __pycache__/
 .ruff_cache/
 .godot/
 .import/
+
+deliverables/gameplay_clips/*.mp4
