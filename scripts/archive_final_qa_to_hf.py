@@ -42,7 +42,30 @@ def main() -> int:
             print("Refusing to upload: the target Hugging Face dataset is not private.", file=sys.stderr)
             return 3
         if args.check_only:
-            print("Private Hugging Face dataset is reachable and marked private.")
+            # Prove write access before the final Gemini quota is spent.
+            # The tiny probe is immediately removed; if either operation fails,
+            # the workflow stops before calling Gemini.
+            probe_path = "final-qa/_private_state/preflight-write-check.txt"
+            with tempfile.TemporaryDirectory(prefix="game-factory-hf-probe-") as temp_dir:
+                probe_file = Path(temp_dir) / "preflight-write-check.txt"
+                probe_file.write_text(
+                    "Temporary private-archive write check. Safe to delete.\\n",
+                    encoding="utf-8",
+                )
+                api.upload_file(
+                    path_or_fileobj=str(probe_file),
+                    path_in_repo=probe_path,
+                    repo_id=repo_id,
+                    repo_type="dataset",
+                    commit_message="Preflight private QA archive write permission",
+                )
+            api.delete_file(
+                path_in_repo=probe_path,
+                repo_id=repo_id,
+                repo_type="dataset",
+                commit_message="Remove temporary QA archive write check",
+            )
+            print("Private Hugging Face dataset is private and read/write access passed a temporary write/delete check.")
             return 0
 
         files = [Path(item).resolve() for item in args.file]
