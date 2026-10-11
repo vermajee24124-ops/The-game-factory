@@ -147,6 +147,7 @@ def main() -> int:
         "overall_status": "blocked",
     }
 
+    uploaded = None
     try:
         uploaded = client.files.upload(file=str(args.video))
         report["file_processing"] = {
@@ -158,10 +159,18 @@ def main() -> int:
         report["file_processing"]["status"] = "active"
         report["file_processing"]["active_state"] = state_text(video_ref)
     except Exception as exc:
+        cleanup_status = "not_needed"
+        if uploaded is not None and getattr(uploaded, "name", None):
+            try:
+                client.files.delete(name=uploaded.name)
+                cleanup_status = "deleted_after_upload_or_processing_error"
+            except Exception:
+                cleanup_status = "cleanup_failed_after_upload_or_processing_error"
         report["file_processing"] = {
             "status": "error",
             "error_type": type(exc).__name__,
             "error": str(exc)[:1000],
+            "cleanup_status": cleanup_status,
         }
         report["completed_at"] = utc_now()
         args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
