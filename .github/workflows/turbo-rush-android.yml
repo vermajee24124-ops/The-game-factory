@@ -183,8 +183,10 @@ jobs:
             if [ -s "$src" ]; then cp "$src" "$STUDIO_ROOT/$model.glb"; fi
           done
           # Four racing-car body/paint variants from Kenney Racing Kit.
+          # Upstream ZIP versions differ on the GLB/GLTF folder name; resolve the path by file name.
           for model in raceCarGreen raceCarOrange raceCarRed raceCarWhite; do
-            cp "$LIB_ROOT/kenney_racing_kit/Models/GLTF format/$model.glb" "$STUDIO_ROOT/$model.glb"
+            find "$LIB_ROOT/kenney_racing_kit" -type f -iname "$model.glb" -exec cp {} "$STUDIO_ROOT/$model.glb" \;
+            test -s "$STUDIO_ROOT/$model.glb"
           done
           cp -r "$LIB_ROOT/kenney_car_kit/Models/GLB format/Textures/." "$STUDIO_ROOT/Textures/"
           if [ -d "$LIB_ROOT/kenney_racing_kit/Models/GLTF format/Textures" ]; then
