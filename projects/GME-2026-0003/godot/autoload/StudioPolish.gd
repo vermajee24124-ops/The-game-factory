@@ -31,7 +31,23 @@ func vehicle_scene_for_slot(slot:int, car_id:String="") -> PackedScene:
         HERO_ALT_PATH,
         HERO_SPORT_PATH,
         HERO_SUV_PATH,
-        "res://assets/studio/race.glb"
+        "res://assets/studio/race.glb",
+        "res://assets/studio/sedan.glb",
+        "res://assets/studio/suv.glb",
+        "res://assets/studio/van.glb",
+        "res://assets/studio/delivery.glb",
+        "res://assets/studio/taxi.glb",
+        "res://assets/studio/ambulance.glb",
+        "res://assets/studio/police.glb",
+        "res://assets/studio/kart-oobi.glb",
+        "res://assets/studio/kart-oodi.glb",
+        "res://assets/studio/kart-ooli.glb",
+        "res://assets/studio/kart-oopi.glb",
+        "res://assets/studio/kart-oozi.glb",
+        "res://assets/studio/raceCarGreen.glb",
+        "res://assets/studio/raceCarOrange.glb",
+        "res://assets/studio/raceCarRed.glb",
+        "res://assets/studio/raceCarWhite.glb"
     ]
     if not car_id.is_empty():
         var preferred:int=abs(car_id.hash())%paths.size()
