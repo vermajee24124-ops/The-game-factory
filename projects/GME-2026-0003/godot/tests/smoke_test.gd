@@ -7,10 +7,29 @@ func _initialize() -> void:
     var reward_service:Node=get_root().get_node("RewardService")
     var catalog:Node=get_root().get_node("ContentCatalog")
 
-    if game_config.CARS.size() != 54:
-        failures.append("expected 54 cars, got %d" % game_config.CARS.size())
+    if game_config.CARS.size() != 100:
+        failures.append("expected 100 cars, got %d" % game_config.CARS.size())
     if game_config.WHEELS.size() != 60:
-        failures.append("expected 60 wheels, got %d" % game_config.WHEELS.size())
+        failures.append("expected 60 wheel/rim styles, got %d" % game_config.WHEELS.size())
+    if game_config.TIRES.size() != 48:
+        failures.append("expected 48 tyre setups, got %d" % game_config.TIRES.size())
+    if level_generator.TRACK_COUNT != 200:
+        failures.append("expected 200 track blueprints")
+    var profile_names:Dictionary={}
+    var car_names_seen:Dictionary={}
+    for car_id in game_config.CARS.keys():
+        var car_name:=str(game_config.car(str(car_id)).get("name",""))
+        if car_name.is_empty() or car_names_seen.has(car_name):
+            failures.append("missing/duplicate car display name %s" % car_name)
+        car_names_seen[car_name]=true
+    for profile_level in range(1, level_generator.TRACK_COUNT + 1):
+        var profile:Dictionary=level_generator.track_profile(profile_level)
+        var profile_name:=str(profile.get("name",""))
+        if profile_name.is_empty() or profile_names.has(profile_name):
+            failures.append("missing/duplicate track profile %d" % profile_level)
+        profile_names[profile_name]=true
+    if profile_names.size() != 200:
+        failures.append("expected 200 unique track profile names")
     if game_config.PAINTS.size() < 8:
         failures.append("paint catalog")
     if catalog.SKINS.size() != 54:
@@ -25,6 +44,9 @@ func _initialize() -> void:
         var definition: Dictionary = level_generator.generate(level)
         if int(definition.get("level_number", 0)) != level:
             failures.append("level number %d" % level)
+        var expected_track_id:String="track_%03d" % (posmod(level-1,level_generator.TRACK_COUNT)+1)
+        if str(definition.get("track_id","")) != expected_track_id:
+            failures.append("track blueprint ID %d" % level)
         if int(definition.get("seed", 0)) == 0:
             failures.append("seed %d" % level)
         if definition.get("race_type", "") == "Elite" and not bool(definition.get("has_diamond_pickup", false)):
@@ -43,7 +65,7 @@ func _initialize() -> void:
     for level in range(1, 10001):
         var first: Dictionary = level_generator.generate(level)
         var second: Dictionary = level_generator.generate(level)
-        if first.get("seed") != second.get("seed") or first.get("track_modules") != second.get("track_modules"):
+        if first.get("seed") != second.get("seed") or first.get("track_modules") != second.get("track_modules") or first.get("track_id") != second.get("track_id") or first.get("track_profile") != second.get("track_profile"):
             failures.append("non-deterministic level %d" % level)
             break
         var typ := str(first.get("race_type", ""))
@@ -68,8 +90,7 @@ func _initialize() -> void:
         failures.append("rank reward ordering")
 
     if failures.is_empty():
-        print("Turbo Rush smoke tests passed")
-        print("Turbo Rush smoke tests passed")
+        print("Turbo Rush 2.0.0 catalogue and determinism smoke tests passed")
         quit(0)
         return
     print("Turbo Rush smoke tests FAILED: ", failures)
