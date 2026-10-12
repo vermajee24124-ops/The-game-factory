@@ -2119,6 +2119,7 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
                 asset_visual.name="CC0VehicleVisual"
                 asset_visual.position=Vector3(0.0,0.42,0.0)
                 asset_visual.scale=Vector3.ONE*0.92
+                StudioPolish.tint_vehicle(asset_visual,body_color)
                 car.add_child(asset_visual)
 
     return car
