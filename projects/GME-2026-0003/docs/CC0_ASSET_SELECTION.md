@@ -13,7 +13,7 @@ Turbo Rush keeps a curated selection of low-poly models for its Android runtime,
 
 ## Runtime selection
 
-The Android workflow curates 21 selectable vehicle model paths from the Kenney Car Kit and Racing Kit (sports cars, sedans/SUVs, karts, utility vehicles and four racing-colour variants), plus wheel/body textures, racing stands/barriers, roadside lights, buildings and industrial props. Models are chosen by the selected garage entry, with a fallback if an optional model isn't present. When those optional source models have not yet been downloaded/imported, the game falls back to its own procedural meshes.
+The Android workflow curates 29 distinct selectable vehicle models from the Kenney Car Kit and Racing Kit (race cars, sedans/SUVs, karts, vans, delivery vehicles, utility trucks and four racing-colour variants), plus wheel/body textures, racing stands/barriers, roadside lights, buildings and industrial props. Models are selected deterministically from the garage entry ID, and their materials are tinted per instance for paint variation. The core project keeps a procedural visual fallback when optional models aren't present.
 
 The garage catalogue has **100 selectable gameplay/progression car entries**. It does **not** claim to contain 100 individually authored car models: the runtime uses available CC0 vehicle variants and eight lightweight procedural fallback silhouettes. The game also has **48 tyre parameter setups**, not 48 separately sculpted tyre meshes. The **200 track profiles** are seeded procedural archetypes that influence route segment selection, jumps, boosts, traffic, surface and width, not 200 hand-authored track scenes.
 
