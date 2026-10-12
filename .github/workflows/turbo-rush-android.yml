@@ -176,11 +176,13 @@ jobs:
           cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/ambulance.glb" "$STUDIO_ROOT/ambulance.glb"
           cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/police.glb" "$STUDIO_ROOT/police.glb"
           cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/firetruck.glb" "$STUDIO_ROOT/firetruck.glb"
-          # Additional distinct low-poly CC0 vehicle silhouettes for the garage and AI field.
-          for model in sedan suv van delivery taxi kart-oobi kart-oodi kart-ooli kart-oopi kart-oozi; do
-            cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/$model.glb" "$STUDIO_ROOT/$model.glb"
+          # Curated CC0 vehicle family: separate low-poly body meshes selected by car ID.
+          # Copy only known vehicle names; don't copy wheels, debris, or the whole source library to runtime.
+          for model in ambulance delivery-flat delivery firetruck garbage-truck hatchback-sports kart-oobi kart-oodi kart-ooli kart-oopi kart-oozi police race-future race sedan-sports sedan suv-luxury suv taxi tractor-police tractor-shovel tractor truck-flat truck van; do
+            src="$LIB_ROOT/kenney_car_kit/Models/GLB format/$model.glb"
+            if [ -s "$src" ]; then cp "$src" "$STUDIO_ROOT/$model.glb"; fi
           done
-          # Four separate racing-car body/paint variants from Kenney Racing Kit.
+          # Four racing-car body/paint variants from Kenney Racing Kit.
           for model in raceCarGreen raceCarOrange raceCarRed raceCarWhite; do
             cp "$LIB_ROOT/kenney_racing_kit/Models/GLTF format/$model.glb" "$STUDIO_ROOT/$model.glb"
           done
