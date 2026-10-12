@@ -1,5 +1,5 @@
 name: Turbo Rush Release Build
-# studio release pipeline 1.9.0 - Unity Ads + Web + no billing + expanded CC0 asset library
+# studio release pipeline 2.0.0 - 100 car entries, 48 tyre setups, 200 procedural track profiles, curated CC0 assets
 
 on:
   workflow_dispatch:
@@ -19,8 +19,8 @@ jobs:
     timeout-minutes: 90
     env:
       GODOT_VERSION: "4.7.2"
-      GAME_VERSION: "1.9.0"
-      VERSION_CODE: "14"
+      GAME_VERSION: "2.0.0"
+      VERSION_CODE: "15"
       ANDROID_PLATFORM: "android-36"
       ANDROID_BUILD_TOOLS: "36.1.0"
       ANDROID_CMDLINE_TOOLS: "11076708"
