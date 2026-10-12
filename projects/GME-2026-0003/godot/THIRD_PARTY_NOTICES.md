@@ -13,15 +13,15 @@ Turbo Rush uses selected CC0 assets from the supplied production asset package.
 
 Excluded: the supplied "CAR Model by Ignition Labs" package is not included in the production build because its supplied archive did not contain a license/readme/credit file that was sufficient to verify redistribution rights.
 
-The current CI release pipeline downloads only the seven selected Kenney GLBs from a pinned public Git commit at build time, instead of shipping the complete source asset libraries.
+The current CI release pipeline downloads the source packs at build time, copies a curated set of 29 distinct Kenney vehicle model files and a limited set of scenery GLBs into the runtime directory, and keeps the full source libraries out of the shipped game.
 
 
 ## Runtime model sources used by the Android build workflow
 
 The Android build downloads selected model files at build time from the source pages below. The source page describes the relevant pack as CC0-1.0. The build records selected-file hashes in `projects/GME-2026-0003/artifacts/SELECTED_ASSETS_SHA256.txt`.
 
-- Kenney Car Kit (vehicle body variants, wheels and textures): CC0-1.0 — https://opengameart.org/content/car-kit
-- Kenney Racing Kit (grandstand and barriers): CC0-1.0 — https://opengameart.org/content/racing-kit
+- Kenney Car Kit (25 selected vehicle models, wheels and textures): CC0-1.0 — https://opengameart.org/content/car-kit
+- Kenney Racing Kit (four racing-colour vehicle models, grandstand and barriers): CC0-1.0 — https://opengameart.org/content/racing-kit
 - Kenney City Kit Roads (roadside lighting): CC0-1.0 — https://opengameart.org/content/city-kit-roads
 - Kenney City Kit Commercial (building variants): CC0-1.0 — https://opengameart.org/content/city-kit-commercial
 - Kenney City Kit Suburban (low-rise buildings): CC0-1.0 — https://opengameart.org/content/city-kit-suburban
