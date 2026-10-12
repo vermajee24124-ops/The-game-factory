@@ -4,7 +4,7 @@ name: Turbo Rush Release Build
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, "upgrade/turbo-rush-100-cars-48-tires-200-tracks"]
     paths:
       - 'projects/GME-2026-0003/godot/**'
       - 'projects/GME-2026-0003/tests/**'
@@ -267,7 +267,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p projects/GME-2026-0003/artifacts
-          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v1.9.0-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release APK" ../artifacts/TurboRush-v2.0.0-release.apk 2>&1 | tee /tmp/turbo-export-release-apk.log
 
       - name: Reset Gradle template before AAB
         run: |
@@ -284,7 +284,7 @@ jobs:
       - name: Android release AAB
         run: |
           set -euo pipefail
-          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v1.9.0-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
+          "$GODOT_BIN" --headless --path projects/GME-2026-0003/godot --export-release "Android Release AAB" ../artifacts/TurboRush-v2.0.0-release.aab 2>&1 | tee /tmp/turbo-export-release-aab.log
 
       - name: Web release export
         run: |
@@ -297,13 +297,13 @@ jobs:
           grep -q "TurboRushWebAds" projects/GME-2026-0003/artifacts/web/index.html
           grep -q "turbo-banner-top" projects/GME-2026-0003/artifacts/web/index.html
           grep -q "turbo-banner-bottom" projects/GME-2026-0003/artifacts/web/index.html
-          (cd projects/GME-2026-0003/artifacts/web && zip -qr ../TurboRush-v1.9.0-web.zip .)
+          (cd projects/GME-2026-0003/artifacts/web && zip -qr ../TurboRush-v2.0.0-web.zip .)
 
       - name: Validate APK
         run: |
           set -euo pipefail
-          APK="projects/GME-2026-0003/artifacts/TurboRush-v1.9.0-release.apk"
-          AAB="projects/GME-2026-0003/artifacts/TurboRush-v1.9.0-release.aab"
+          APK="projects/GME-2026-0003/artifacts/TurboRush-v2.0.0-release.apk"
+          AAB="projects/GME-2026-0003/artifacts/TurboRush-v2.0.0-release.aab"
           "$ANDROID_SDK_ROOT/build-tools/36.1.0/aapt2" dump badging "$APK" | tee projects/GME-2026-0003/artifacts/APK_BADGING.txt
           "$ANDROID_SDK_ROOT/build-tools/36.1.0/apksigner" verify --verbose "$APK" | tee projects/GME-2026-0003/artifacts/APK_SIGNING.txt
           sha256sum "$APK" | tee projects/GME-2026-0003/artifacts/APK_SHA256.txt
@@ -317,7 +317,7 @@ jobs:
         run: |
           mkdir -p projects/GME-2026-0003/artifacts
           {
-            echo "Turbo Rush v1.9.0"
+            echo "Turbo Rush v2.0.0"
             echo "Godot 4.7.2"
             echo "JDK Temurin 17"
             echo "Android platform 34 + 36"
@@ -327,7 +327,7 @@ jobs:
             echo "Startup hang guard + post-boot asset loading enabled"
             echo "Lightweight racing minimap enabled"
             echo "Expanded CC0 asset library indexed in ASSET_LIBRARY_INDEX.txt"
-            echo "54 cars / 60 wheels / 54 skins / 48 cards"
+            echo "100 car entries / 60 wheel styles / 48 tyre setups / 200 track blueprints / 54 skins / 48 cards"
             echo "External billing disabled; no Aptoide Connect integration"
             echo "Release APK + release AAB + Web export generated in CI"
             echo "Aptoide Connect removed; in-app purchases removed"
@@ -342,10 +342,10 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Turbo-Rush-v1.9.0-release
+          name: Turbo-Rush-v2.0.0-release
           path: |
-            projects/GME-2026-0003/artifacts/TurboRush-v1.9.0-release.apk
-            projects/GME-2026-0003/artifacts/TurboRush-v1.9.0-release.aab
+            projects/GME-2026-0003/artifacts/TurboRush-v2.0.0-release.apk
+            projects/GME-2026-0003/artifacts/TurboRush-v2.0.0-release.aab
             projects/GME-2026-0003/artifacts/APK_BADGING.txt
             projects/GME-2026-0003/artifacts/APK_SIGNING.txt
             projects/GME-2026-0003/artifacts/APK_SHA256.txt
@@ -358,7 +358,7 @@ jobs:
             projects/GME-2026-0003/artifacts/export_release_apk.log
             projects/GME-2026-0003/artifacts/export_release_aab.log
             projects/GME-2026-0003/artifacts/export_web.log
-            projects/GME-2026-0003/artifacts/TurboRush-v1.9.0-web.zip
+            projects/GME-2026-0003/artifacts/TurboRush-v2.0.0-web.zip
           if-no-files-found: error
 
 
