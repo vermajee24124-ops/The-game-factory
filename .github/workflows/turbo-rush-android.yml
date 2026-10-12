@@ -176,7 +176,18 @@ jobs:
           cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/ambulance.glb" "$STUDIO_ROOT/ambulance.glb"
           cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/police.glb" "$STUDIO_ROOT/police.glb"
           cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/firetruck.glb" "$STUDIO_ROOT/firetruck.glb"
+          # Additional distinct low-poly CC0 vehicle silhouettes for the garage and AI field.
+          for model in sedan suv van delivery taxi kart-oobi kart-oodi kart-ooli kart-oopi kart-oozi; do
+            cp "$LIB_ROOT/kenney_car_kit/Models/GLB format/$model.glb" "$STUDIO_ROOT/$model.glb"
+          done
+          # Four separate racing-car body/paint variants from Kenney Racing Kit.
+          for model in raceCarGreen raceCarOrange raceCarRed raceCarWhite; do
+            cp "$LIB_ROOT/kenney_racing_kit/Models/GLTF format/$model.glb" "$STUDIO_ROOT/$model.glb"
+          done
           cp -r "$LIB_ROOT/kenney_car_kit/Models/GLB format/Textures/." "$STUDIO_ROOT/Textures/"
+          if [ -d "$LIB_ROOT/kenney_racing_kit/Models/GLTF format/Textures" ]; then
+            cp -r "$LIB_ROOT/kenney_racing_kit/Models/GLTF format/Textures/." "$STUDIO_ROOT/Textures/"
+          fi
 
           # Current Racing Kit references used for circuit dressing.
           find "$LIB_ROOT/kenney_racing_kit" -type f -iname 'grandStandCovered.glb' -exec cp {} "$STUDIO_ROOT/grandStandCovered.glb" \;
