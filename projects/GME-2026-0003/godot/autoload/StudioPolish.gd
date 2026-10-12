@@ -24,8 +24,9 @@ const BARRIER_PATH := "res://assets/studio/barrierRed.glb"
 var _menu_refresh_queued := false
 
 func vehicle_scene_for_slot(slot:int, car_id:String="") -> PackedScene:
-    # Prefer real CC0 Kenney vehicles for race actors. ResourceLoader caches imports,
-    # so repeated AI/traffic instances do not re-read the GLB bytes from disk.
+    # Shared CC0 low-poly vehicles. The user-facing catalogue has 100 selectable
+    # cars; these curated body families plus paint, stats and silhouette presets
+    # keep the mobile build varied without shipping a giant unneeded asset library.
     var paths:Array[String]=[
         HERO_PATH,
         HERO_ALT_PATH,
@@ -36,9 +37,18 @@ func vehicle_scene_for_slot(slot:int, car_id:String="") -> PackedScene:
         "res://assets/studio/suv.glb",
         "res://assets/studio/van.glb",
         "res://assets/studio/delivery.glb",
+        "res://assets/studio/delivery-flat.glb",
         "res://assets/studio/taxi.glb",
         "res://assets/studio/ambulance.glb",
         "res://assets/studio/police.glb",
+        "res://assets/studio/firetruck.glb",
+        "res://assets/studio/garbage-truck.glb",
+        "res://assets/studio/truck.glb",
+        "res://assets/studio/truck-flat.glb",
+        "res://assets/studio/tractor.glb",
+        "res://assets/studio/tractor-police.glb",
+        "res://assets/studio/tractor-shovel.glb",
+        "res://assets/studio/hatchback-sports.glb",
         "res://assets/studio/kart-oobi.glb",
         "res://assets/studio/kart-oodi.glb",
         "res://assets/studio/kart-ooli.glb",
@@ -50,18 +60,36 @@ func vehicle_scene_for_slot(slot:int, car_id:String="") -> PackedScene:
         "res://assets/studio/raceCarWhite.glb"
     ]
     if not car_id.is_empty():
-        var preferred:int=abs(car_id.hash())%paths.size()
+        var preferred:int=posmod(abs(car_id.hash())+abs(slot),paths.size())
         paths=[paths[preferred]]+paths
-    var index:int=0
     for path in paths:
         if not ResourceLoader.exists(path):
-            index+=1
             continue
         var packed:PackedScene=load(path) as PackedScene
         if packed:
             return packed
-        index+=1
     return null
+
+func tint_vehicle(root:Node3D, tint:Color) -> void:
+    # Duplicate per-instance materials before tinting, so player/AI variants do
+    # not recolour ResourceLoader-cached shared materials used by other racers.
+    if root == null or not is_instance_valid(root):
+        return
+    var meshes:Array[Node]=root.find_children("*","MeshInstance3D",true,false)
+    for entry in meshes:
+        var mesh_node:=entry as MeshInstance3D
+        if mesh_node == null or mesh_node.mesh == null:
+            continue
+        for surface_index in range(mesh_node.mesh.get_surface_count()):
+            var original:=mesh_node.get_active_material(surface_index)
+            if not (original is StandardMaterial3D):
+                continue
+            var cloned:=original.duplicate() as StandardMaterial3D
+            if cloned.albedo_texture != null:
+                cloned.albedo_color=Color.WHITE.lerp(tint,0.18)
+            else:
+                cloned.albedo_color=cloned.albedo_color.lerp(tint,0.78)
+            mesh_node.set_surface_override_material(surface_index,cloned)
 
 func _ready() -> void:
     # Studio assets are activated only after the first playable screen is visible.
