@@ -12,7 +12,7 @@
   "connectivity": "offline_first",
   "renderer": "mobile",
   "orientation": "landscape",
-  "status": "validation_required",
+  "status": "development",
   "release_gate": {
     "build": false,
     "tests": false,
