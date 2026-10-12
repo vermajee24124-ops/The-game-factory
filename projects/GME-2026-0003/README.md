@@ -14,7 +14,7 @@ Godot 4.7.2-first, offline-first 3D arcade racing game for Android and iOS, desi
 
 ## Art and licence scope
 
-The current build pipeline selects a small set of Kenney CC0 vehicle and environment GLBs, including five vehicle variants and road-side scenery. The 100 garage entries are game/progression variants, not 100 unique bespoke 3D meshes. Similarly, the 200 tracks are generated archetypes, not separate authored maps. This keeps downloads and memory use manageable for mobile devices.
+The Android build pipeline packages 29 distinct Kenney CC0 vehicle models, including race cars, sedans, SUVs, karts and utility vehicles, plus curated road-side and city scenery. The 100 garage entries are gameplay/progression variants, not 100 individually bespoke 3D meshes: they use these real model families, colour/skin tinting, unique stats and eight lightweight procedural fallback silhouettes. Similarly, the 200 tracks are seeded generated archetypes, not separate hand-authored maps. This keeps downloads and memory use manageable for mobile devices.
 
 The unverified Ignition Labs car model from the supplied archive is excluded because its package did not provide sufficient licence evidence. See `godot/THIRD_PARTY_NOTICES.md` and `docs/CC0_ASSET_SELECTION.md`.
 
