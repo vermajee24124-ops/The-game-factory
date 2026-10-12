@@ -18,8 +18,10 @@ target_race_seconds:
 progression:
   next_level_unlock_position_max: 5
   assist_after_failures: 2
-  car_count: 54
+  car_count: 100
   wheel_count: 60
+  tire_count: 48
+  track_blueprint_count: 200
   skin_count: 54
   card_count: 48
   upgrade_levels: 10
@@ -53,7 +55,7 @@ monetization:
       coins: [80, 120, 180, 250, 400]
       diamonds: [1, 2, 3]
   interstitial: "results_to_menu only; max once per 5 minutes; first 10 minutes disabled"
-  content_catalog: {skins: 54, cards: 48}
+  content_catalog: {skins: 54, cards: 48, tire_setups: 48, wheel_styles: 60}
   pay_to_win: false
 release:
   requires_build: true
