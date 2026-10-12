@@ -133,6 +133,23 @@ func buy_wheel(id: String) -> bool:
     SaveSystem.save_now()
     return true
 
+func buy_tire(id: String) -> bool:
+    var item: Dictionary = GameConfig.tire(id)
+    if item.is_empty():
+        return false
+    if player_level() < int(item.get("level", 1)):
+        return false
+    var owned: Array = SaveSystem.data["cosmetics"]["owned"]
+    if not owned.has(id):
+        var coins_cost := int(item.get("cost_coins", 0))
+        var diamonds_cost := int(item.get("cost_diamonds", 0))
+        if not EconomyService.spend_combo(coins_cost, diamonds_cost, "tire_purchase"):
+            return false
+        owned.append(id)
+    SaveSystem.data["cosmetics"]["equipped"]["tire"] = id
+    SaveSystem.save_now()
+    return true
+
 func buy_paint(id: String) -> bool:
     var item: Dictionary = GameConfig.paint(id)
     if player_level() < int(item.get("level", 1)):

@@ -1,6 +1,6 @@
 extends Node
 
-const GAME_VERSION := "1.9.0"
+const GAME_VERSION := "2.0.0"
 const MAX_UPGRADE_LEVEL := 10
 const REVIVE_DIAMOND_COST := 5
 const PLAYER_CAR_COUNT := 1
@@ -36,6 +36,12 @@ var WHEELS: Dictionary = {
  "nova_edge":{"name":"Nova Edge","level":100,"cost":0,"cost_coins":26000,"cost_diamonds":75,"premium":true,"ability":"Stability Pro","ability_type":"stability","ability_value":0.04}
 }
 
+var TIRES: Dictionary = {}
+
+const TIRE_NAMES := ["Street Comfort","Touring Allrounder","Urban Sport","Performance Street","Sport Grip","Sport Plus","Semi Slick A","Semi Slick B","Track Slick A","Track Slick B","Track Endurance","Track Qualifier","Rain Touring","Rain Sport","Wet Grip Pro","Aqua Channel","Gravel Runner","Gravel Rally","Loose Surface","Dirt Sprint","Rally Mixed","Rally Soft","Rally Medium","Rally Hard","Snow Touring","Ice Studded","Winter Sport","Frost Control","Sand Runner","Desert Rally","All Terrain A","All Terrain B","Highway Touring","Highway Sport","Carbon Performance","Endurance Max","Eco Rolling","Low Drag Sport","Drift Street","Drift Pro","Precision Corner","Heavy Brake","Launch Traction","Nitro Stability","Wet Track Elite","Mountain Grip","Champion Compound","Legend Compound"]
+const TIRE_SURFACES := ["asphalt","asphalt","urban","asphalt","circuit","circuit","circuit","circuit","circuit","circuit","circuit","circuit","wet","wet","wet","wet","gravel","gravel","dirt","dirt","mixed","dirt","mixed","mixed","snow","ice","snow","ice","sand","sand","mixed","mixed","asphalt","asphalt","circuit","circuit","asphalt","asphalt","asphalt","circuit","mixed","asphalt","asphalt","mixed","wet","gravel","circuit","circuit"]
+const TIRE_COMPOUNDS := ["touring","street","sport","semi_slick","slick","rain","rally","winter"]
+
 const PAINTS := {
  "paint_red":{"name":"Turbo Red","level":1,"cost":0,"currency":"coins","type":"basic","color":"#FF3B30"},
  "paint_blue":{"name":"Electric Blue","level":1,"cost":250,"currency":"coins","type":"basic","color":"#23C4FF"},
@@ -56,29 +62,31 @@ const MODIFIERS := ["Traffic Rush","Slippery Zones","Boost Famine","Narrow Works
 func _init() -> void:
     _extend_cars()
     _extend_wheels()
+    _extend_tires()
 
 func _extend_cars() -> void:
-    var ids := ["volt_striker","apex_runner","nitro_falcon","road_phantom","blaze_gt","iron_comet","storm_racer","neon_sprint","desert_x","coastal_gt","midnight_rs","thunder_bolt","silver_arrow","crimson_apex","blue_orbit","green_fury","violet_xr","solar_gt","arctic_rs","carbon_v","shadow_racer","rally_nova","drift_king","pulse_gt","meteor_rs","night_falcon","ocean_fury","firestorm_gt","glacier_x","vertex_pro","quantum_gt","aurora_racer","titan_rs","velocity_xr","phantom_x","zenith_gt","inferno_rs","cyclone_pro","eclipse_gt","prism_racer","hyperion_rs","galaxy_gt","nova_striker","legend_rs","apex_ultra","zenith_x","titan_ultra","rush_xr"]
+    # 94 unlockable entries plus six starter/early vehicles = 100 choices.
+    # Retain existing IDs to protect saves; body_style selects a lightweight silhouette.
+    var ids:Array = ["volt_striker","apex_runner","nitro_falcon","road_phantom","blaze_gt","iron_comet","storm_racer","neon_sprint","desert_x","coastal_gt","midnight_rs","thunder_bolt","silver_arrow","crimson_apex","blue_orbit","green_fury","violet_xr","solar_gt","arctic_rs","carbon_v","shadow_racer","rally_nova","drift_king","pulse_gt","meteor_rs","night_falcon","ocean_fury","firestorm_gt","glacier_x","vertex_pro","quantum_gt","aurora_racer","titan_rs","velocity_xr","phantom_x","zenith_gt","inferno_rs","cyclone_pro","eclipse_gt","prism_racer","hyperion_rs","galaxy_gt","nova_striker","legend_rs","apex_ultra","zenith_x","titan_ultra","rush_xr","finale_xr","titan_racer","quantum_rush","world_gt","arc_lightning","vortex_gt","phantom_surge","monsoon_rs","solar_wind","eclipse_pro","granite_rally","apex_sentinel","nova_pulse","glacier_torque","ember_gt","midnight_vector","drift_spectre","titan_velocity","ion_storm","cobalt_rush","crimson_tide","zenith_blade","orbital_gt","tempest_rs","wildfire_x","aurora_prime","lunar_velocity","copperhead_gt","shadow_matrix","blue_thunder","jade_phantom","quartz_racer","silver_comet","vector_one","overdrive_x","rally_tempest","circuit_nova","nebula_king","horizon_rs","meteor_blitz","thunder_crest","apex_horizon","velocity_prime","hyper_drive","ion_runner","vortex_legend"]
+    var car_names:Array = ["Volt Striker","Apex Runner","Nitro Falcon","Road Phantom","Blaze GT","Iron Comet","Storm Racer","Neon Sprint","Desert X","Coastal GT","Midnight RS","Thunder Bolt","Silver Arrow","Crimson Apex","Blue Orbit","Green Fury","Violet XR","Solar GT","Arctic RS","Carbon V","Shadow Racer","Rally Nova","Drift King","Pulse GT","Meteor RS","Night Falcon","Ocean Fury","Firestorm GT","Glacier X","Vertex Pro","Quantum GT","Aurora Racer","Titan RS","Velocity XR","Phantom X","Zenith GT","Inferno RS","Cyclone Pro","Eclipse GT","Prism Racer","Hyperion RS","Galaxy GT","Nova Striker","Legend RS","Apex Ultra","Zenith X","Titan Ultra","Rush XR","Finale XR","Titan Racer","Quantum Rush","World GT","Arc Lightning","Vortex GT","Phantom Surge","Monsoon RS","Solar Wind","Eclipse Pro","Granite Rally","Apex Sentinel","Nova Pulse","Glacier Torque","Ember GT","Midnight Vector","Drift Spectre","Titan Velocity","Ion Storm","Cobalt Rush","Crimson Tide","Zenith Blade","Orbital GT","Tempest RS","Wildfire X","Aurora Prime","Lunar Velocity","Copperhead GT","Shadow Matrix","Blue Thunder","Jade Phantom","Quartz Racer","Silver Comet","Vector One","Overdrive X","Rally Tempest","Circuit Nova","Nebula King","Horizon RS","Meteor Blitz","Thunder Crest","Apex Horizon","Velocity Prime","Hyper Drive","Ion Runner","Vortex Legend"]
     for i in range(ids.size()):
-        var n := i + 7
-        var base := n - 7
-        var tier := mini(11, floori(float(base) / 4.0))
+        var base := i
         var level := 8 + base * 4
-        var top := 149.0 + float(base) * 1.05
-        var accel := 8.4 + float(base) * 0.045
+        var tier := mini(18, floori(float(base) / 5.0))
+        var top := minf(222.0, 149.0 + float(base) * 0.78)
+        var accel := 8.4 + float(base) * 0.035
         var grip := 1.01 + float(base % 7) * 0.01
         var brake := 12.2 + float(base % 6) * 0.18
-        var boost := 27.0 + float(base) * 0.26
+        var boost := 27.0 + float(base) * 0.22
         var duration := 2.05 + float(base % 6) * 0.08
         var stability := 0.98 + float(base % 7) * 0.012
         var coins := 3000 + base * 2200
-        var diamonds := 12 + floori(float(base) * 2.0)
-        var a:String = ["launch_boost","boost_efficiency","damage_reduction","coin_multiplier","handling","boost_power","stability","speed"][base % 8]
-        var av:float = float([0.05,0.07,0.06,0.05,0.04,0.06,0.05,0.025][base % 8])
-        var an:String = ["Launch Burst","Nitro Saver","Impact Guard","Coin Rush","Apex Grip","Turbo Core","Stability Pro","Velocity Core"][base % 8]
-        var car_names:Array=["Street King","Turbo Viper","Canyon Falcon","Circuit Phantom","Hyper Nova","Volt Striker","Apex Runner","Nitro Falcon","Road Phantom","Blaze GT","Iron Comet","Storm Racer","Neon Sprint","Desert X","Coastal GT","Midnight RS","Thunder Bolt","Silver Arrow","Crimson Apex","Blue Orbit","Green Fury","Violet XR","Solar GT","Arctic RS","Carbon V","Shadow Racer","Rally Nova","Drift King","Pulse GT","Meteor RS","Night Falcon","Ocean Fury","Firestorm GT","Glacier X","Vertex Pro","Quantum GT","Aurora Racer","Titan RS","Velocity XR","Phantom X","Zenith GT","Inferno RS","Cyclone Pro","Eclipse GT","Prism Racer","Hyperion RS","Galaxy GT","Nova Striker","Legend RS","Apex Ultra","Finale XR","Titan Racer","Quantum Rush","World GT"]
-        CARS[ids[i]] = {
-            "name": str(car_names[n-1]),
+        var diamonds := 12 + base
+        var ability_type:String = ["launch_boost","boost_efficiency","damage_reduction","coin_multiplier","handling","boost_power","stability","speed"][base % 8]
+        var ability_value:float = float([0.05,0.07,0.06,0.05,0.04,0.06,0.05,0.025][base % 8])
+        var ability_name:String = ["Launch Burst","Nitro Saver","Impact Guard","Coin Rush","Apex Grip","Turbo Core","Stability Pro","Velocity Core"][base % 8]
+        CARS[str(ids[i])] = {
+            "name": str(car_names[i]),
             "level": level,
             "cost": coins,
             "cost_coins": coins,
@@ -90,9 +98,10 @@ func _extend_cars() -> void:
             "boost_power": boost,
             "boost_duration": duration,
             "stability": stability,
-            "ability": an,
-            "ability_type": a,
-            "ability_value": av + float(tier % 3) * 0.01
+            "ability": ability_name,
+            "ability_type": ability_type,
+            "ability_value": ability_value + float(tier % 3) * 0.01,
+            "body_style": base % 8
         }
 
 func _extend_wheels() -> void:
@@ -117,11 +126,51 @@ func _extend_wheels() -> void:
             "ability_value": av
         }
 
+func _extend_tires() -> void:
+    for i in range(TIRE_NAMES.size()):
+        var n := i + 1
+        var id := "tire_%02d" % n
+        var surface := str(TIRE_SURFACES[i])
+        var compound := str(TIRE_COMPOUNDS[i % TIRE_COMPOUNDS.size()])
+        var tier := floori(float(i) / 6.0)
+        var grip := 0.94 + float((i * 3) % 7) * 0.018
+        var accel_mult := 0.97 + float((i * 5) % 6) * 0.012
+        var brake_mult := 0.95 + float((i * 2) % 8) * 0.016
+        var durability := 0.82 + float((i * 3) % 7) * 0.04
+        if surface == "wet" and compound == "rain":
+            grip += 0.025
+            brake_mult += 0.025
+        elif surface in ["snow","ice"] and compound == "winter":
+            grip += 0.025
+            brake_mult += 0.015
+        elif surface in ["gravel","dirt","sand"] and compound == "rally":
+            grip += 0.02
+            accel_mult += 0.01
+        var coins := 0 if i == 0 else 250 + i * 350
+        var diamonds := 0 if n < 25 else mini(12, 1 + floori(float(n - 25) / 4.0))
+        TIRES[id] = {
+            "id": id,
+            "name": str(TIRE_NAMES[i]),
+            "level": 1 if i == 0 else 1 + i * 2,
+            "cost_coins": coins,
+            "cost_diamonds": diamonds,
+            "compound": compound,
+            "surface": surface,
+            "grip_multiplier": clampf(grip, 0.92, 1.12),
+            "acceleration_multiplier": clampf(accel_mult, 0.95, 1.05),
+            "braking_multiplier": clampf(brake_mult, 0.93, 1.10),
+            "durability": clampf(durability, 0.8, 1.1),
+            "tier": tier
+        }
+
 func car(id:String)->Dictionary:
     return CARS.get(id,CARS["rookie_gt"])
 
 func wheel(id:String)->Dictionary:
     return WHEELS.get(id,WHEELS["wheel_stock"])
+
+func tire(id:String) -> Dictionary:
+    return TIRES.get(id, {})
 
 func paint(id:String)->Dictionary:
     return PAINTS.get(id,PAINTS["paint_red"])

@@ -15,7 +15,7 @@ func _defaults()->Dictionary:
         "currencies":{"coins":0,"diamonds":0},
         "campaign":{"total_stars":0,"star_milestones_claimed":[],"levels":{}},
         "progression":{"upgrades":{"top_speed":0,"acceleration":0,"handling":0,"braking":0,"boost_power":0,"boost_duration":0,"stability":0},"cars":{"owned":["rookie_gt"],"selected":"rookie_gt"},"abilities":{"slipstream_boost":false,"clean_run_bonus":false,"perfect_landing_boost":false},"cards":{"owned":["card_01"],"equipped":["card_01"]}},
-        "cosmetics":{"owned":["wheel_stock","paint_red","material_basic","skin_01"],"equipped":{"wheel":"wheel_stock","paint":"paint_red","material":"material_basic","decal":"none","underglow":"none","skin":"skin_01"}},
+        "cosmetics":{"owned":["wheel_stock","paint_red","material_basic","skin_01","tire_01"],"equipped":{"wheel":"wheel_stock","tire":"tire_01","paint":"paint_red","material":"material_basic","decal":"none","underglow":"none","skin":"skin_01"}},
         "settings":{"audio":{"master_volume":1.0,"music_volume":1.0,"sfx_volume":1.0,"engine_volume":1.0},"controls":{"steering_sensitivity":0.5,"auto_acceleration":true,"manual_brake_enabled":false,"boost_tap_mode":false,"large_controls":false},"graphics":{"quality":"medium","target_fps":60,"reduce_motion":false},"haptics_enabled":true,"language":"en"},
         "monetization":{"ads":{"daily":{"date":"1970-01-01","revive_count":0,"double_coins_count":0,"bonus_coins_count":0},"interstitial":{"first_launch_unix":0,"last_shown_unix":0,"results_since_last":0}}},
         "privacy":{"consent_version":1,"consent_status":"unknown","personalized_ads":false,"analytics_allowed":false,"att_status":"not_required","consent_timestamp_unix":0},
@@ -88,7 +88,13 @@ func _repair_invariants()->void:
 
     if not data["cosmetics"].has("owned"): data["cosmetics"]["owned"]=[]
     if not data["cosmetics"]["owned"].has("skin_01"): data["cosmetics"]["owned"].append("skin_01")
+    if not data["cosmetics"]["owned"].has("tire_01"): data["cosmetics"]["owned"].append("tire_01")
+    if not data["cosmetics"].has("equipped") or not (data["cosmetics"]["equipped"] is Dictionary):
+        data["cosmetics"]["equipped"]=defaults["cosmetics"]["equipped"].duplicate(true)
     if not data["cosmetics"]["equipped"].has("skin"): data["cosmetics"]["equipped"]["skin"]="skin_01"
+    var equipped_tire_id:=str(data["cosmetics"]["equipped"].get("tire","tire_01"))
+    if not GameConfig.TIRES.has(equipped_tire_id):
+        data["cosmetics"]["equipped"]["tire"]="tire_01"
 
 
 func save_now()->void:
