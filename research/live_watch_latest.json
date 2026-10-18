@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "retrieved_at": "2026-10-18T09:33:01.629505+00:00",
+  "purpose": "low-cost live discovery for the Autonomous Godot Game Factory",
+  "model_calls": 0,
+  "gemini_calls": 0,
+  "sections": [
+    {
+      "source": "Godot stable releases",
+      "url": "https://api.github.com/repos/godotengine/godot/releases?per_page=10",
+      "retrieved_at": "2026-10-18T09:33:01.629516+00:00",
+      "status": "ok",
+      "items": [
+        {
+          "name": "3.6.3-stable",
+          "tag": "3.6.3-stable",
+          "published_at": "2026-08-22T14:05:19Z",
+          "url": "https://github.com/godotengine/godot/releases/tag/3.6.3-stable"
+        },
+        {
+          "name": "4.7.2-stable",
+          "tag": "4.7.2-stable",
+          "published_at": "2026-08-18T16:12:28Z",
+          "url": "https://github.com/godotengine/godot/releases/tag/4.7.2-stable"
+        },
+        {
+          "name": "4.7.1-stable",
+          "tag": "4.7.1-stable",
+          "published_at": "2026-07-14T18:03:10Z",
+          "url": "https://github.com/godotengine/godot/releases/tag/4.7.1-stable"
+        },
+        {
+          "name": "4.7-stable",
+          "tag": "4.7-stable",
+          "published_at": "2026-06-18T12:06:17Z",
+          "url": "https://github.com/godotengine/godot/releases/tag/4.7-stable"
+        },
+        {
+          "name": "4.6.3-stable",
+          "tag": "4.6.3-stable",
+          "published_at": "2026-05-20T20:49:16Z",
+          "url": "https://github.com/godotengine/godot/releases/tag/4.6.3-stable"
+        }
+      ]
+    },
+    {
+      "source": "GitHub Godot AI/MCP repositories",
+      "url": "https://api.github.com/search/repositories?q=Godot%20MCP%20AI%20agent&sort=updated&per_page=8",
+      "retrieved_at": "2026-10-18T09:33:02.160745+00:00",
+      "status": "ok",
+      "items": [
+        {
+          "name": "jorgeaktas/godot-mcp",
+          "description": "Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents",
+          "url": "https://github.com/jorgeaktas/godot-mcp",
+          "updated_at": "2026-10-18T06:53:48Z",
+          "stars": 0,
+          "license": "NOASSERTION"
+        },
+        {
+          "name": "nexarioneo/godot-copilot",
+          "description": "AI agent chat dock for the Godot 4 editor: multi-provider (OpenAI-compatible + Anthropic), tool execution, subagents, MCP and an action(target) permission system. Early version, expect bugs.",
+          "url": "https://github.com/nexarioneo/godot-copilot",
+          "updated_at": "2026-10-18T06:29:22Z",
+          "stars": 0,
+          "license": "MIT"
+        },
+        {
+          "name": "Le762/godot-mcp",
+          "description": "Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents",
+          "url": "https://github.com/Le762/godot-mcp",
+          "updated_at": "2026-10-18T05:07:12Z",
+          "stars": 0,
+          "license": "NOASSERTION"
+        },
+        {
+          "name": "Denizp83431/godot-mcp",
+          "description": "Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents",
+          "url": "https://github.com/Denizp83431/godot-mcp",
+          "updated_at": "2026-10-17T22:19:13Z",
+          "stars": 0,
+          "license": "NOASSERTION"
+        },
+        {
+          "name": "karinhill66/godot-mcp",
+          "description": "Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents",
+          "url": "https://github.com/karinhill66/godot-mcp",
+          "updated_at": "2026-10-17T22:01:56Z",
+          "stars": 0,
+          "license": "NOASSERTION"
+        },
+        {
+          "name": "hashimoto5835/godot-mcp",
+          "description": "Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents",
+          "url": "https://github.com/hashimoto5835/godot-mcp",
+          "updated_at": "2026-10-17T21:32:46Z",
+          "stars": 0,
+          "license": "NOASSERTION"
+        },
+        {
+          "name": "nataliar87/godot-mcp",
+          "description": "Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents",
+          "url": "https://github.com/nataliar87/godot-mcp",
+          "updated_at": "2026-10-17T21:28:01Z",
+          "stars": 0,
+          "license": "NOASSERTION"
+        },
+        {
+          "name": "lozkan56/godot-mcp",
+          "description": "Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents",
+          "url": "https://github.com/lozkan56/godot-mcp",
+          "updated_at": "2026-10-17T21:14:09Z",
+          "stars": 0,
+          "license": "NOASSERTION"
+        }
+      ]
+    },
+    {
+      "source": "Hugging Face Godot models",
+      "url": "https://huggingface.co/api/models?search=godot&limit=10&sort=lastModified&direction=-1",
+      "retrieved_at": "2026-10-18T09:33:02.592633+00:00",
+      "status": "ok",
+      "items": [
+        {
+          "id": "arunsrajan/qwen3.5-2b-godot-thinking-GGUF",
+          "url": "https://huggingface.co/arunsrajan/qwen3.5-2b-godot-thinking-GGUF",
+          "last_modified": "2026-10-11T11:14:03.000Z",
+          "pipeline_tag": null,
+          "downloads": 272,
+          "likes": 0
+        },
+        {
+          "id": "arunsrajan/qwen3.5-2b-godot-thinking",
+          "url": "https://huggingface.co/arunsrajan/qwen3.5-2b-godot-thinking",
+          "last_modified": "2026-10-11T10:59:30.000Z",
+          "pipeline_tag": "image-text-to-text",
+          "downloads": 27,
+          "likes": 0
+        },
+        {
+          "id": "arunsrajan/qwen3.5-2b-godot-docs-GGUF",
+          "url": "https://huggingface.co/arunsrajan/qwen3.5-2b-godot-docs-GGUF",
+          "last_modified": "2026-10-11T08:45:38.000Z",
+          "pipeline_tag": null,
+          "downloads": 195,
+          "likes": 0
+        },
+        {
+          "id": "arunsrajan/qwen3.5-2b-godot-docs",
+          "url": "https://huggingface.co/arunsrajan/qwen3.5-2b-godot-docs",
+          "last_modified": "2026-10-11T08:29:54.000Z",
+          "pipeline_tag": "image-text-to-text",
+          "downloads": 26,
+          "likes": 0
+        },
+        {
+          "id": "mradermacher/Godoter-27B-GGUF",
+          "url": "https://huggingface.co/mradermacher/Godoter-27B-GGUF",
+          "last_modified": "2026-10-07T19:33:35.000Z",
+          "pipeline_tag": null,
+          "downloads": 921,
+          "likes": 1
+        },
+        {
+          "id": "Janstnkel/Godoter-27B",
+          "url": "https://huggingface.co/Janstnkel/Godoter-27B",
+          "last_modified": "2026-09-07T17:03:35.000Z",
+          "pipeline_tag": "text-generation",
+          "downloads": 23,
+          "likes": 0
+        },
+        {
+          "id": "3bse/Llama3-Godot4-Senior",
+          "url": "https://huggingface.co/3bse/Llama3-Godot4-Senior",
+          "last_modified": "2026-07-10T20:02:18.000Z",
+          "pipeline_tag": null,
+          "downloads": 0,
+          "likes": 0
+        },
+        {
+          "id": "GoDotWebs/dotwebs-1",
+          "url": "https://huggingface.co/GoDotWebs/dotwebs-1",
+          "last_modified": "2026-07-10T06:26:03.000Z",
+          "pipeline_tag": "text-generation",
+          "downloads": 15,
+          "likes": 1
+        },
+        {
+          "id": "SaltShakerStudio/Qwen2.5-GodotCoder",
+          "url": "https://huggingface.co/SaltShakerStudio/Qwen2.5-GodotCoder",
+          "last_modified": "2026-07-06T17:21:05.000Z",
+          "pipeline_tag": "text-generation",
+          "downloads": 73,
+          "likes": 0
+        },
+        {
+          "id": "h1st0ry3D/Godoter-27B-MLX-4bit",
+          "url": "https://huggingface.co/h1st0ry3D/Godoter-27B-MLX-4bit",
+          "last_modified": "2026-07-02T08:14:23.000Z",
+          "pipeline_tag": "text-generation",
+          "downloads": 196,
+          "likes": 2
+        }
+      ]
+    }
+  ]
+}
