@@ -10,11 +10,11 @@ This folder builds a standalone ZIP for the browser version of **Open Road: Clea
 - Hides the change-car action and keeps the pause menu to a simple **Back to race** action.
 - Prevents ordinary browser selection, long-press context menus and text dragging over the game area and driving controls.
 - Requests full-screen and landscape orientation from a user gesture. Mobile browsers and embedded game portals can deny orientation locking; when that happens, a small prompt asks the player to rotate the device.
-- Uses the Yes2Games dashboard-injected `window.Yes2SDK` global directly. The browser game initializes the SDK, reports loading progress, calls `startGameAsync()`, and tracks gameplay lifecycle events. The platform SDK itself is supplied by the dashboard, not copied into the ZIP.
+- Includes the official `yes2-runtime.js` helper from `@yes2games/js` plus its licence text. The Dashboard supplies the actual `window.Yes2SDK` platform SDK when bundling a build; no platform SDK or private key is hard-coded into this ZIP.
 - Starts SDK initialization early, retries `startGameAsync()` if the injected adapter arrives late, reports loading progress, and tracks `gameplayStart()` / `gameplayStop()`.
-- Uses `Yes2SDK.ads.showInterstitial()` only when the player chooses **Race again**, not during a race or in the first three minutes of a session, with at least three minutes between interstitials. The game pauses and audio is muted during the ad. A missing SDK, unsupported format or no-fill does not block the next race.
+- Uses the official JavaScript wrapper `window.Yes2Runtime.ads` for interstitials and simple banners. An interstitial is requested only when the player chooses **Race again** and after the first three minutes of a session. Further natural breaks are signalled to the platform SDK so each portal can apply its own frequency rules. The game pauses and audio is muted during the ad. Missing SDK, unsupported format or no-fill does not block play.
 - Handles Yes2SDK `pause`, `resume`, `audioEnabledChange`, and account-dialog events, including a separate platform audio-mute state that preserves the player's own sound preference.
-- Uses `Yes2SDK.banners.showBanner()` for a small results-screen banner where the host supports it; hides the banner before a race starts.
+- Shows a bottom banner on the results screen via the wrapper when that format is supported; hides it before a race starts. Banners are not available on every portal.
 - Signals the optional `Yes2SDK.game.happyTime()` hook after a first-place finish when supported.
 - Rebuilds the actual WebAssembly engine with a modest high-speed steering tune: the speed-sensitive steering lock is increased slightly, its high-speed minimum is raised, and steering-angle response is 20% faster. The steering lock still decreases with speed instead of being forced to maximum at all speeds.
 - Preserves the upstream credits and downloads the upstream README and asset licence ledger into the ZIP.
@@ -29,13 +29,13 @@ No API keys or other secrets are embedded. This does not add a rewarded-video bu
 4. When the workflow succeeds, open that run and download the `Open-Road-Yes2Games-WebBuild` artifact.
 5. Extract the artifact ZIP if needed. The game archive inside has `index.html` at its root, along with the WebAssembly files and track packs.
 
-The workflow rebuilds the Open Road WebAssembly engine, verifies that the three steering-tuning source changes were applied, runs `node --check` on the game and SDK smoke test, and tests the start handshake, gameplay lifecycle, pause/resume, platform audio mute, the early-ad gate, and ad audio restoration using a mock SDK. It also verifies required files and ZIP structure. The mock test is not a substitute for certification in your Yes2Games account.
+The workflow rebuilds the Open Road WebAssembly engine, verifies the three steering-tuning source changes, checks the game, wrapper and mock test JavaScript, and tests the start handshake, gameplay lifecycle, pause/resume, platform audio mute, the initial ad gate, results banner, and ad audio restoration with a mock SDK. It also verifies required files and ZIP structure. The mock test is not a substitute for certification in your Yes2Games account.
 
 ## Upload to Yes2Games
 
 Upload the ZIP containing `index.html` from the Yes2Games dashboard as an HTML5 / JavaScript web game. Select the Yes2SDK integration for the build/platform where the dashboard offers it, then use the dashboard preview/QA checks to verify loading, gameplay lifecycle, interstitials and banners.
 
-The ZIP does not contain the platform's real SDK. Real ads require the Yes2Games dashboard to inject `window.Yes2SDK` for an approved platform. Opening the ZIP locally is expected to run without paid ads. The code is defensive when the runtime is absent, an ad has no fill, or that platform doesn't support a format. Actual earnings are never guaranteed.
+The ZIP includes the small JavaScript helper, not the platform's real SDK. Real ads require the Yes2Games dashboard to inject `window.Yes2SDK` for an approved platform. Opening the ZIP locally is expected to run without paid ads. The code is defensive when the runtime is absent, an ad has no fill, or that platform doesn't support a format. Actual earnings are never guaranteed.
 
 ## Important limits
 
