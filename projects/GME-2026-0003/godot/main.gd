@@ -1155,7 +1155,7 @@ func _refresh_garage()->void:
             _refresh_currency_header()
         )
 
-    _label(cosmetics,"PAINTS + WHEELS",28,palette.muted)
+    _label(cosmetics,"PAINTS + WHEELS + TYRES",28,palette.muted)
     for id in GameConfig.PAINTS.keys():
         var item:Dictionary=GameConfig.paint(str(id))
         var owned_p:=ProgressionService.has_cosmetic(str(id))
@@ -1180,6 +1180,23 @@ func _refresh_garage()->void:
         b.disabled=not (owned_w or ProgressionService.player_level()>=int(item.get("level",1)))
         b.pressed.connect(func(wheel_id=str(id)):
             if ProgressionService.buy_wheel(wheel_id):_show_toast("Wheels equipped")
+            else:_show_toast("Level or currency required")
+            _refresh_garage()
+            _refresh_currency_header()
+        )
+
+    _label(cosmetics,"TYRE COMPOUNDS • %d SETUPS" % GameConfig.TIRES.size(),26,palette.muted)
+    for id in GameConfig.TIRES.keys():
+        var item:Dictionary=GameConfig.tire(str(id))
+        var owned_t:=ProgressionService.has_cosmetic(str(id))
+        var cur_t:=str(SaveSystem.data["cosmetics"]["equipped"].get("tire","tire_01"))==str(id)
+        var ttxt:=str(item.get("name",""))+" • "+str(item.get("surface","asphalt")).capitalize()+" • Grip "+str(snappedf(float(item.get("grip_multiplier",1.0)),0.01))
+        if not owned_t:
+            ttxt+=" • "+str(item.get("cost_coins",0))+" Coins + "+str(item.get("cost_diamonds",0))+" Diamonds"
+        var tire_button:=_button(cosmetics,("✓ " if cur_t else "")+ttxt,Vector2(590,54),owned_t or ProgressionService.player_level()>=int(item.get("level",1)))
+        tire_button.disabled=not (owned_t or ProgressionService.player_level()>=int(item.get("level",1)))
+        tire_button.pressed.connect(func(tire_id=str(id)):
+            if ProgressionService.buy_tire(tire_id):_show_toast("Tyre setup equipped")
             else:_show_toast("Level or currency required")
             _refresh_garage()
             _refresh_currency_header()
@@ -1407,12 +1424,13 @@ func _build_race_world()->void:
     player_car.add_child(race_camera)
 
 func _generate_path()->void:
+    var width_scale:=float(level_def.get("track_width_scale",1.0))
     var pos:=Vector3.ZERO
     var heading:=0.0
     var distance:=0.0
     path_points.append(pos)
     path_distances.append(distance)
-    path_widths.append(ROAD_WIDTH)
+    path_widths.append(ROAD_WIDTH*width_scale)
     for module in level_def.track_modules:
         var length:=float(module.get("length",50.0))
         var steps:=maxi(2,ceili(length/ROAD_STEP))
@@ -1437,7 +1455,7 @@ func _generate_path()->void:
             path_points.append(pos)
             distance+=step_len
             path_distances.append(distance)
-            path_widths.append(NARROW_WIDTH if typ=="narrow_gate" else ROAD_WIDTH)
+            path_widths.append((NARROW_WIDTH if typ=="narrow_gate" else ROAD_WIDTH)*width_scale)
         heading=start_heading+final_turn
 
 func _build_track_surface()->void:
@@ -1445,8 +1463,31 @@ func _build_track_surface()->void:
     var st:=SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     var mat:=StandardMaterial3D.new()
-    mat.albedo_color=Color("#1A2030")
-    mat.roughness=0.92
+    var surface_type:=str(level_def.get("track_surface","asphalt"))
+    match surface_type:
+        "wet":
+            mat.albedo_color=Color("#172633")
+            mat.roughness=0.34
+            mat.metallic=0.16
+        "gravel":
+            mat.albedo_color=Color("#37383A")
+            mat.roughness=0.98
+        "sand":
+            mat.albedo_color=Color("#655441")
+            mat.roughness=0.95
+        "snow":
+            mat.albedo_color=Color("#A9B6C9")
+            mat.roughness=0.86
+        "ice":
+            mat.albedo_color=Color("#718DA5")
+            mat.roughness=0.28
+            mat.metallic=0.12
+        "dirt":
+            mat.albedo_color=Color("#57463A")
+            mat.roughness=0.98
+        _:
+            mat.albedo_color=Color("#1A2030")
+            mat.roughness=0.92
     st.set_material(mat)
     for i in range(path_points.size()-1):
         var p0:=path_points[i]
@@ -1773,6 +1814,88 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
     car.add_child(shape)
 
     car.set_meta("car_id",_car_id)
+    var car_data:Dictionary=GameConfig.car(_car_id)
+    var body_style:int=int(car_data.get("body_style",abs(_car_id.hash())%8))%8
+    var body_size:=Vector3(2.08,0.52,3.42)
+    var body_pos:=Vector3(0,0.82,-0.15)
+    var hood_size:=Vector3(1.88,0.20,1.18)
+    var hood_pos:=Vector3(0,1.03,-1.38)
+    var cabin_size:=Vector3(1.34,0.52,1.70)
+    var cabin_pos:=Vector3(0,1.25,0.05)
+    var roof_size:=Vector3(1.08,0.08,1.15)
+    var roof_pos:=Vector3(0,1.57,0.05)
+    var spoiler_size:=Vector3(1.76,0.12,0.36)
+    var spoiler_pos:=Vector3(0,1.23,1.72)
+    match body_style:
+        1:
+            body_size=Vector3(2.10,0.34,3.88)
+            body_pos=Vector3(0,0.69,-0.08)
+            hood_size=Vector3(1.90,0.13,1.36)
+            hood_pos=Vector3(0,0.86,-1.25)
+            cabin_size=Vector3(1.05,0.30,1.12)
+            cabin_pos=Vector3(0,0.98,0.18)
+            roof_size=Vector3(0.95,0.06,0.82)
+            roof_pos=Vector3(0,1.16,0.18)
+            spoiler_size=Vector3(2.00,0.10,0.30)
+            spoiler_pos=Vector3(0,0.98,1.78)
+        2:
+            body_size=Vector3(2.00,0.58,3.28)
+            body_pos=Vector3(0,0.84,0.02)
+            hood_size=Vector3(1.82,0.18,1.00)
+            hood_pos=Vector3(0,1.02,-1.35)
+            cabin_size=Vector3(1.42,0.60,1.52)
+            cabin_pos=Vector3(0,1.29,0.22)
+            roof_size=Vector3(1.19,0.08,1.08)
+            roof_pos=Vector3(0,1.62,0.22)
+        3:
+            body_size=Vector3(2.12,0.47,3.72)
+            body_pos=Vector3(0,0.79,-0.12)
+            hood_size=Vector3(1.94,0.17,1.48)
+            hood_pos=Vector3(0,0.99,-1.26)
+            cabin_size=Vector3(1.28,0.45,1.55)
+            cabin_pos=Vector3(0,1.20,0.12)
+            roof_size=Vector3(1.09,0.07,1.10)
+            roof_pos=Vector3(0,1.47,0.12)
+        4:
+            body_size=Vector3(2.18,0.58,3.48)
+            body_pos=Vector3(0,0.84,-0.10)
+            hood_size=Vector3(1.96,0.22,1.46)
+            hood_pos=Vector3(0,1.08,-1.30)
+            cabin_size=Vector3(1.22,0.46,1.42)
+            cabin_pos=Vector3(0,1.28,0.12)
+            roof_size=Vector3(1.06,0.08,0.98)
+            roof_pos=Vector3(0,1.55,0.12)
+        5:
+            body_size=Vector3(2.00,0.38,3.84)
+            body_pos=Vector3(0,0.73,-0.04)
+            hood_size=Vector3(1.84,0.14,1.45)
+            hood_pos=Vector3(0,0.91,-1.32)
+            cabin_size=Vector3(1.12,0.38,1.30)
+            cabin_pos=Vector3(0,1.07,0.08)
+            roof_size=Vector3(0.98,0.07,0.98)
+            roof_pos=Vector3(0,1.29,0.08)
+            spoiler_size=Vector3(1.92,0.11,0.34)
+            spoiler_pos=Vector3(0,1.02,1.78)
+        6:
+            body_size=Vector3(2.03,0.45,3.24)
+            body_pos=Vector3(0,0.79,-0.05)
+            hood_size=Vector3(1.84,0.16,1.28)
+            hood_pos=Vector3(0,0.99,-1.30)
+            cabin_size=Vector3(1.38,0.27,1.13)
+            cabin_pos=Vector3(0,1.06,0.16)
+            roof_size=Vector3(1.10,0.06,0.82)
+            roof_pos=Vector3(0,1.20,0.16)
+            spoiler_size=Vector3(1.52,0.10,0.28)
+            spoiler_pos=Vector3(0,1.06,1.60)
+        7:
+            body_size=Vector3(2.16,0.62,3.48)
+            body_pos=Vector3(0,0.86,-0.05)
+            hood_size=Vector3(1.90,0.20,1.18)
+            hood_pos=Vector3(0,1.05,-1.32)
+            cabin_size=Vector3(1.36,0.55,1.56)
+            cabin_pos=Vector3(0,1.32,0.12)
+            roof_size=Vector3(1.14,0.08,1.08)
+            roof_pos=Vector3(0,1.63,0.12)
     var body_color:=color
     if car_name=="PLAYER":
         var skin_id:=str(SaveSystem.data["cosmetics"]["equipped"].get("skin","skin_01"))
@@ -1794,9 +1917,9 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
 
     var body:=MeshInstance3D.new()
     var bm:=BoxMesh.new()
-    bm.size=Vector3(2.08,0.52,3.42)
+    bm.size=body_size
     body.mesh=bm
-    body.position=Vector3(0,0.82,-0.15)
+    body.position=body_pos
     body.rotation_degrees.x=-2.5
     var mat:=StandardMaterial3D.new()
     mat.albedo_color=body_color
@@ -1807,18 +1930,18 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
 
     var hood:=MeshInstance3D.new()
     var hm:=BoxMesh.new()
-    hm.size=Vector3(1.88,0.20,1.18)
+    hm.size=hood_size
     hood.mesh=hm
-    hood.position=Vector3(0,1.03,-1.38)
+    hood.position=hood_pos
     hood.rotation_degrees.x=-4.0
     hood.material_override=mat
     car.add_child(hood)
 
     var cabin:=MeshInstance3D.new()
     var cb:=BoxMesh.new()
-    cb.size=Vector3(1.34,0.52,1.70)
+    cb.size=cabin_size
     cabin.mesh=cb
-    cabin.position=Vector3(0,1.25,0.05)
+    cabin.position=cabin_pos
     cabin.rotation_degrees.x=7.0
     var glass:=StandardMaterial3D.new()
     glass.albedo_color=Color("#12243B")
@@ -1829,9 +1952,9 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
 
     var roof:=MeshInstance3D.new()
     var rb:=BoxMesh.new()
-    rb.size=Vector3(1.08,0.08,1.15)
+    rb.size=roof_size
     roof.mesh=rb
-    roof.position=Vector3(0,1.57,0.05)
+    roof.position=roof_pos
     var roof_mat:=StandardMaterial3D.new()
     roof_mat.albedo_color=Color("#0E1420")
     roof_mat.metallic=0.55
@@ -1852,9 +1975,9 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
 
     var spoiler:=MeshInstance3D.new()
     var sb:=BoxMesh.new()
-    sb.size=Vector3(1.76,0.12,0.36)
+    sb.size=spoiler_size
     spoiler.mesh=sb
-    spoiler.position=Vector3(0,1.23,1.72)
+    spoiler.position=spoiler_pos
     spoiler.material_override=roof_mat
     car.add_child(spoiler)
 
@@ -1996,6 +2119,7 @@ func _make_car(car_name:String,_car_id:String,color:Color)->CharacterBody3D:
                 asset_visual.name="CC0VehicleVisual"
                 asset_visual.position=Vector3(0.0,0.42,0.0)
                 asset_visual.scale=Vector3.ONE*0.92
+                StudioPolish.tint_vehicle(asset_visual,body_color)
                 car.add_child(asset_visual)
 
     return car
@@ -2132,6 +2256,22 @@ func _update_race(delta:float)->void:
     var boost_power:=float(cd.get("boost_power",25.0))+2.0*int(up.get("boost_power",0))+ProgressionService.boost_power_bonus()
     var handling:=float(cd.get("grip",1.0))*(1.0+0.025*int(up.get("handling",0))+ProgressionService.handling_bonus())
     var stability:=float(cd.get("stability",1.0))*(1.0+0.02*int(up.get("stability",0))+ProgressionService.stability_bonus())
+    var equipped_tire_id:=str(SaveSystem.data["cosmetics"]["equipped"].get("tire","tire_01"))
+    var tire:Dictionary=GameConfig.tire(equipped_tire_id)
+    var tire_surface:=str(tire.get("surface","asphalt"))
+    var condition:=str(level_def.get("condition_id","Clear"))
+    var tire_grip:=float(tire.get("grip_multiplier",1.0))
+    if condition in ["Rain","Fog"] and tire_surface=="wet":
+        tire_grip*=1.04
+    elif condition=="Snow" and tire_surface in ["snow","ice"]:
+        tire_grip*=1.06
+    elif condition=="Sandstorm" and tire_surface in ["sand","gravel","dirt"]:
+        tire_grip*=1.05
+    elif condition=="Rain" and tire_surface in ["sand","gravel"]:
+        tire_grip*=0.93
+    accel*=float(tire.get("acceleration_multiplier",1.0))
+    braking*=float(tire.get("braking_multiplier",1.0))
+    handling*=tire_grip
     var launch_bonus:=ProgressionService.launch_bonus()
     if race_clock<5.0:
         accel*=1.0+launch_bonus

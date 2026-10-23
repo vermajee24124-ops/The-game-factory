@@ -1,28 +1,36 @@
-# Turbo Rush 1.9.0 — Open-Source Racing Research
+# Turbo Rush 2.0.0 — Open-Source Racing Research
 
-## What was researched
+## Code and architecture references
 
-The update was compared against current Godot racing examples and Godot Asset Library entries that are MIT or otherwise permissively licensed.
+- [Seerban/godot-vehicle](https://github.com/Seerban/godot-vehicle): Godot 4 vehicle/race architecture; the repository is a work in progress, so it is treated as a reference rather than dropped in as a guaranteed production-ready engine.
+- [HaileNegash/godot4-vehicle-framework](https://github.com/HaileNegash/godot4-vehicle-framework): modular Godot vehicle suspension/controller patterns.
+- [chukfinley/racing-game](https://github.com/chukfinley/racing-game): MIT-licensed example for race HUD, checkpoints and minimap patterns.
+- [KenneyNL/Starter-Kit-Racing](https://github.com/KenneyNL/Starter-Kit-Racing): a composable racing starter kit.
+- Godot 4.7.2 built-in scene, rendering and physics systems remain the baseline. No paid engine, subscription-only plugin or proprietary runtime is required for the offline core.
 
-### Useful patterns adopted
+## CC0 art source pages
 
-- **Race HUD + minimap + checkpoints:** the MIT-licensed Godot 4 racing-game example by chukfinley separates race management, checkpoint handling, HUD and minimap into focused systems. Turbo Rush keeps its own level-based race architecture but now adds a lightweight minimap and checkpoint markers. Source: https://github.com/chukfinley/racing-game
-- **Composable vehicle presentation:** the MIT-licensed Godot starter racing kit pattern keeps vehicle logic separate from swappable visual models. Turbo Rush now keeps the existing race/collision logic while using real CC0 car GLBs as the visual layer when available. Source: https://github.com/KenneyNL/Starter-Kit-Racing
-- **Vehicle controller and terrain addons:** current Godot Asset Library listings include MIT-licensed Vehicle Controller templates and Terrain3D. They were reviewed as development references, but are not forced into the shipping build because Turbo Rush already has a deterministic procedural track system and a mobile renderer. This avoids adding an unnecessary native/GDExtension dependency to the release APK.
+The Android workflow downloads curated subsets at build time; source archives are indexed in build artifacts. These asset families are documented as CC0 on their source pages:
 
-## Asset policy
+- [Kenney Car Kit](https://opengameart.org/content/car-kit)
+- [Kenney Racing Kit](https://opengameart.org/content/racing-kit)
+- [Kenney City Kit Roads](https://opengameart.org/content/city-kit-roads)
+- [Kenney City Kit Commercial](https://opengameart.org/content/city-kit-commercial)
+- [Kenney City Kit Suburban](https://opengameart.org/content/city-kit-suburban)
+- [Kenney City Kit Industrial](https://opengameart.org/content/city-kit-industrial)
+- [Modular Racetrack 3D Models](https://opengameart.org/content/modular-racetrack-3d-models)
+- [Racing Assets v1](https://opengameart.org/content/racing-assets-v1)
+- [Quaternius Low Poly Cars](https://opengameart.org/content/low-poly-cars-0)
+- [Free Low Poly Vehicles Pack](https://opengameart.org/content/free-low-poly-vehicles-pack)
 
-No source game's code, UI artwork, track layout, or proprietary assets are copied into Turbo Rush. The research is used only for architecture and gameplay patterns.
+## What 2.0.0 adds
 
-The supplied asset package was audited separately. The verified CC0 packages are the runtime asset pool. The supplied Ignition Labs package was intentionally excluded because the provided package did not contain license evidence.
+- 100 car catalogue entries with progression values and eight procedural fallback body silhouettes.
+- 60 wheel/rim choices plus 48 tyre setup presets whose parameters affect handling.
+- 200 uniquely named seeded procedural track blueprints that bias route shape and surface settings.
+- CC0 model variants and scenery through the existing build-time asset-selection workflow.
+- No unverified vehicle model or branded proprietary track/UI has been included.
 
-## Turbo Rush-specific direction
+## Licence reminder
 
-Turbo Rush remains a finite, level-based racer, not an endless runner. The update prioritizes:
-
-1. reliable boot to the playable menu;
-2. visible real 3D car models;
-3. richer racing HUD with a track map;
-4. more varied scenery and track dressing;
-5. offline-first gameplay with optional ads only;
-6. no Aptoide, billing, or IAP features.
+MIT code may be modified and used commercially while preserving the required copyright/licence notice. CC0 assets generally waive copyright-related restrictions as described by the creator, but each downloaded source archive should still be checked for embedded third-party content and its own notices. Free download does not automatically mean MIT or CC0.

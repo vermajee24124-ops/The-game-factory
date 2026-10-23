@@ -1,33 +1,27 @@
-# Turbo Rush
+# Turbo Rush 2.0.0
 
-Godot 4.7.2-first mobile 3D arcade racing game built from the six canonical specification documents.
+Godot 4.7.2-first, offline-first 3D arcade racing game for Android and iOS, designed around finite level-based races rather than endless running.
 
-## Current integrated build
+## Expanded content
 
-This branch contains a playable, asset-light core implementation designed to validate the complete race loop before native platform services are finalized.
+- **100 selectable car entries**, with progressive stats, unlocks and eight procedural fallback body silhouettes.
+- **60 wheel/rim styles** and **48 tyre setups** with different surface specialisation, grip, acceleration and braking values.
+- **200 named procedural track blueprints** that tune curve, jump, boost, traffic and road-width patterns. Each level builds a seeded route from a blueprint; these are not 200 individually handcrafted track scenes.
+- 54 paint/skin choices and 48 collectible cards.
+- 1 player versus 5 AI racers; Standard, Sprint, Endurance and Elite races; countdown, traffic, obstacles, coins, boosts, rare diamonds, damage/revive, rank rewards, upgrades and level unlocking.
+- Offline local save data with backup/migration, landscape UI and mobile touch controls.
+- CC0 vehicle and scenery models are curated from public source packs during the Android build workflow. Procedural visuals remain available if the optional models are absent.
 
-Implemented:
-- finite level-based races
-- 1 player + 5 AI racers
-- deterministic procedural tracks
-- Standard / Sprint / Endurance / Elite race types
-- traffic, obstacles, coins, boost pickups and rare diamonds
-- damage / wreck / revive flow
-- rank rewards, bounded reward chests, random bonus, stars
-- top-5 next-level unlock rule
-- assist mode after repeated failures
-- local JSON save with backup and SHA-256 integrity check
-- global performance upgrades
-- car unlock and selection
-- paints and wheels catalog/equipment
-- landscape UI with touch controls
-- offline-safe optional ads with platform-specific adapters
-- 10,000-level deterministic smoke-test coverage
+## Art and licence scope
 
-## Monetization
+The Android build pipeline packages 29 distinct Kenney CC0 vehicle models, including race cars, sedans, SUVs, karts and utility vehicles, plus curated road-side and city scenery. The 100 garage entries are gameplay/progression variants, not 100 individually bespoke 3D meshes: they use these real model families, colour/skin tinting, unique stats and eight lightweight procedural fallback silhouettes. Similarly, the 200 tracks are seeded generated archetypes, not separate hand-authored maps. This keeps downloads and memory use manageable for mobile devices.
 
-Turbo Rush 1.8.0 is ads-only. It has no Aptoide Connect, no in-app purchase system, no billing SDK/permission, no purchase restore flow and no paid-content entitlement path. Cars, wheels, skins, cards, currencies and upgrades are earned through gameplay. Web ads are host-aware for CrazyGames/GameDistribution; generic Web/itch.io remains playable without an advertising SDK.
+The unverified Ignition Labs car model from the supplied archive is excluded because its package did not provide sufficient licence evidence. See `godot/THIRD_PARTY_NOTICES.md` and `docs/CC0_ASSET_SELECTION.md`.
+
+## Current validation state
+
+The content and code expansion is committed on a feature branch. **Do not treat it as a store-ready release until the Godot 4.7.2 headless import, updated smoke tests, Android export, device launch/playthrough, performance review, security review and store/privacy compliance all pass.** The manifest marks those gates as pending until verified.
 
 ## Run
 
-Open godot/project.godot with Godot 4.7.2 and run.
+Open `godot/project.godot` in Godot 4.7.2 and run the main scene. The core game uses procedural fallbacks, while the Android build workflow downloads, indexes and imports the curated CC0 models.
