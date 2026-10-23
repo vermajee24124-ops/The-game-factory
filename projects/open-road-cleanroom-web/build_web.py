@@ -86,7 +86,7 @@ def patch_html(site: Path) -> None:
 """
     html = replace_once(
         html,
-        '</div>\n</div>\n<script src="yes2-runtime.js"></script>\\n<script src="audio.js"></script>',
+        '</div>\n</div>\n<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
         '</div>\n' + orientation_hint + '</div>\n<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
         "insert the mobile landscape gate",
     )
