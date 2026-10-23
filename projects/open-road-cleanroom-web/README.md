@@ -11,8 +11,9 @@ This folder builds a standalone ZIP for the browser version of **Open Road: Clea
 - Prevents ordinary browser selection, long-press context menus and text dragging over the game area and driving controls.
 - Requests full-screen and landscape orientation from a user gesture. Mobile browsers and embedded game portals can deny orientation locking; when that happens, a small prompt asks the player to rotate the device.
 - Bundles the official `yes2-runtime.js` helper from `@yes2games/js` and its MIT licence file. The dashboard injects the real `window.Yes2SDK` runtime when it bundles the uploaded game; we do **not** add or copy platform SDKs or keys into the ZIP.
-- Initializes Yes2SDK, reports loading progress, calls `startGameAsync()`, and tracks `gameplayStart()` / `gameplayStop()`.
-- Uses the official `window.Yes2Runtime.ads` wrapper for interstitials. The ad is requested only when the player chooses **Race again**, never during a race, and the build also applies a local three-minute cooldown. Audio is stopped while an ad is up. The game continues on a missing SDK, unsupported format or no-fill.
+- Starts SDK initialization early, retries `startGameAsync()` if the injected adapter arrives late, reports loading progress, and tracks `gameplayStart()` / `gameplayStop()`.
+- Uses the official `window.Yes2Runtime.ads` wrapper for interstitials. The ad is requested only when the player chooses **Race again**, never during a race or in the first three minutes of a session, and the build applies a local three-minute cooldown between interstitials. Audio is muted while an ad is up and restored afterward. The game continues on a missing SDK, unsupported format or no-fill.
+- Handles Yes2SDK `pause`, `resume`, `audioEnabledChange`, and account-dialog events, including a separate platform audio-mute state that preserves the player's own sound preference.
 - Shows a bottom banner on the results screen only when the active platform reports banner support; hides it before a race begins.
 - Signals Yes2SDK's optional `game.happyTime()` hook after a first-place finish, when the host supports it.
 - Preserves the upstream credits and downloads the upstream README and asset licence ledger into the ZIP.
@@ -27,7 +28,7 @@ No API keys or other secrets are embedded. This does not add a rewarded-video bu
 4. When the workflow succeeds, open that run and download the `Open-Road-Yes2Games-WebBuild` artifact.
 5. Extract the artifact ZIP if needed. The game archive inside has `index.html` at its root, along with the WebAssembly files and track packs.
 
-The workflow also runs `node --check` against the patched game script and verifies that required build files and track packs are present. It deliberately stops if a required upstream patch point is missing, instead of generating a half-patched ZIP.
+The workflow runs `node --check` on the game, runtime wrapper and smoke test; runs a mock Yes2SDK smoke test covering the start handshake, gameplay lifecycle, pause/resume, platform audio mute, the early-ad gate and ad audio restoration; and verifies required build files and track packs. It deliberately stops if a required upstream patch point is missing, instead of generating a half-patched ZIP. This mock test is not a substitute for certification in your Yes2Games account.
 
 ## Upload to Yes2Games
 
