@@ -58,24 +58,36 @@ jobs:
           git -C "$ENGINE" submodule update --init --recursive
           python -m pip install "numpy<2" Pillow
 
-          # Modest handling tune: about 16% more steering lock under load, a safer minimum
-          # steering lock at speed, and a 20% quicker wheel response. Physics remains speed-aware.
+          # Tune the actual physics, not only the HTML buttons:
+          # 32% more speed-sensitive lateral limit, a response boost that grows to 180 km/h,
+          # and faster yaw following. Keep the minimum lock at the physics-safe 0.012 rad.
           python - "$PROJECT/ports/opennfs/patches.py" <<'PY'
           import pathlib, sys
           path = pathlib.Path(sys.argv[1])
           source = path.read_text(encoding="utf-8")
           changes = [
-              ("wheelFriction * 9.81f * 0.62f", "wheelFriction * 9.81f * 0.72f"),
-              ("std::max(speed * speed, 1.f)), 0.012f, 0.45f)", "std::max(speed * speed, 1.f)), 0.016f, 0.45f)"),
-              ("request == 0.f ? 2.6f : 1.5f", "request == 0.f ? 2.6f : 1.8f"),
+              (
+                  "wheelFriction * 9.81f * 0.62f",
+                  "wheelFriction * 9.81f * 0.82f",
+              ),
+              (
+                  "float const rate{(request == 0.f ? 2.6f : 1.5f) * lock + 0.08f};",
+                  "float const speedKmh{std::fabs(m_vehicle->getCurrentSpeedKmHour())};\n"
+                  "                float const highSpeedResponse{1.f + 0.65f * std::clamp(speedKmh / 180.f, 0.f, 1.f)};\n"
+                  "                float const rate{(request == 0.f ? 2.6f : 1.5f) * lock + 0.08f * highSpeedResponse};",
+              ),
+              (
+                  "std::min(3.0f * assist * dt, 0.5f)",
+                  "std::min(4.0f * assist * dt, 0.5f)",
+              ),
           ]
           for old, new in changes:
               count = source.count(old)
               if count != 1:
-                  raise SystemExit(f"Safe steering patch stopped: expected one {old!r}, found {count}.")
+                  raise SystemExit(f"Steering patch stopped safely: expected one {old!r}, found {count}.")
               source = source.replace(old, new, 1)
           path.write_text(source, encoding="utf-8", newline="\n")
-          print("Steering patch points verified and updated.")
+          print("High-speed steering curve, cornering limit and yaw response patch points verified.")
           PY
 
           # The public clean-room source does not contain the owner's optional private track spec.
@@ -92,9 +104,9 @@ jobs:
           PY
           python "$PROJECT/games/opennfs/build_assets.py" "$WORK/clean"
           python "$PROJECT/ports/opennfs/prepare.py" "$ENGINE" "$WORK/port"
-          grep -Fq "wheelFriction * 9.81f * 0.72f" "$WORK/port/src/Physics/Car.cpp"
-          grep -Fq ")), 0.016f, 0.45f)" "$WORK/port/src/Physics/Car.cpp"
-          grep -Fq "request == 0.f ? 2.6f : 1.8f" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq "wheelFriction * 9.81f * 0.82f" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq "highSpeedResponse" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq "std::min(4.0f * assist * dt, 0.5f)" "$WORK/port/src/Physics/Car.cpp"
 
           emcmake cmake -S "$PROJECT/ports/opennfs" -B "$WORK/build" -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
