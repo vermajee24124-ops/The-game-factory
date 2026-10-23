@@ -60,7 +60,7 @@ def patch_html(site: Path) -> None:
     html = replace_once(
         html,
         '<script src="audio.js"></script>',
-        '<script src="yes2-runtime.js"></script>\\n<script src="audio.js"></script>',
+        '<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
         "load the official Yes2Games JavaScript runtime helper",
     )
     html = replace_once(
@@ -86,8 +86,8 @@ def patch_html(site: Path) -> None:
 """
     html = replace_once(
         html,
-        '</div>\n</div>\n<script src="audio.js"></script>',
-        '</div>\n' + orientation_hint + '</div>\n<script src="audio.js"></script>',
+        '</div>\n</div>\n<script src="yes2-runtime.js"></script>\\n<script src="audio.js"></script>',
+        '</div>\n' + orientation_hint + '</div>\n<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
         "insert the mobile landscape gate",
     )
     write_text(path, html)
@@ -389,7 +389,7 @@ document.addEventListener('fullscreenchange', syncLandscapeGate);
     js = replace_once(
         js,
         "function startRace() {\n  saveChoice();",
-        "function startRace() {\n  choice.opponents = 5;\n  yes2HideBanner();\n  saveChoice();",
+        "function startRace() {\n  choice.opponents = 5;\n  yes2HappyTimeSent = false;\n  yes2HideBanner();\n  saveChoice();",
         "fix opponent count and hide result banner when racing",
     )
 
@@ -424,7 +424,7 @@ document.addEventListener('fullscreenchange', syncLandscapeGate);
     js = replace_once(
         js,
         "function showResults() {\n  if (!game.state || game.state.phase !== 2 || game.menuOpen) return;\n  fillResults(game.state);\n  $('results').classList.remove('hidden');\n}",
-        "function showResults() {\n  if (!game.state || game.state.phase !== 2 || game.menuOpen) return;\n  yes2GameplayStop();\n  fillResults(game.state);\n  $('results').classList.remove('hidden');\n  yes2ShowResultBanner();\n}",
+        "function showResults() {\n  if (!game.state || game.state.phase !== 2 || game.menuOpen) return;\n  yes2GameplayStop();\n  if (game.state.pos === 1) yes2CelebrateWin();\n  fillResults(game.state);\n  $('results').classList.remove('hidden');\n  yes2ShowResultBanner();\n}",
         "stop play and optionally show a non-blocking result banner",
     )
 
