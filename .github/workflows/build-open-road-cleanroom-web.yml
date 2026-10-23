@@ -1,0 +1,73 @@
+name: Build Open Road for Yes2Games
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - open-road-yes2games-web-build
+    paths:
+      - "projects/open-road-cleanroom-web/**"
+      - ".github/workflows/build-open-road-cleanroom-web.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-web-archive:
+    name: Build and validate the HTML5 game ZIP
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Download and customize Open Road
+        run: |
+          python projects/open-road-cleanroom-web/build_web.py --out "$RUNNER_TEMP/open-road-cleanroom"
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check "$RUNNER_TEMP/open-road-cleanroom/game.js"
+
+      - name: Validate release files and create ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          GAME="$RUNNER_TEMP/open-road-cleanroom"
+          test -s "$GAME/index.html"
+          test -s "$GAME/style.css"
+          test -s "$GAME/game.js"
+          test -s "$GAME/opennfs.js"
+          test -s "$GAME/opennfs.wasm"
+          test -s "$GAME/assets.js"
+          test -s "$GAME/assets.bin"
+          test -s "$GAME/UPSTREAM-README.md"
+          test -s "$GAME/UPSTREAM-LICENSES.csv"
+          test -n "$(find "$GAME/tracks" -maxdepth 1 -type f -name '*.bin' -print -quit)"
+          grep -q 'class="overlay hidden"' "$GAME/index.html"
+          grep -q 'rotate-hint' "$GAME/index.html"
+          grep -q 'yes2FinishLoading' "$GAME/game.js"
+          cd "$GAME"
+          zip -qr "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" .
+          unzip -t "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip"
+          unzip -Z1 "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" | grep -qx 'index.html'
+          unzip -Z1 "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" | grep -qx 'UPSTREAM-LICENSES.csv'
+          echo "Release archive created: $(du -h "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" | cut -f1)"
+
+      - name: Upload HTML5 game ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: Open-Road-Yes2Games-WebBuild
+          path: Open-Road-Yes2Games.zip
+          if-no-files-found: error
+          retention-days: 14
