@@ -78,6 +78,18 @@ jobs:
           print("Steering patch points verified and updated.")
           PY
 
+          # The public clean-room source does not contain the owner's optional private track spec.
+          # Its asset script passes sys.argv into the imported cleaner, so explicitly disable that optional input.
+          python - "$PROJECT/games/opennfs/build_assets.py" <<'PY'
+          import pathlib, sys
+          path = pathlib.Path(sys.argv[1])
+          source = path.read_text(encoding="utf-8")
+          old = "    import clean_tracks\\n    kept_tracks = clean_tracks.main()"
+          new = "    import clean_tracks\\n    clean_tracks.SPEC = os.path.join(OUT, \".no-private-spec\")\\n    kept_tracks = clean_tracks.main()"
+          if source.count(old) != 1:
+              raise SystemExit("Could not safely disable the optional private track-spec input.")
+          path.write_text(source.replace(old, new, 1), encoding="utf-8", newline="\\n")
+          PY
           python "$PROJECT/games/opennfs/build_assets.py" "$WORK/clean"
           python "$PROJECT/ports/opennfs/prepare.py" "$ENGINE" "$WORK/port"
           grep -Fq "wheelFriction * 9.81f * 0.72f" "$WORK/port/src/Physics/Car.cpp"
