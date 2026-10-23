@@ -59,12 +59,6 @@ def patch_html(site: Path) -> None:
     )
     html = replace_once(
         html,
-        '<script src="audio.js"></script>',
-        '<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
-        "load the official Yes2Games JavaScript runtime helper",
-    )
-    html = replace_once(
-        html,
         '<div id="menu" class="overlay">',
         '<div id="menu" class="overlay hidden">',
         "hide the setup menu until it is needed",
@@ -86,8 +80,8 @@ def patch_html(site: Path) -> None:
 """
     html = replace_once(
         html,
-        '</div>\n</div>\n<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
-        '</div>\n' + orientation_hint + '</div>\n<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
+        '</div>\n</div>\n<script src="audio.js"></script>',
+        '</div>\n' + orientation_hint + '</div>\n<script src="audio.js"></script>',
         "insert the mobile landscape gate",
     )
     write_text(path, html)
@@ -270,8 +264,14 @@ function yes2SdkReady() {
 }
 
 function yes2AdsRuntime() {
-  // The official @yes2games/js runtime helper is bundled as window.Yes2Runtime.
-  return window.Yes2Runtime && window.Yes2Runtime.ads ? window.Yes2Runtime.ads : null;
+  // Yes2Games injects the official global SDK into dashboard builds.
+  var sdk = yes2Cached || window.Yes2SDK;
+  return sdk && sdk.ads ? sdk.ads : null;
+}
+
+function yes2BannerRuntime() {
+  var sdk = yes2Cached || window.Yes2SDK;
+  return sdk && sdk.banners ? sdk.banners : null;
 }
 
 function yes2Progress(value) {
@@ -388,18 +388,19 @@ function yes2FinishLoading() {
 }
 
 function yes2HideBanner() {
-  var ads = yes2AdsRuntime();
-  if (!ads || typeof ads.hideBanner !== 'function') return;
-  try { ads.hideBanner(); } catch (e) {}
+  var banners = yes2BannerRuntime();
+  if (!banners || typeof banners.hideBanner !== 'function') return;
+  try { banners.hideBanner('open-road-results'); } catch (e) {}
   yes2BannerVisible = false;
 }
 
-function yes2ShowResultBanner() {
-  var ads = yes2AdsRuntime();
-  if (!ads || typeof ads.showBanner !== 'function') return;
+async function yes2ShowResultBanner() {
+  var banners = yes2BannerRuntime();
+  if (!banners || typeof banners.showBanner !== 'function') return;
   try {
-    if (typeof ads.isBannerSupported === 'function' && !ads.isBannerSupported()) return;
-    ads.showBanner('bottom').then(function () { yes2BannerVisible = true; }).catch(function () {});
+    if (typeof banners.isSupported === 'function' && !banners.isSupported()) return;
+    await banners.showBanner('open-road-results', '320x50');
+    yes2BannerVisible = true;
   } catch (e) {
     // Banners are not supported on every portal. Their absence must not block play.
   }
