@@ -623,7 +623,7 @@ yes2SdkReady();
     # Emscripten can change the exact escaping around the Aborted() matcher between versions.
     # Patch the printErr callback by its stable function signature, preserving fatal error reporting.
     js, err_count = re.subn(
-        r"(?m)^[ \t]*printErr: function \(t\) \{[^\n]*\},?[ \t]*$",
+        r"(?m)^[ \t]*printErr:\s*(?:function\s*)?(?:\(\s*t\s*\)|t)\s*(?:=>)?\s*\{[^\n]*$",
         r"  printErr: function (t) { var fatal = /^FATAL|Aborted\(|Assertion/.test(t); if (fatal) { if (window.console && console.error) console.error(t); showError(t); } else if (Q.has('debug')) console.warn(t); },",
         js,
         count=1,
