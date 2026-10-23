@@ -154,6 +154,47 @@ button, canvas, #stage {
     write_text(path, css)
 
 
+def patch_audio(site: Path) -> None:
+    path = site / "audio.js"
+    audio = read_text(path)
+    audio = replace_once(
+        audio,
+        "var muted = false, active = false, lastSpeed = 0, lastT = 0;",
+        "var muted = false, platformMuted = false, active = false, lastSpeed = 0, lastT = 0;",
+        "track a portal-mandated mute separately from the player's sound preference",
+    )
+    audio = replace_once(
+        audio,
+        "master.gain.value = muted ? 0 : 0.9;",
+        "master.gain.value = (muted || platformMuted) ? 0 : 0.9;",
+        "honor platform mute when creating audio",
+    )
+    audio = replace_once(
+        audio,
+        "if (ctx) master.gain.setTargetAtTime(muted ? 0 : 0.9, ctx.currentTime, 0.05);",
+        "if (ctx) master.gain.setTargetAtTime((muted || platformMuted) ? 0 : 0.9, ctx.currentTime, 0.05);",
+        "preserve platform mute when the player toggles sound",
+    )
+    setter = """  function setPlatformMuted(on) {
+    platformMuted = !!on;
+    if (ctx) master.gain.setTargetAtTime((muted || platformMuted) ? 0 : 0.9, ctx.currentTime, 0.03);
+  }
+"""
+    audio = replace_once(
+        audio,
+        "  function update(s) {",
+        setter + "  function update(s) {",
+        "add platform audio mute setter",
+    )
+    audio = replace_once(
+        audio,
+        "return { unlock: unlock, setActive: setActive, toggleMute: toggleMute, update: update, beep: beep, fanfare: fanfare, isMuted: function () { return muted; } };",
+        "return { unlock: unlock, setActive: setActive, toggleMute: toggleMute, setPlatformMuted: setPlatformMuted, update: update, beep: beep, fanfare: fanfare, isMuted: function () { return muted; } };",
+        "expose platform mute setter",
+    )
+    write_text(path, audio)
+
+
 def patch_js(site: Path) -> None:
     path = site / "game.js"
     js = read_text(path)
@@ -594,6 +635,7 @@ def main() -> int:
 
     patch_html(out)
     patch_css(out)
+    patch_audio(out)
     patch_js(out)
     print("Patched: hide setup UI, default to 5 opponents, auto-start, mobile input guard, landscape prompt, Yes2SDK lifecycle/ads.")
     print(f"Ready: {out}")
