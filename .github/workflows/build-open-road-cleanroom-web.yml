@@ -8,6 +8,7 @@ on:
     paths:
       - "projects/open-road-cleanroom-web/**"
       - ".github/workflows/build-open-road-cleanroom-web.yml"
+      - ".github/scripts/open-road-yes2sdk-smoke.cjs"
   pull_request:
     branches:
       - main
@@ -62,6 +63,11 @@ jobs:
         run: |
           node --check "$RUNNER_TEMP/open-road-cleanroom/game.js"
           node --check "$RUNNER_TEMP/open-road-cleanroom/yes2-runtime.js"
+          node --check .github/scripts/open-road-yes2sdk-smoke.cjs
+
+      - name: Test Yes2SDK start, lifecycle and ad guards with a mock platform
+        run: |
+          node .github/scripts/open-road-yes2sdk-smoke.cjs "$RUNNER_TEMP/open-road-cleanroom/game.js"
 
       - name: Validate release files and create ZIP
         shell: bash
