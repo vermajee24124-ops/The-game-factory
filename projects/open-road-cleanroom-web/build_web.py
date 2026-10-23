@@ -524,6 +524,13 @@ yes2SdkReady();
 
     js = replace_once(
         js,
+        "function pushInput() {\n  var mask = 0;\n  for (var k in held) mask |= held[k];\n  if (game.menuOpen) mask = 0;\n  if (window.Module && Module._web_set_input) Module._web_set_input(mask, 0);\n}",
+        "function pushInput() {\n  var mask = 0;\n  for (var k in held) mask |= held[k];\n  if (!game.menuOpen && (mask & (BIT.left | BIT.right)) && game.state && Number(game.state.speed) >= 125) {\n    /* Brief high-speed turn-in assist; normal-speed steering remains unchanged. */\n    if ((Date.now() % 420) < 65) mask |= BIT.hand;\n  }\n  if (game.menuOpen) mask = 0;\n  if (window.Module && Module._web_set_input) Module._web_set_input(mask, 0);\n}",
+        "add a brief high-speed turn-in assist without changing normal-speed steering",
+    )
+
+    js = replace_once(
+        js,
         "function startRace() {\n  saveChoice();",
         "function startRace() {\n  choice.opponents = 5;\n  yes2HappyTimeSent = false;\n  yes2HideBanner();\n  saveChoice();",
         "fix opponent count and hide result banner when racing",
