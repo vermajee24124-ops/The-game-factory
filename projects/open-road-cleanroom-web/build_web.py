@@ -209,6 +209,16 @@ def patch_js(site: Path) -> None:
     if count != 1:
         raise RuntimeError("Could not find the upstream opponent default. Refusing a partial build.")
 
+    # Keep quick-sprint length fixed at one lap even when older browser storage has a longer setting.
+    js, lap_count = re.subn(
+        r"laps:\s*\+\(Q\.get\('laps'\)\s*\|\|\s*localStorage\.getItem\('or\.laps'\)\s*\|\|\s*3\)",
+        "laps: 1",
+        js,
+        count=1,
+    )
+    if lap_count != 1:
+        raise RuntimeError("Could not find the upstream lap default. Refusing a partial build.")
+
     helpers = r"""
 // ---------------------------------------------------------------- Yes2SDK lifecycle, ads, orientation and input guards
 var yes2ReadyPromise = null;
@@ -540,7 +550,7 @@ yes2SdkReady();
     js = replace_once(
         js,
         "function startRace() {\n  saveChoice();",
-        "function startRace() {\n  choice.opponents = 5;\n  yes2HappyTimeSent = false;\n  yes2HideBanner();\n  saveChoice();",
+        "function startRace() {\n  choice.opponents = 5;\n  choice.laps = 1;\n  yes2HappyTimeSent = false;\n  yes2HideBanner();\n  saveChoice();",
         "fix opponent count and hide result banner when racing",
     )
 
