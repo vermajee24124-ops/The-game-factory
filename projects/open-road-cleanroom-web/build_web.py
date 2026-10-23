@@ -463,7 +463,7 @@ async function raceAgainWithAd() {
   } catch (e) {
     console.info('Interstitial skipped because Yes2SDK is not ready.', e);
   } finally {
-    restoreFromAd();
+    if (yes2AdActive) restoreFromAd();
     yes2ReplayBusy = false;
     startRace();
   }
