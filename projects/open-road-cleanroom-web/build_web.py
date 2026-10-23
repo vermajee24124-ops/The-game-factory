@@ -74,8 +74,8 @@ def patch_html(site: Path) -> None:
 """
     html = replace_once(
         html,
-        '</div>\n<script src="audio.js"></script>',
-        orientation_hint + '</div>\n<script src="audio.js"></script>',
+        '</div>\n</div>\n<script src="audio.js"></script>',
+        '</div>\n' + orientation_hint + '</div>\n<script src="audio.js"></script>',
         "insert the mobile landscape gate",
     )
     write_text(path, html)
@@ -395,7 +395,7 @@ document.addEventListener('fullscreenchange', syncLandscapeGate);
     js = replace_once(
         js,
         "$('btn-full').addEventListener('click', function () {\n  if (document.fullscreenElement) document.exitFullscreen(); else if ($('stage').requestFullscreen) $('stage').requestFullscreen();\n});",
-        "$('btn-full').addEventListener('click', function () {\n  if (document.fullscreenElement) {\n    document.exitFullscreen().catch(function () {});\n  } else { requestImmersiveLandscape(); }\n});\n$('landscape-go').addEventListener('click', requestImmersiveLandscape);",
+        "$('btn-full').addEventListener('click', function () {\n  if (document.fullscreenElement) {\n    try { var exitResult = document.exitFullscreen(); if (exitResult && typeof exitResult.catch === 'function') exitResult.catch(function () {}); } catch (e) {}\n  } else { requestImmersiveLandscape(); }\n});\n$('landscape-go').addEventListener('click', requestImmersiveLandscape);",
         "make full-screen button request landscape when possible",
     )
     js = replace_once(
