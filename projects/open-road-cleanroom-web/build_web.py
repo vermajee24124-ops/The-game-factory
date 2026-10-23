@@ -512,6 +512,16 @@ window.addEventListener('orientationchange', syncLandscapeGate);
 window.addEventListener('resize', syncLandscapeGate);
 document.addEventListener('fullscreenchange', syncLandscapeGate);
 
+// Refresh steering input while a touch/key is held so high-speed assist pulses are not dependent on pointer events.
+setInterval(function () {
+  if (game.menuOpen || !game.state || Number(game.state.speed) < 125) return;
+  var steeringHeld = false;
+  for (var source in held) {
+    if (held[source] & (BIT.left | BIT.right)) { steeringHeld = true; break; }
+  }
+  if (steeringHeld) pushInput();
+}, 40);
+
 // Begin SDK initialization before loading the game assets. The ready signal is sent later, after the engine reports ready.
 yes2SdkReady();
 """
