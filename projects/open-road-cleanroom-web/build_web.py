@@ -620,12 +620,16 @@ yes2SdkReady();
         "  print: function (t) { if (Q.has('debug')) console.log(t); },",
         "suppress routine Emscripten stdout in portal builds",
     )
-    js = replace_once(
+    # Emscripten can change the exact escaping around the Aborted() matcher between versions.
+    # Patch the printErr callback by its stable function signature, preserving fatal error reporting.
+    js, err_count = re.subn(
+        r"(?m)^[ \\t]*printErr: function \\(t\\) \\{[^\\n]*\\},?[ \\t]*$",
+        r"  printErr: function (t) { var fatal = /^FATAL|Aborted\\\\(|Assertion/.test(t); if (fatal) { if (window.console && console.error) console.error(t); showError(t); } else if (Q.has('debug')) console.warn(t); },",
         js,
-        "  printErr: function (t) { console.log(t); if (/^FATAL|Aborted\\\\(|Assertion/.test(t)) showError(t); },",
-        "  printErr: function (t) { var fatal = /^FATAL|Aborted\\\\(|Assertion/.test(t); if (fatal) { if (window.console && console.error) console.error(t); showError(t); } else if (Q.has('debug')) console.warn(t); },",
-        "keep fatal engine errors but stop flooding the portal console",
+        count=1,
     )
+    if err_count != 1:
+        raise RuntimeError("Could not safely patch the Emscripten printErr callback to avoid console flooding.")
 
     js = replace_once(
         js,
