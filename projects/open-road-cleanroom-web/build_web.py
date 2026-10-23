@@ -169,15 +169,24 @@ def patch_js(site: Path) -> None:
         raise RuntimeError("Could not find the upstream opponent default. Refusing a partial build.")
 
     helpers = r"""
-// ---------------------------------------------------------------- Yes2SDK, orientation and input guard
+// ---------------------------------------------------------------- Yes2SDK lifecycle, ads, orientation and input guards
 var yes2ReadyPromise = null;
 var yes2Cached = null;
 var yes2GameplayActive = false;
+var yes2StartComplete = false;
+var yes2StartInProgress = false;
+var yes2StartRetries = 0;
+var yes2SdkEventsBound = false;
 var yes2LastInterstitial = 0;
+var yes2SessionStartedAt = Date.now();
 var yes2LastProgress = 0;
 var yes2ReplayBusy = false;
 var yes2BannerVisible = false;
 var yes2HappyTimeSent = false;
+var yes2PlatformPaused = false;
+var yes2AdActive = false;
+var yes2HostAudioEnabled = true;
+var yes2ResumeAdDone = false;
 
 function yes2Sleep(ms) {
   return new Promise(function (resolve) { setTimeout(resolve, ms); });
@@ -188,8 +197,8 @@ function yes2SdkReady() {
   if (!yes2ReadyPromise) {
     yes2ReadyPromise = (async function () {
       var sdk = null;
-      // The dashboard can inject its runtime asynchronously; wait briefly instead of disabling ads permanently.
-      for (var i = 0; i < 80; i++) {
+      // The dashboard may inject its platform adapter asynchronously. Start polling as early as this script loads.
+      for (var i = 0; i < 150; i++) {
         if (window.Yes2SDK && typeof window.Yes2SDK.initializeAsync === 'function') {
           sdk = window.Yes2SDK;
           break;
@@ -197,7 +206,7 @@ function yes2SdkReady() {
         await yes2Sleep(100);
       }
       if (!sdk) {
-        console.info('Yes2SDK was not injected. The game continues without ads on this origin.');
+        console.info('Yes2SDK was not injected yet. The game continues; lifecycle setup will retry.');
         return null;
       }
       try {
@@ -206,9 +215,10 @@ function yes2SdkReady() {
         if (typeof sdk.setLoadingProgress === 'function') {
           sdk.setLoadingProgress(Math.max(0, Math.min(100, yes2LastProgress)));
         }
+        yes2BindPlatformEvents(sdk);
         return sdk;
       } catch (e) {
-        console.info('Yes2SDK initialization failed; continuing without ads.', e);
+        console.warn('Yes2SDK initialization failed; retrying while the game remains playable.', e);
         return null;
       }
     })().finally(function () {
@@ -219,7 +229,7 @@ function yes2SdkReady() {
 }
 
 function yes2AdsRuntime() {
-  // @yes2games/js exposes the guarded ad wrapper as window.Yes2Runtime.ads.
+  // The official @yes2games/js runtime helper is bundled as window.Yes2Runtime.
   return window.Yes2Runtime && window.Yes2Runtime.ads ? window.Yes2Runtime.ads : null;
 }
 
@@ -232,105 +242,187 @@ function yes2Progress(value) {
   });
 }
 
-function yes2GameplayStart() {
-  yes2SdkReady().then(function (sdk) {
-    if (!sdk || !sdk.game || typeof sdk.game.gameplayStart !== 'function' || yes2GameplayActive) return;
-    try { sdk.game.gameplayStart(); yes2GameplayActive = true; } catch (e) {}
-  });
+function yes2SetPlatformMute() {
+  if (window.GameAudio && typeof GameAudio.setPlatformMuted === 'function') {
+    GameAudio.setPlatformMuted(!yes2HostAudioEnabled || yes2PlatformPaused || yes2AdActive);
+  }
 }
 
-function yes2GameplayStop() {
-  yes2SdkReady().then(function (sdk) {
-    if (!sdk || !sdk.game || typeof sdk.game.gameplayStop !== 'function' || !yes2GameplayActive) return;
-    try { sdk.game.gameplayStop(); } catch (e) {}
+function yes2BindPlatformEvents(sdk) {
+  if (yes2SdkEventsBound || !sdk || typeof sdk.on !== 'function') return;
+  yes2SdkEventsBound = true;
+  try {
+    sdk.on('pause', function () {
+      yes2PlatformPaused = true;
+      setPaused(true);
+      yes2SetPlatformMute();
+      if (window.GameAudio) GameAudio.setActive(false);
+      yes2GameplayStop();
+    });
+    sdk.on('resume', function () {
+      yes2PlatformPaused = false;
+      yes2SetPlatformMute();
+      if (!game.menuOpen && !yes2AdActive) {
+        setPaused(false);
+        if (window.GameAudio) GameAudio.setActive(true);
+        yes2GameplayStart();
+      }
+    });
+    sdk.on('audioEnabledChange', function (event) {
+      if (event && typeof event.enabled === 'boolean') {
+        yes2HostAudioEnabled = event.enabled;
+        yes2SetPlatformMute();
+      }
+    });
+    sdk.on('accountDialogOpen', function () {
+      yes2PlatformPaused = true;
+      setPaused(true);
+      yes2SetPlatformMute();
+      if (window.GameAudio) GameAudio.setActive(false);
+      yes2GameplayStop();
+    });
+    sdk.on('accountDialogClose', function () {
+      yes2PlatformPaused = false;
+      yes2SetPlatformMute();
+      if (!game.menuOpen && !yes2AdActive) {
+        setPaused(false);
+        if (window.GameAudio) GameAudio.setActive(true);
+        yes2GameplayStart();
+      }
+    });
+  } catch (e) {
+    yes2SdkEventsBound = false;
+    console.warn('Could not subscribe to all optional Yes2SDK lifecycle events.', e);
+  }
+}
+
+function yes2GameplayStart(sdkOverride) {
+  if (!yes2StartComplete || yes2GameplayActive || !game.ready ||
+      game.menuOpen || yes2PlatformPaused || yes2AdActive) return;
+  var sdk = sdkOverride || yes2Cached;
+  if (!sdk || !sdk.game || typeof sdk.game.gameplayStart !== 'function') return;
+  try {
+    sdk.game.gameplayStart();
+    yes2GameplayActive = true;
+  } catch (e) {
+    console.warn('Yes2SDK gameplayStart failed; will retry on the next gameplay transition.', e);
+  }
+}
+
+function yes2GameplayStop(sdkOverride) {
+  if (!yes2GameplayActive) return;
+  var sdk = sdkOverride || yes2Cached;
+  if (!sdk || !sdk.game || typeof sdk.game.gameplayStop !== 'function') {
     yes2GameplayActive = false;
-  });
+    return;
+  }
+  try { sdk.game.gameplayStop(); } catch (e) {}
+  yes2GameplayActive = false;
 }
 
 function yes2FinishLoading() {
+  // Called only from the engine's ready callback, after the WebAssembly game and required assets have loaded.
+  if (!game.ready || yes2StartComplete || yes2StartInProgress) return;
+  yes2StartInProgress = true;
   yes2SdkReady().then(async function (sdk) {
-    if (!sdk) return;
-    try {
-      if (typeof sdk.setLoadingProgress === 'function') sdk.setLoadingProgress(100);
-      if (typeof sdk.startGameAsync === 'function') await sdk.startGameAsync();
-      yes2GameplayStart();
-    } catch (e) {
-      console.info('Yes2SDK loading lifecycle failed; game continues.', e);
+    if (!sdk || typeof sdk.startGameAsync !== 'function') {
+      throw new Error('Yes2SDK is not available yet');
+    }
+    // This is the single explicit ready signal expected by Yes2SDK Inspector.
+    if (typeof sdk.setLoadingProgress === 'function') sdk.setLoadingProgress(100);
+    yes2BindPlatformEvents(sdk);
+    await sdk.startGameAsync();
+    yes2StartComplete = true;
+    yes2StartRetries = 0;
+    yes2GameplayStart(sdk);
+  }).catch(function (e) {
+    console.warn('Yes2SDK startGameAsync not completed; retrying without blocking play.', e);
+  }).finally(function () {
+    yes2StartInProgress = false;
+    if (!yes2StartComplete && yes2StartRetries < 20 && game.ready) {
+      yes2StartRetries++;
+      setTimeout(yes2FinishLoading, 1000);
     }
   });
 }
 
 function yes2HideBanner() {
-  yes2SdkReady().then(function () {
-    var ads = yes2AdsRuntime();
-    if (!ads || typeof ads.hideBanner !== 'function') return;
-    try { ads.hideBanner(); } catch (e) {}
-    yes2BannerVisible = false;
-  });
+  var ads = yes2AdsRuntime();
+  if (!ads || typeof ads.hideBanner !== 'function') return;
+  try { ads.hideBanner(); } catch (e) {}
+  yes2BannerVisible = false;
 }
 
 function yes2ShowResultBanner() {
-  yes2SdkReady().then(async function () {
-    var ads = yes2AdsRuntime();
-    if (!ads || typeof ads.showBanner !== 'function') return;
-    try {
-      if (typeof ads.isBannerSupported === 'function' && !ads.isBannerSupported()) return;
-      await ads.showBanner('bottom');
-      yes2BannerVisible = true;
-    } catch (e) {
-      // Banners are not offered by every portal. Their absence must not block gameplay.
-    }
-  });
+  var ads = yes2AdsRuntime();
+  if (!ads || typeof ads.showBanner !== 'function') return;
+  try {
+    if (typeof ads.isBannerSupported === 'function' && !ads.isBannerSupported()) return;
+    ads.showBanner('bottom').then(function () { yes2BannerVisible = true; }).catch(function () {});
+  } catch (e) {
+    // Banners are not supported on every portal. Their absence must not block play.
+  }
 }
 
 function yes2CelebrateWin() {
   if (yes2HappyTimeSent) return;
   yes2HappyTimeSent = true;
-  yes2SdkReady().then(function (sdk) {
-    if (sdk && sdk.game && typeof sdk.game.happyTime === 'function') {
-      try { sdk.game.happyTime(); } catch (e) {}
-    }
-  });
+  var sdk = yes2Cached;
+  if (sdk && sdk.game && typeof sdk.game.happyTime === 'function') {
+    try { sdk.game.happyTime(); } catch (e) {}
+  }
 }
 
 async function raceAgainWithAd() {
   if (yes2ReplayBusy) return;
   yes2ReplayBusy = true;
+  var restored = false;
+  function restoreFromAd() {
+    if (restored) return;
+    restored = true;
+    yes2AdActive = false;
+    yes2SetPlatformMute();
+    if (!yes2PlatformPaused && !game.menuOpen) {
+      setPaused(false);
+      if (window.GameAudio) GameAudio.setActive(true);
+    }
+  }
   try {
-    var sdk = await yes2SdkReady();
+    var sdk = yes2Cached || await yes2SdkReady();
     var ads = yes2AdsRuntime();
     var canShow = !!(sdk && ads && typeof ads.showInterstitial === 'function');
     if (canShow && typeof ads.isInterstitialSupported === 'function') {
       canShow = !!ads.isInterstitialSupported();
     }
-    // Natural break only: player opts to replay; cap this client to one interstitial per 3 minutes.
+    // Natural break only, after a race; do not show any interstitial in the first 3 minutes of a session.
     var now = Date.now();
-    if (canShow && now - yes2LastInterstitial >= 180000) {
+    if (canShow && now - yes2SessionStartedAt >= 180000 &&
+        now - yes2LastInterstitial >= 180000 && !yes2PlatformPaused) {
       yes2LastInterstitial = now;
-      if (sdk.game && typeof sdk.game.gameplayStop === 'function') {
-        try { sdk.game.gameplayStop(); } catch (e) {}
-        yes2GameplayActive = false;
-      }
+      yes2GameplayStop(sdk);
       yes2HideBanner();
+      yes2AdActive = true;
+      yes2SetPlatformMute();
       try {
         await ads.showInterstitial('race-replay', {
           beforeAd: function () {
+            yes2AdActive = true;
             setPaused(true);
             if (window.GameAudio) GameAudio.setActive(false);
+            yes2SetPlatformMute();
           },
-          afterAd: function () {
-            setPaused(false);
-            if (window.GameAudio) GameAudio.setActive(true);
-          },
-          noFill: function () {}
+          afterAd: restoreFromAd,
+          noFill: restoreFromAd
         });
       } catch (e) {
-        // Missing or unavailable ads must never prevent the next race.
+        restoreFromAd();
+        console.info('Interstitial unavailable; continuing with the next race.', e);
       }
     }
   } catch (e) {
-    // SDK not injected / blocked: leave ads disabled but keep the game playable.
+    console.info('Interstitial skipped because Yes2SDK is not ready.', e);
   } finally {
+    restoreFromAd();
     yes2ReplayBusy = false;
     startRace();
   }
@@ -378,6 +470,9 @@ document.addEventListener('contextmenu', function (e) {
 window.addEventListener('orientationchange', syncLandscapeGate);
 window.addEventListener('resize', syncLandscapeGate);
 document.addEventListener('fullscreenchange', syncLandscapeGate);
+
+// Begin SDK initialization before loading the game assets. The ready signal is sent later, after the engine reports ready.
+yes2SdkReady();
 """
     js = replace_once(
         js,
