@@ -616,6 +616,19 @@ yes2SdkReady();
 
     js = replace_once(
         js,
+        "  print: function (t) { console.log(t); },",
+        "  print: function (t) { if (Q.has('debug')) console.log(t); },",
+        "suppress routine Emscripten stdout in portal builds",
+    )
+    js = replace_once(
+        js,
+        "  printErr: function (t) { console.log(t); if (/^FATAL|Aborted\\\\(|Assertion/.test(t)) showError(t); },",
+        "  printErr: function (t) { var fatal = /^FATAL|Aborted\\\\(|Assertion/.test(t); if (fatal) { if (window.console && console.error) console.error(t); showError(t); } else if (Q.has('debug')) console.warn(t); },",
+        "keep fatal engine errors but stop flooding the portal console",
+    )
+
+    js = replace_once(
+        js,
         "function closeMenu() {\n  game.menuOpen = false;\n  $('menu').classList.add('hidden');\n  setPaused(false);\n  pushInput();\n  if (window.GameAudio) GameAudio.setActive(true);\n  Module.canvas.focus();\n}",
         "function closeMenu() {\n  game.menuOpen = false;\n  yes2HideBanner();\n  $('menu').classList.add('hidden');\n  setPaused(false);\n  pushInput();\n  if (window.GameAudio) GameAudio.setActive(true);\n  yes2GameplayStart();\n  Module.canvas.focus();\n}",
         "resume gameplay and safely hide banners",
