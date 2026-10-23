@@ -613,6 +613,7 @@ yes2SdkReady();
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", required=True, help="Output directory for the portal-uploadable web build")
+    parser.add_argument("--source", help="Optional prebuilt website directory. If supplied, use these binaries/assets instead of downloading the live release.")
     args = parser.parse_args()
     out = Path(args.out).resolve()
     if out.exists():
@@ -623,10 +624,23 @@ def main() -> int:
         "index.html", "style.css", "game.js", "audio.js", "credits.html",
         "cars.json", "assets.js", "assets.bin", "opennfs.js", "opennfs.wasm",
     ]
-    print("Downloading the current published Open Road web build...")
-    for name in required:
-        download(urllib.parse.urljoin(SITE, name), out / name)
-        print(f"  fetched {name}")
+    source_mode = bool(args.source)
+    if source_mode:
+        source = Path(args.source).resolve()
+        if not source.is_dir():
+            raise RuntimeError(f"Prebuilt source directory does not exist: {source}")
+        print(f"Using rebuilt Open Road engine and assets from {source}...")
+        shutil.copytree(source, out, dirs_exist_ok=True)
+        for name in required:
+            path = out / name
+            if not path.is_file() or path.stat().st_size == 0:
+                raise RuntimeError(f"Rebuilt site is missing required file {name}; refusing to package.")
+            print(f"  verified {name} ({path.stat().st_size} bytes)")
+    else:
+        print("Downloading the current published Open Road web build...")
+        for name in required:
+            download(urllib.parse.urljoin(SITE, name), out / name)
+            print(f"  fetched {name}")
 
     cars_path = out / "cars.json"
     catalogue = json.loads(read_text(cars_path))
@@ -640,11 +654,19 @@ def main() -> int:
             raise RuntimeError(f"Unexpected track id in cars.json: {track_id!r}")
         if track_id not in track_ids:
             track_ids.append(track_id)
-    print(f"Downloading {len(track_ids)} track packs...")
-    for track_id in track_ids:
-        name = f"tracks/{track_id}.bin"
-        download(urllib.parse.urljoin(SITE, name), out / name)
-        print(f"  fetched {name}")
+
+    if source_mode:
+        for track_id in track_ids:
+            path = out / "tracks" / f"{track_id}.bin"
+            if not path.is_file() or path.stat().st_size == 0:
+                raise RuntimeError(f"Rebuilt site is missing track pack {track_id}.bin; refusing an incomplete build.")
+        print(f"Verified all {len(track_ids)} rebuilt track packs.")
+    else:
+        print(f"Downloading {len(track_ids)} track packs...")
+        for track_id in track_ids:
+            name = f"tracks/{track_id}.bin"
+            download(urllib.parse.urljoin(SITE, name), out / name)
+            print(f"  fetched {name}")
 
     # Preserve upstream provenance and the asset licence ledger in the submitted ZIP.
     download(urllib.parse.urljoin(RAW, "README.md"), out / "UPSTREAM-README.md")
@@ -654,9 +676,9 @@ def main() -> int:
     patch_css(out)
     patch_audio(out)
     patch_js(out)
-    print("Patched: hide setup UI, default to 5 opponents, auto-start, mobile input guard, landscape prompt, Yes2SDK lifecycle/ads.")
+    print("Patched: auto-start, five AI opponents, touch safety, landscape prompt, Yes2SDK lifecycle/ads.")
     print(f"Ready: {out}")
-    print("No SDK keys are embedded. Yes2SDK ads only activate when the Yes2Games dashboard injects its runtime.")
+    print("No SDK keys are embedded. Live ads require the Yes2Games dashboard to inject its runtime.")
     return 0
 
 
