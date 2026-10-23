@@ -91,6 +91,8 @@ const context = {
   URLSearchParams,
   setTimeout,
   clearTimeout,
+  setInterval() { return 0; },
+  clearInterval() {},
   matchMedia: () => ({ matches: false }),
   Q: { has: () => false, get: () => null },
   game,
