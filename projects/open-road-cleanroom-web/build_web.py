@@ -368,15 +368,9 @@ document.addEventListener('fullscreenchange', syncLandscapeGate);
 
     js = replace_once(
         js,
-        "  game.menuOpen = false;\n  $('menu').classList.add('hidden');",
-        "  game.menuOpen = false;\n  yes2HideBanner();\n  $('menu').classList.add('hidden');",
-        "hide banners when gameplay resumes",
-    )
-    js = replace_once(
-        js,
-        "  if (window.GameAudio) GameAudio.setActive(true);\n  Module.canvas.focus();",
-        "  if (window.GameAudio) GameAudio.setActive(true);\n  yes2GameplayStart();\n  Module.canvas.focus();",
-        "report resumed gameplay",
+        "function closeMenu() {\n  game.menuOpen = false;\n  $('menu').classList.add('hidden');\n  setPaused(false);\n  pushInput();\n  if (window.GameAudio) GameAudio.setActive(true);\n  Module.canvas.focus();\n}",
+        "function closeMenu() {\n  game.menuOpen = false;\n  yes2HideBanner();\n  $('menu').classList.add('hidden');\n  setPaused(false);\n  pushInput();\n  if (window.GameAudio) GameAudio.setActive(true);\n  yes2GameplayStart();\n  Module.canvas.focus();\n}",
+        "resume gameplay and safely hide banners",
     )
 
     js = replace_once(
