@@ -9,13 +9,10 @@ on:
       - "projects/open-road-cleanroom-web/**"
       - ".github/workflows/build-open-road-cleanroom-web.yml"
       - ".github/scripts/open-road-yes2sdk-smoke.cjs"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "projects/open-road-cleanroom-web/**"
-      - ".github/workflows/build-open-road-cleanroom-web.yml"
-      - ".github/scripts/open-road-yes2sdk-smoke.cjs"
+
+concurrency:
+  group: open-road-yes2games-build
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -123,27 +120,9 @@ jobs:
         run: |
           python projects/open-road-cleanroom-web/build_web.py --source "$OPENROAD_WORKDIR/site" --out "$RUNNER_TEMP/open-road-cleanroom"
 
-      - name: Bundle the official Yes2Games JavaScript runtime helper
-        shell: bash
-        run: |
-          set -euo pipefail
-          PACK_DIR="$RUNNER_TEMP/yes2sdk-package"
-          UNPACK_DIR="$RUNNER_TEMP/yes2sdk-unpacked"
-          GAME="$RUNNER_TEMP/open-road-cleanroom"
-          mkdir -p "$PACK_DIR" "$UNPACK_DIR"
-          npm pack @yes2games/js@latest --pack-destination "$PACK_DIR"
-          TARBALL="$(find "$PACK_DIR" -maxdepth 1 -type f -name '*.tgz' -print -quit)"
-          test -n "$TARBALL"
-          tar -xzf "$TARBALL" -C "$UNPACK_DIR" package/dist/yes2-runtime.js package/LICENSE
-          cp "$UNPACK_DIR/package/dist/yes2-runtime.js" "$GAME/yes2-runtime.js"
-          cp "$UNPACK_DIR/package/LICENSE" "$GAME/YES2GAMES-JS-LICENSE.txt"
-          test -s "$GAME/yes2-runtime.js"
-          test -s "$GAME/YES2GAMES-JS-LICENSE.txt"
-
       - name: Validate JavaScript syntax
         run: |
           node --check "$RUNNER_TEMP/open-road-cleanroom/game.js"
-          node --check "$RUNNER_TEMP/open-road-cleanroom/yes2-runtime.js"
           node --check .github/scripts/open-road-yes2sdk-smoke.cjs
 
       - name: Test Yes2SDK start, lifecycle and ad guards with a mock platform
@@ -162,8 +141,6 @@ jobs:
           test -s "$GAME/opennfs.wasm"
           test -s "$GAME/assets.js"
           test -s "$GAME/assets.bin"
-          test -s "$GAME/yes2-runtime.js"
-          test -s "$GAME/YES2GAMES-JS-LICENSE.txt"
           test -s "$GAME/UPSTREAM-README.md"
           test -s "$GAME/UPSTREAM-LICENSES.csv"
           test -n "$(find "$GAME/tracks" -maxdepth 1 -type f -name '*.bin' -print -quit)"
@@ -172,10 +149,10 @@ jobs:
           grep -q 'yes2FinishLoading' "$GAME/game.js"
           grep -q 'startGameAsync' "$GAME/game.js"
           grep -q 'yes2BindPlatformEvents' "$GAME/game.js"
-          grep -q 'Yes2Runtime.ads' "$GAME/game.js"
+          grep -q 'sdk.ads' "$GAME/game.js"
+          grep -q 'sdk.banners' "$GAME/game.js"
           grep -q 'setPlatformMuted' "$GAME/audio.js"
           grep -q 'data-yes2-canvas' "$GAME/index.html"
-          grep -q 'yes2-runtime.js' "$GAME/index.html"
           cd "$GAME"
           zip -qr "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" .
           unzip -t "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip"
