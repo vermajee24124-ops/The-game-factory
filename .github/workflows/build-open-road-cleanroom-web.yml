@@ -173,6 +173,41 @@ jobs:
         run: |
           python projects/open-road-cleanroom-web/build_web.py --source "$OPENROAD_WORKDIR/site" --out "$RUNNER_TEMP/open-road-cleanroom"
 
+      - name: Record quick-sprint and stability tuning
+        shell: bash
+        run: |
+          set -euo pipefail
+          GAME="$RUNNER_TEMP/open-road-cleanroom"
+          python - "$GAME" <<'PY'
+          import json, pathlib, sys
+          game = pathlib.Path(sys.argv[1])
+          data = json.loads((game / "cars.json").read_text(encoding="utf-8"))
+          tracks = data.get("tracks", [])
+          lines = [
+              "# Open Road: quick-sprint and stability tuning",
+              "",
+              "- Default race length: one lap, even if a browser stored an older longer-lap setting.",
+              "- Five AI opponents are kept for a close race without extending the race duration.",
+              "- The three procedural routes are shortened and their elevation amplitude is reduced for smoother driving.",
+              "- Steering remains speed-sensitive; the cornering limit is balanced, lateral slip is damped more firmly, yaw correction is less abrupt, and high-speed downforce is slightly higher.",
+              "- Results screen and replay flow remain enabled. Yes2SDK ad requests are still limited to natural breaks and skipped safely when unsupported or unavailable.",
+              "",
+              "## Generated track lengths",
+              "",
+          ]
+          if not tracks:
+              raise SystemExit("No tracks in cars.json; cannot document the sprint build.")
+          for t in tracks:
+              lines.append(f"- {t.get('name', t.get('id', 'Track'))}: {t.get('length_m', 'unknown')} m per lap")
+          lines += [
+              "",
+              "Automated build, ZIP integrity, JavaScript syntax and mocked Yes2SDK smoke tests must pass before this archive is uploaded.",
+              "Real-world handling still needs a play test on the target phone and Yes2Games Inspector; the mock SDK is not portal certification.",
+          ]
+          (game / "QUICK-SPRINT-AND-STABILITY.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          print("Recorded generated track lengths in QUICK-SPRINT-AND-STABILITY.md")
+          PY
+
       - name: Bundle the official Yes2Games JavaScript runtime helper
         shell: bash
         run: |
@@ -216,6 +251,7 @@ jobs:
           test -s "$GAME/YES2GAMES-JS-LICENSE.txt"
           test -s "$GAME/UPSTREAM-README.md"
           test -s "$GAME/UPSTREAM-LICENSES.csv"
+          test -s "$GAME/QUICK-SPRINT-AND-STABILITY.md"
           test -n "$(find "$GAME/tracks" -maxdepth 1 -type f -name '*.bin' -print -quit)"
           grep -q 'class="overlay hidden"' "$GAME/index.html"
           grep -q 'rotate-hint' "$GAME/index.html"
@@ -227,11 +263,14 @@ jobs:
           grep -q 'setPlatformMuted' "$GAME/audio.js"
           grep -q 'yes2-runtime.js' "$GAME/index.html"
           grep -q 'data-yes2-canvas' "$GAME/index.html"
+          grep -q 'laps: 1' "$GAME/game.js"
+          grep -q 'choice.laps = 1' "$GAME/game.js"
           cd "$GAME"
           zip -qr "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" .
           unzip -t "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip"
           unzip -Z1 "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" | grep -qx 'index.html'
           unzip -Z1 "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" | grep -qx 'UPSTREAM-LICENSES.csv'
+          unzip -Z1 "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" | grep -qx 'QUICK-SPRINT-AND-STABILITY.md'
           echo "Release archive created: $(du -h "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" | cut -f1)"
 
       - name: Upload HTML5 game ZIP
