@@ -8,6 +8,12 @@ on:
     paths:
       - "projects/open-road-cleanroom-web/**"
       - ".github/workflows/build-open-road-cleanroom-web.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "projects/open-road-cleanroom-web/**"
+      - ".github/workflows/build-open-road-cleanroom-web.yml"
 
 permissions:
   contents: read
