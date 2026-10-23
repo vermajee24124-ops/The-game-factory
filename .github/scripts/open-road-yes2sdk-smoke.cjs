@@ -22,6 +22,7 @@ const pauseFlags = [];
 const platformMutes = [];
 const activeAudioStates = [];
 let interstitialCount = 0;
+let progressCalls = 0;
 let mutedDuringInterstitial = false;
 let startRaceCount = 0;
 
@@ -46,7 +47,7 @@ const mockAudio = {
 };
 const mockSdk = {
   async initializeAsync() { events.push('initializeAsync'); },
-  setLoadingProgress(n) { events.push('progress:' + n); },
+  setLoadingProgress(n) { progressCalls++; events.push('progress:' + n); },
   async startGameAsync() { events.push('startGameAsync'); },
   on(name, callback) { sdkHandlers[name] = callback; },
   game: {
@@ -137,18 +138,22 @@ async function waitFor(fn, label) {
   sdkHandlers.resume();
   assert.ok(platformMutes.at(-1) === false, 'resume with host audio enabled must unmute platform audio');
 
-  // The initial 3-minute no-ad gate must not display an interstitial.
-  await context.raceAgainWithAd();
-  assert.equal(interstitialCount, 0, 'an interstitial must not show during the first three minutes');
-  assert.ok(startRaceCount >= 1, 'replay must never be blocked when the ad is skipped');
+  // Repeated per-frame values must not flood the SDK/Inspector event log.
+  const progressBefore = progressCalls;
+  for (let i = 0; i < 100; i++) context.yes2Progress(47);
+  await new Promise(resolve => setTimeout(resolve, 300));
+  context.yes2Progress(48);
+  await new Promise(resolve => setTimeout(resolve, 300));
+  const progressDelta = progressCalls - progressBefore;
+  assert.ok(progressDelta <= 3, 'loading progress must be deduplicated and limited to at most a few calls per second');
 
-  // After the cooldown, a requested interstitial must mute and restore audio around the ad.
-  context.yes2SessionStartedAt = Date.now() - 240000;
-  context.yes2LastInterstitial = Date.now() - 240000;
+  // A player-selected natural break must be signalled immediately; the portal applies its own ad policy.
   await context.raceAgainWithAd();
-  assert.equal(interstitialCount, 1, 'an interstitial should be requested after the first-three-minute gate');
+  assert.equal(interstitialCount, 1, 'first natural replay break should request an interstitial without a game-side timer gate');
   assert.equal(mutedDuringInterstitial, true, 'audio must be muted while the interstitial is active');
-  assert.ok(startRaceCount >= 2, 'the next race must start after the interstitial');
+  assert.ok(startRaceCount >= 1, 'replay must never be blocked when the ad is skipped');
+  assert.ok(events.includes('gameplayStop'), 'gameplayStop must be sent at a break');
+  assert.ok(events.filter(e => e === 'gameplayStart').length >= 2, 'gameplayStart must bracket active play');
   assert.ok(events.includes('gameplayStop'), 'gameplayStop must be sent at a break');
   assert.ok(events.filter(e => e === 'gameplayStart').length >= 2, 'gameplayStart must bracket active play');
 
@@ -157,11 +162,10 @@ async function waitFor(fn, label) {
   context.yes2HideBanner();
   assert.ok(events.includes('hideBanner'), 'banner must be hidden when racing resumes');
 
-  // After the first three minutes the game signals every player-chosen race break;
-  // platform adapters are responsible for their own pacing rules.
+  // Subsequent natural breaks are signalled too; no-fill must never strand the player.
   await context.raceAgainWithAd();
-  assert.equal(interstitialCount, 2, 'each later natural break should be signalled to the platform SDK');
-  assert.ok(startRaceCount >= 3, 'replay must always continue after ad completion');
+  assert.equal(interstitialCount, 2, 'each player-chosen natural break should be signalled to platform pacing');
+  assert.ok(startRaceCount >= 2, 'replay must always continue after ad completion');
 
   console.log(JSON.stringify({
     result: 'PASS',
@@ -169,10 +173,10 @@ async function waitFor(fn, label) {
       'SDK initialize → loading progress → startGameAsync → gameplayStart order',
       'pause/resume event handlers',
       'platform audio enabled/disabled events',
-      'no interstitial in the first three minutes',
+      'loading progress is deduplicated and rate-limited',
       'interstitial mute/restore and replay continuation',
       'results banner uses official runtime and hides at next race',
-      'every post-intro natural break is signalled to platform pacing',
+      'all player-chosen natural breaks are signalled to platform pacing',
       'gameplayStop/gameplayStart lifecycle'
     ],
     sdkEvents: events,
