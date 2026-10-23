@@ -57,8 +57,6 @@ const mockSdk = {
 };
 const mockAds = {
   isInterstitialSupported() { return true; },
-  isBannerSupported() { return false; },
-  hideBanner() { events.push('hideBanner'); },
   async showInterstitial(placement, callbacks) {
     interstitialCount++;
     events.push('showInterstitial:' + placement);
@@ -68,9 +66,17 @@ const mockAds = {
     callbacks.afterAd();
   }
 };
+const mockBanners = {
+  isSupported() { return true; },
+  async showBanner(id, size) {
+    events.push('showBanner:' + id + ':' + size);
+  },
+  hideBanner(id) { events.push('hideBanner:' + id); }
+};
+mockSdk.ads = mockAds;
+mockSdk.banners = mockBanners;
 const fakeWindow = {
   Yes2SDK: mockSdk,
-  Yes2Runtime: { ads: mockAds },
   GameAudio: mockAudio,
   Module: { _web_set_flag(flag, value) { pauseFlags.push([flag, value]); } },
   addEventListener() {}
