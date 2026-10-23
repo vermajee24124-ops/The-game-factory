@@ -429,7 +429,7 @@ async function raceAgainWithAd() {
     }
   }
   try {
-    var sdk = yes2Cached || await yes2SdkReady();
+    var sdk = yes2Cached;
     var ads = yes2AdsRuntime();
     var canShow = !!(sdk && ads && typeof ads.showInterstitial === 'function');
     if (canShow && typeof ads.isInterstitialSupported === 'function') {
