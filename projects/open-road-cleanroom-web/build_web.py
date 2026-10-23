@@ -228,8 +228,12 @@ var yes2StartComplete = false;
 var yes2StartInProgress = false;
 var yes2StartRetries = 0;
 var yes2SdkEventsBound = false;
-var yes2SessionStartedAt = Date.now();
 var yes2LastProgress = 0;
+var yes2LastProgressSent = -1;
+var yes2LastProgressSentAt = 0;
+var yes2ProgressTimer = null;
+var yes2LastProgressSdk = null;
+var yes2LoggedWarnings = Object.create(null);
 var yes2ReplayBusy = false;
 var yes2BannerVisible = false;
 var yes2HappyTimeSent = false;
@@ -240,6 +244,14 @@ var yes2ResumeAdDone = false;
 
 function yes2Sleep(ms) {
   return new Promise(function (resolve) { setTimeout(resolve, ms); });
+}
+
+function yes2LogOnce(key, message, error) {
+  if (!Q.has('debug') || yes2LoggedWarnings[key]) return;
+  yes2LoggedWarnings[key] = true;
+  if (window.console && typeof window.console.warn === 'function') {
+    window.console.warn(message, error || '');
+  }
 }
 
 function yes2SdkReady() {
@@ -256,19 +268,20 @@ function yes2SdkReady() {
         await yes2Sleep(100);
       }
       if (!sdk) {
-        console.info('Yes2SDK was not injected yet. The game continues; lifecycle setup will retry.');
+        yes2LogOnce('sdk-missing', 'Yes2SDK is not injected yet; gameplay remains available.');
         return null;
       }
       try {
         await sdk.initializeAsync();
         yes2Cached = sdk;
-        if (typeof sdk.setLoadingProgress === 'function') {
-          sdk.setLoadingProgress(Math.max(0, Math.min(100, yes2LastProgress)));
-        }
         yes2BindPlatformEvents(sdk);
+        // Send only the latest known loading value when initialization is complete.
+        yes2LastProgressSent = -1;
+        yes2LastProgressSdk = sdk;
+        yes2SendProgress(yes2LastProgress, true);
         return sdk;
       } catch (e) {
-        console.warn('Yes2SDK initialization failed; retrying while the game remains playable.', e);
+        yes2LogOnce('sdk-init', 'Yes2SDK initialization failed; gameplay remains available.', e);
         return null;
       }
     })().finally(function () {
@@ -283,13 +296,40 @@ function yes2AdsRuntime() {
   return window.Yes2Runtime && window.Yes2Runtime.ads ? window.Yes2Runtime.ads : null;
 }
 
+function yes2SendProgress(value, force) {
+  var sdk = yes2Cached;
+  if (!sdk || typeof sdk.setLoadingProgress !== 'function') return;
+  var n = Math.max(0, Math.min(100, Math.floor(value)));
+  if (!force && n === yes2LastProgressSent && sdk === yes2LastProgressSdk) return;
+
+  var now = Date.now();
+  // Inspector records every loading-progress event. Cap normal updates to four per second,
+  // but send 100 immediately so the host loading screen can dismiss without delay.
+  if (!force && n < 100 && yes2LastProgressSentAt && now - yes2LastProgressSentAt < 250) {
+    if (!yes2ProgressTimer) {
+      yes2ProgressTimer = setTimeout(function () {
+        yes2ProgressTimer = null;
+        if (yes2Cached) yes2SendProgress(yes2LastProgress, false);
+      }, Math.max(10, 250 - (now - yes2LastProgressSentAt)));
+    }
+    return;
+  }
+
+  if (yes2ProgressTimer && (force || n >= 100)) {
+    clearTimeout(yes2ProgressTimer);
+    yes2ProgressTimer = null;
+  }
+  yes2LastProgressSent = n;
+  yes2LastProgressSentAt = now;
+  yes2LastProgressSdk = sdk;
+  try { sdk.setLoadingProgress(n); }
+  catch (e) { yes2LogOnce('progress-error', 'Yes2SDK rejected a loading-progress update.', e); }
+}
+
 function yes2Progress(value) {
   yes2LastProgress = Math.max(0, Math.min(100, Math.floor(value)));
-  yes2SdkReady().then(function (sdk) {
-    if (sdk && typeof sdk.setLoadingProgress === 'function') {
-      try { sdk.setLoadingProgress(yes2LastProgress); } catch (e) {}
-    }
-  });
+  // Do not start SDK discovery from the per-frame loader callback. Initialization begins once at boot.
+  if (yes2Cached) yes2SendProgress(yes2LastProgress, false);
 }
 
 function yes2SetPlatformMute() {
@@ -342,7 +382,7 @@ function yes2BindPlatformEvents(sdk) {
     });
   } catch (e) {
     yes2SdkEventsBound = false;
-    console.warn('Could not subscribe to all optional Yes2SDK lifecycle events.', e);
+    yes2LogOnce('event-bind', 'Some optional Yes2SDK lifecycle events could not be subscribed.', e);
   }
 }
 
@@ -355,7 +395,7 @@ function yes2GameplayStart(sdkOverride) {
     sdk.game.gameplayStart();
     yes2GameplayActive = true;
   } catch (e) {
-    console.warn('Yes2SDK gameplayStart failed; will retry on the next gameplay transition.', e);
+    yes2LogOnce('gameplay-start', 'Yes2SDK gameplayStart failed; it will retry on the next gameplay transition.', e);
   }
 }
 
@@ -378,15 +418,15 @@ function yes2FinishLoading() {
     if (!sdk || typeof sdk.startGameAsync !== 'function') {
       throw new Error('Yes2SDK is not available yet');
     }
-    // This is the single explicit ready signal expected by Yes2SDK Inspector.
-    if (typeof sdk.setLoadingProgress === 'function') sdk.setLoadingProgress(100);
+    // Final loading value is sent once, only after the engine reports ready.
+    yes2Progress(100);
     yes2BindPlatformEvents(sdk);
     await sdk.startGameAsync();
     yes2StartComplete = true;
     yes2StartRetries = 0;
     yes2GameplayStart(sdk);
   }).catch(function (e) {
-    console.warn('Yes2SDK startGameAsync not completed; retrying without blocking play.', e);
+    yes2LogOnce('start-game', 'Yes2SDK startGameAsync has not completed yet; the game remains playable.', e);
   }).finally(function () {
     yes2StartInProgress = false;
     if (!yes2StartComplete && yes2StartRetries < 20 && game.ready) {
@@ -445,13 +485,11 @@ async function raceAgainWithAd() {
     if (canShow && typeof ads.isInterstitialSupported === 'function') {
       canShow = !!ads.isInterstitialSupported();
     }
-    // Natural break only, after a race; do not show any interstitial in the first 3 minutes of a session.
-    var now = Date.now();
-    if (canShow && now - yes2SessionStartedAt >= 180000 && !yes2PlatformPaused) {
+    // Signal every player-chosen between-race break. The portal SDK, not the game,
+    // applies its own first-ad delay and frequency caps. This also lets Inspector finish its ad check.
+    if (canShow && !yes2PlatformPaused) {
       yes2GameplayStop(sdk);
       yes2HideBanner();
-      yes2AdActive = true;
-      yes2SetPlatformMute();
       try {
         await ads.showInterstitial('race-replay', {
           beforeAd: function () {
@@ -465,15 +503,16 @@ async function raceAgainWithAd() {
         });
       } catch (e) {
         restoreFromAd();
-        console.info('Interstitial unavailable; continuing with the next race.', e);
+        yes2LogOnce('interstitial-error', 'Interstitial was unavailable; continuing without blocking the next race.', e);
       }
     }
   } catch (e) {
-    console.info('Interstitial skipped because Yes2SDK is not ready.', e);
+    yes2LogOnce('interstitial-runtime', 'Interstitial was skipped because the SDK runtime is not ready.', e);
   } finally {
     if (yes2AdActive) restoreFromAd();
     yes2ReplayBusy = false;
     startRace();
+    yes2GameplayStart(sdk);
   }
 }
 
