@@ -58,36 +58,60 @@ jobs:
           git -C "$ENGINE" submodule update --init --recursive
           python -m pip install "numpy<2" Pillow
 
-          # Tune the actual physics, not only the HTML buttons:
-          # 32% more speed-sensitive lateral limit, a response boost that grows to 180 km/h,
-          # and faster yaw following. Keep the minimum lock at the physics-safe 0.012 rad.
+          # Balance high-speed steering for better grip and less snap: useful response remains,
+          # but side-slip is damped more firmly and yaw correction is less abrupt.
           python - "$PROJECT/ports/opennfs/patches.py" <<'PY'
           import pathlib, sys
           path = pathlib.Path(sys.argv[1])
           source = path.read_text(encoding="utf-8")
           changes = [
-              (
-                  "wheelFriction * 9.81f * 0.62f",
-                  "wheelFriction * 9.81f * 0.82f",
-              ),
+              ("wheelFriction * 9.81f * 0.62f", "wheelFriction * 9.81f * 0.72f"),
               (
                   "float const rate{(request == 0.f ? 2.6f : 1.5f) * lock + 0.08f};",
                   "float const speedKmh{std::fabs(m_vehicle->getCurrentSpeedKmHour())};\n"
-                  "                float const highSpeedResponse{1.f + 0.65f * std::clamp(speedKmh / 180.f, 0.f, 1.f)};\n"
+                  "                float const highSpeedResponse{1.f + 0.45f * std::clamp(speedKmh / 180.f, 0.f, 1.f)};\n"
                   "                float const rate{(request == 0.f ? 2.6f : 1.5f) * lock + 0.08f * highSpeedResponse};",
               ),
-              (
-                  "std::min(3.0f * assist * dt, 0.5f)",
-                  "std::min(4.0f * assist * dt, 0.5f)",
-              ),
+              ("std::min(1.1f * assist * dt, 0.5f)", "std::min(1.65f * assist * dt, 0.5f)"),
+              ("std::min(4.0f * assist * dt, 0.5f)", "std::min(3.2f * assist * dt, 0.5f)"),
+              ("physics.mass * 0.0022f * speed * speed", "physics.mass * 0.0025f * speed * speed"),
           ]
           for old, new in changes:
               count = source.count(old)
               if count != 1:
-                  raise SystemExit(f"Steering patch stopped safely: expected one {old!r}, found {count}.")
+                  raise SystemExit(f"Stability patch stopped safely: expected one {old!r}, found {count}.")
               source = source.replace(old, new, 1)
           path.write_text(source, encoding="utf-8", newline="\n")
-          print("High-speed steering curve, cornering limit and yaw response patch points verified.")
+          print("Stability tune verified: balanced steering lock, stronger side-slip damping, smoother yaw correction.")
+          PY
+
+          # Quick-sprint version of the three original circuits. Curvature minima are kept close
+          # to their earlier values so reducing distance does not turn every bend into a hairpin.
+          python - "$PROJECT/games/opennfs/synth_track.py" <<'PY'
+          import pathlib, sys
+          path = pathlib.Path(sys.argv[1])
+          source = path.read_text(encoding="utf-8")
+          changes = [
+              ('name="Cedar Ridge", blurb="Rolling hills, flowing bends", seed=7, radius=330.0,',
+               'name="Cedar Ridge", blurb="Quick sprint with flowing bends", seed=7, radius=260.0,'),
+              ('radial=[(70.0, 2, 0.6), (45.0, 3, 2.1), (18.0, 5, -1.27)], height=[(10.0, 1, -1.17), (5.0, 3, -0.57), (2.0, 5, 0.0)]',
+               'radial=[(35.0, 2, 0.6), (22.0, 3, 2.1), (10.0, 5, -1.27)], height=[(8.0, 1, -1.17), (4.0, 3, -0.57), (1.6, 5, 0.0)]'),
+              ('name="Harbor Loop", blurb="Flat out: long straights, fast sweepers", seed=21, radius=400.0,',
+               'name="Harbor Loop", blurb="Short sprint with fast sweepers", seed=21, radius=300.0,'),
+              ('radial=[(150.0, 2, 0.2), (22.0, 4, 1.1), (10.0, 6, 0.4)], height=[(3.0, 1, 0.5), (1.5, 2, 2.0)]',
+               'radial=[(70.0, 2, 0.2), (12.0, 4, 1.1), (6.0, 6, 0.4)], height=[(2.5, 1, 0.5), (1.2, 2, 2.0)]'),
+              ('name="Granite Pass", blurb="Tight and twisty mountain road", seed=33, radius=250.0,',
+               'name="Granite Pass", blurb="Short technical mountain sprint", seed=33, radius=200.0,'),
+              ('radial=[(48.0, 2, 1.0), (40.0, 3, 0.2), (26.0, 4, 2.0), (14.0, 7, 0.9)], height=[(15.0, 1, 2.0), (7.0, 2, 0.3), (3.0, 4, 1.0)]',
+               'radial=[(30.0, 2, 1.0), (25.0, 3, 0.2), (15.0, 4, 2.0), (8.0, 7, 0.9)], height=[(10.0, 1, 2.0), (5.0, 2, 0.3), (2.0, 4, 1.0)]'),
+          ]
+          for old, new in changes:
+              count = source.count(old)
+              if count != 1:
+                  raise SystemExit(f"Quick-track patch stopped safely: expected one {old!r}, found {count}.")
+              source = source.replace(old, new, 1)
+          path.write_text(source, encoding="utf-8", newline="\n")
+          print("Three original tracks tuned for shorter one-lap sprint races.")
           PY
 
           # The public clean-room source does not contain the owner's optional private track spec.
@@ -104,9 +128,14 @@ jobs:
           PY
           python "$PROJECT/games/opennfs/build_assets.py" "$WORK/clean"
           python "$PROJECT/ports/opennfs/prepare.py" "$ENGINE" "$WORK/port"
-          grep -Fq "wheelFriction * 9.81f * 0.82f" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq "wheelFriction * 9.81f * 0.72f" "$WORK/port/src/Physics/Car.cpp"
           grep -Fq "highSpeedResponse" "$WORK/port/src/Physics/Car.cpp"
-          grep -Fq "std::min(4.0f * assist * dt, 0.5f)" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq "std::min(1.65f * assist * dt, 0.5f)" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq "std::min(3.2f * assist * dt, 0.5f)" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq "physics.mass * 0.0025f * speed * speed" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq 'radius=260.0' "$PROJECT/games/opennfs/synth_track.py"
+          grep -Fq 'radius=300.0' "$PROJECT/games/opennfs/synth_track.py"
+          grep -Fq 'radius=200.0' "$PROJECT/games/opennfs/synth_track.py"
 
           emcmake cmake -S "$PROJECT/ports/opennfs" -B "$WORK/build" -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
