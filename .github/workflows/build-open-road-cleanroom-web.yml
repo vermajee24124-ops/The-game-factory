@@ -15,6 +15,7 @@ on:
     paths:
       - "projects/open-road-cleanroom-web/**"
       - ".github/workflows/build-open-road-cleanroom-web.yml"
+      - ".github/scripts/open-road-yes2sdk-smoke.cjs"
 
 permissions:
   contents: read
@@ -38,9 +39,89 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Download and customize Open Road
+      - name: Set up Emscripten for the steering-physics rebuild
+        uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: 3.1.74
+
+      - name: Rebuild Open Road with tuned steering physics
+        shell: bash
         run: |
-          python projects/open-road-cleanroom-web/build_web.py --out "$RUNNER_TEMP/open-road-cleanroom"
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build git
+          WORK="$RUNNER_TEMP/openroad-engine-build"
+          PROJECT="$WORK/project"
+          ENGINE="$WORK/OpenNFS"
+          mkdir -p "$WORK"
+          git clone https://github.com/andrewnakas/opennfs-cleanroom.git "$PROJECT"
+          git -C "$PROJECT" checkout ce4fce657f23c82bb3b7235e9f7550ae2a7e49c8
+          git clone https://github.com/OpenNFS/OpenNFS.git "$ENGINE"
+          git -C "$ENGINE" checkout dcd9197
+          git -C "$ENGINE" submodule update --init --recursive
+          python -m pip install "numpy<2" Pillow
+
+          # Modest handling tune: about 16% more steering lock under load, a safer minimum
+          # steering lock at speed, and a 20% quicker wheel response. Physics remains speed-aware.
+          python - "$PROJECT/ports/opennfs/patches.py" <<'PY'
+          import pathlib, sys
+          path = pathlib.Path(sys.argv[1])
+          source = path.read_text(encoding="utf-8")
+          changes = [
+              ("wheelFriction * 9.81f * 0.62f", "wheelFriction * 9.81f * 0.72f"),
+              ("std::max(speed * speed, 1.f)), 0.012f, 0.45f)", "std::max(speed * speed, 1.f)), 0.016f, 0.45f)"),
+              ("request == 0.f ? 2.6f : 1.5f", "request == 0.f ? 2.6f : 1.8f"),
+          ]
+          for old, new in changes:
+              count = source.count(old)
+              if count != 1:
+                  raise SystemExit(f"Safe steering patch stopped: expected one {old!r}, found {count}.")
+              source = source.replace(old, new, 1)
+          path.write_text(source, encoding="utf-8", newline="\n")
+          print("Steering patch points verified and updated.")
+          PY
+
+          python "$PROJECT/games/opennfs/build_assets.py" "$WORK/clean"
+          python "$PROJECT/ports/opennfs/prepare.py" "$ENGINE" "$WORK/port"
+          grep -Fq "wheelFriction * 9.81f * 0.72f" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq ")), 0.016f, 0.45f)" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq "request == 0.f ? 2.6f : 1.8f" "$WORK/port/src/Physics/Car.cpp"
+
+          emcmake cmake -S "$PROJECT/ports/opennfs" -B "$WORK/build" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENGINE="$ENGINE" -DPORT="$WORK/port" \
+            -DDEV_NAMES=OFF -DWEB_FILL=0x00 -DWEB_FILL_MODE=WEB_FILL_KEEP_FREED
+          ninja -C "$WORK/build" -j2
+
+          # The upstream site builder contains Windows defaults. Change only its paths for this Linux CI run.
+          python - "$PROJECT/tools/make_site.py" "$WORK" "$EMSDK" <<'PY'
+          import pathlib, sys
+          path = pathlib.Path(sys.argv[1])
+          work = sys.argv[2]
+          emsdk = sys.argv[3]
+          source = path.read_text(encoding="utf-8")
+          source = source.replace('WORK = "D:/n64work/opennfs"', f'WORK = {work!r}')
+          old_ems = 'EMS = "D:/n64work/emsdk/upstream/emscripten"'
+          if source.count(old_ems) != 1:
+              raise SystemExit("Could not safely replace the upstream Emscripten path.")
+          source = source.replace(old_ems, f'EMS = {str(pathlib.Path(emsdk) / "upstream" / "emscripten")!r}', 1)
+          old_env = 'env = dict(os.environ, EM_CONFIG="D:/n64work/emsdk/.emscripten")'
+          if source.count(old_env) != 1:
+              raise SystemExit("Could not safely replace the upstream EM_CONFIG path.")
+          source = source.replace(old_env, 'env = dict(os.environ, EM_CONFIG=os.path.join(os.environ["EMSDK"], ".emscripten"))', 1)
+          path.write_text(source, encoding="utf-8", newline="\n")
+          PY
+          python "$PROJECT/tools/make_site.py" \
+            --out "$WORK/site" --assets "$WORK/clean" \
+            --build "$WORK/build" --port "$WORK/port"
+          test -s "$WORK/site/opennfs.wasm"
+          test -s "$WORK/site/opennfs.js"
+          test -s "$WORK/site/tracks/trk100.bin"
+          echo "OPENROAD_WORKDIR=$WORK" >> "$GITHUB_ENV"
+
+      - name: Customize rebuilt Open Road for Yes2Games
+        run: |
+          python projects/open-road-cleanroom-web/build_web.py --source "$OPENROAD_WORKDIR/site" --out "$RUNNER_TEMP/open-road-cleanroom"
 
       - name: Bundle the official Yes2Games JavaScript runtime helper
         shell: bash
