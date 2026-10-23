@@ -57,6 +57,7 @@ const mockSdk = {
 };
 const mockAds = {
   isInterstitialSupported() { return true; },
+  isBannerSupported() { return true; },
   async showInterstitial(placement, callbacks) {
     interstitialCount++;
     events.push('showInterstitial:' + placement);
@@ -64,19 +65,13 @@ const mockAds = {
     mutedDuringInterstitial = platformMutes.at(-1) === true;
     await new Promise(resolve => setTimeout(resolve, 1));
     callbacks.afterAd();
-  }
-};
-const mockBanners = {
-  isSupported() { return true; },
-  async showBanner(id, size) {
-    events.push('showBanner:' + id + ':' + size);
   },
-  hideBanner(id) { events.push('hideBanner:' + id); }
+  async showBanner(position) { events.push('showBanner:' + position); },
+  hideBanner() { events.push('hideBanner'); }
 };
-mockSdk.ads = mockAds;
-mockSdk.banners = mockBanners;
 const fakeWindow = {
   Yes2SDK: mockSdk,
+  Yes2Runtime: { ads: mockAds },
   GameAudio: mockAudio,
   Module: { _web_set_flag(flag, value) { pauseFlags.push([flag, value]); } },
   addEventListener() {}
@@ -151,11 +146,22 @@ async function waitFor(fn, label) {
   context.yes2SessionStartedAt = Date.now() - 240000;
   context.yes2LastInterstitial = Date.now() - 240000;
   await context.raceAgainWithAd();
-  assert.equal(interstitialCount, 1, 'an interstitial should be requested after the cooldown');
+  assert.equal(interstitialCount, 1, 'an interstitial should be requested after the first-three-minute gate');
   assert.equal(mutedDuringInterstitial, true, 'audio must be muted while the interstitial is active');
   assert.ok(startRaceCount >= 2, 'the next race must start after the interstitial');
   assert.ok(events.includes('gameplayStop'), 'gameplayStop must be sent at a break');
   assert.ok(events.filter(e => e === 'gameplayStart').length >= 2, 'gameplayStart must bracket active play');
+
+  await context.yes2ShowResultBanner();
+  assert.ok(events.includes('showBanner:bottom'), 'results banner must use the official runtime ads wrapper');
+  context.yes2HideBanner();
+  assert.ok(events.includes('hideBanner'), 'banner must be hidden when racing resumes');
+
+  // After the first three minutes the game signals every player-chosen race break;
+  // platform adapters are responsible for their own pacing rules.
+  await context.raceAgainWithAd();
+  assert.equal(interstitialCount, 2, 'each later natural break should be signalled to the platform SDK');
+  assert.ok(startRaceCount >= 3, 'replay must always continue after ad completion');
 
   console.log(JSON.stringify({
     result: 'PASS',
@@ -165,6 +171,8 @@ async function waitFor(fn, label) {
       'platform audio enabled/disabled events',
       'no interstitial in the first three minutes',
       'interstitial mute/restore and replay continuation',
+      'results banner uses official runtime and hides at next race',
+      'every post-intro natural break is signalled to platform pacing',
       'gameplayStop/gameplayStart lifecycle'
     ],
     sdkEvents: events,
