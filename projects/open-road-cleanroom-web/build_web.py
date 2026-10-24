@@ -57,8 +57,8 @@ def patch_html(site: Path) -> None:
         '<canvas id="canvas" tabindex="0" data-yes2-canvas',
         "mark the racing canvas for Yes2Games Inspector",
     )
-    # The dashboard injects the SDK before the first author script. Initialize it in that
-    # first script, before the bundled runtime or the engine can invoke any SDK method.
+    # The dashboard injects the SDK before the first author script. Put this tiny
+    # bootstrap before every game script; the dashboard's own SDK script is not bundled here.
     early_bootstrap = r"""<script id="yes2sdk-early-init">
 (function () {
   if (window.__openRoadSdkInitPromise || window.__openRoadSdkInitCalled) return;
@@ -79,11 +79,15 @@ def patch_html(site: Path) -> None:
   }
 })();
 </script>"""
+    first_script = re.search(r"<script\b", html, flags=re.IGNORECASE)
+    if not first_script:
+        raise RuntimeError("No script tag found in index.html; cannot place SDK bootstrap safely.")
+    html = html[:first_script.start()] + early_bootstrap + "\n" + html[first_script.start():]
     html = replace_once(
         html,
         '<script src="audio.js"></script>',
-        early_bootstrap + '\n<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
-        "initialize Yes2SDK exactly once before all game/runtime scripts",
+        '<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
+        "load the official Yes2SDK runtime helper without adding a second SDK bootstrap",
     )
     html = replace_once(
         html,
@@ -118,7 +122,7 @@ def patch_html(site: Path) -> None:
     </div>
   </div>
 """
-    script_tail = early_bootstrap + '\n<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>'
+    script_tail = '<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>'
     html = replace_once(
         html,
         '</div>\n</div>\n' + script_tail,
