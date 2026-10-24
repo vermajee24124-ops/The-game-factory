@@ -452,7 +452,7 @@ async function watchRewardedBonus() {
     restored = true;
     yes2AdActive = false;
     yes2SetPlatformMute();
-    if (!yes2PlatformPaused && !game.menuOpen) {
+    if (!yes2PlatformPaused && !game.menuOpen && !game.userPaused) {
       setPaused(false);
       if (window.GameAudio) GameAudio.setActive(true);
     }
@@ -519,7 +519,7 @@ function yes2BindPlatformEvents(sdk) {
     sdk.on('resume', function () {
       yes2PlatformPaused = false;
       yes2SetPlatformMute();
-      if (!game.menuOpen && !yes2AdActive) {
+      if (!game.menuOpen && !game.userPaused && !yes2AdActive) {
         setPaused(false);
         if (window.GameAudio) GameAudio.setActive(true);
         yes2GameplayStart();
@@ -541,7 +541,7 @@ function yes2BindPlatformEvents(sdk) {
     sdk.on('accountDialogClose', function () {
       yes2PlatformPaused = false;
       yes2SetPlatformMute();
-      if (!game.menuOpen && !yes2AdActive) {
+      if (!game.menuOpen && !game.userPaused && !yes2AdActive) {
         setPaused(false);
         if (window.GameAudio) GameAudio.setActive(true);
         yes2GameplayStart();
@@ -555,7 +555,7 @@ function yes2BindPlatformEvents(sdk) {
 
 function yes2GameplayStart(sdkOverride) {
   if (!yes2StartComplete || yes2GameplayActive || !game.ready ||
-      game.menuOpen || yes2PlatformPaused || yes2AdActive) return;
+      game.menuOpen || game.userPaused || yes2PlatformPaused || yes2AdActive) return;
   var sdk = sdkOverride || yes2Cached;
   if (!sdk || !sdk.game || typeof sdk.game.gameplayStart !== 'function') return;
   try {
@@ -640,7 +640,7 @@ async function raceAgainWithAd() {
     restored = true;
     yes2AdActive = false;
     yes2SetPlatformMute();
-    if (!yes2PlatformPaused && !game.menuOpen) {
+    if (!yes2PlatformPaused && !game.menuOpen && !game.userPaused) {
       setPaused(false);
       if (window.GameAudio) GameAudio.setActive(true);
     }
