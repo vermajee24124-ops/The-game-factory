@@ -57,11 +57,33 @@ def patch_html(site: Path) -> None:
         '<canvas id="canvas" tabindex="0" data-yes2-canvas',
         "mark the racing canvas for Yes2Games Inspector",
     )
+    # The dashboard injects the SDK before the first author script. Initialize it in that
+    # first script, before the bundled runtime or the engine can invoke any SDK method.
+    early_bootstrap = r"""<script id="yes2sdk-early-init">
+(function () {
+  if (window.__openRoadSdkInitPromise || window.__openRoadSdkInitCalled) return;
+  var sdk = window.Yes2SDK;
+  if (!sdk || typeof sdk.initializeAsync !== 'function') return;
+  window.__openRoadSdkInitCalled = true;
+  try {
+    var result = sdk.initializeAsync();
+    window.__openRoadSdkInitPromise = Promise.resolve(result).then(function () {
+      return sdk;
+    }).catch(function (error) {
+      window.__openRoadSdkInitError = error;
+      return null;
+    });
+  } catch (error) {
+    window.__openRoadSdkInitError = error;
+    window.__openRoadSdkInitPromise = Promise.resolve(null);
+  }
+})();
+</script>"""
     html = replace_once(
         html,
         '<script src="audio.js"></script>',
-        '<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
-        "load the Yes2Games JavaScript runtime helper before page/game code",
+        early_bootstrap + '\n<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
+        "initialize Yes2SDK exactly once before all game/runtime scripts",
     )
     html = replace_once(
         html,
@@ -96,10 +118,11 @@ def patch_html(site: Path) -> None:
     </div>
   </div>
 """
+    script_tail = early_bootstrap + '\n<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>'
     html = replace_once(
         html,
-        '</div>\n</div>\n<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
-        '</div>\n' + orientation_hint + '</div>\n<script src="yes2-runtime.js"></script>\n<script src="audio.js"></script>',
+        '</div>\n</div>\n' + script_tail,
+        '</div>\n' + orientation_hint + '</div>\n' + script_tail,
         "insert the mobile landscape gate",
     )
     write_text(path, html)
