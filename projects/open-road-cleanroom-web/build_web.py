@@ -284,6 +284,7 @@ var yes2LastProgressSentAt = 0;
 var yes2ProgressTimer = null;
 var yes2LastProgressSdk = null;
 var yes2LoggedWarnings = Object.create(null);
+var yes2AdSupportCache = Object.create(null);
 var yes2ReplayBusy = false;
 var yes2BannerVisible = false;
 var yes2HappyTimeSent = false;
@@ -363,6 +364,19 @@ function yes2AdsRuntime() {
   return window.Yes2Runtime && window.Yes2Runtime.ads ? window.Yes2Runtime.ads : null;
 }
 
+function yes2SupportsAd(format) {
+  if (Object.prototype.hasOwnProperty.call(yes2AdSupportCache, format)) return yes2AdSupportCache[format];
+  var ads = yes2AdsRuntime();
+  var names = { interstitial: 'isInterstitialSupported', rewarded: 'isRewardedSupported', banner: 'isBannerSupported' };
+  var method = ads && names[format] ? ads[names[format]] : null;
+  var supported = false;
+  if (typeof method === 'function') {
+    try { supported = !!method.call(ads); } catch (e) { supported = false; }
+  }
+  yes2AdSupportCache[format] = supported;
+  return supported;
+}
+
 function yes2SendProgress(value, force) {
   var sdk = yes2Cached;
   if (!sdk || typeof sdk.setLoadingProgress !== 'function') return;
@@ -370,14 +384,14 @@ function yes2SendProgress(value, force) {
   if (!force && n === yes2LastProgressSent && sdk === yes2LastProgressSdk) return;
 
   var now = Date.now();
-  // Inspector records every loading-progress event. Cap normal updates to at most twice per second,
+  // Inspector records every loading-progress event. Cap normal updates to at most once per second,
   // and forward only changed integer percentages. Final 100 is sent immediately.
-  if (!force && n < 100 && yes2LastProgressSentAt && now - yes2LastProgressSentAt < 500) {
+  if (!force && n < 100 && yes2LastProgressSentAt && now - yes2LastProgressSentAt < 1000) {
     if (!yes2ProgressTimer) {
       yes2ProgressTimer = setTimeout(function () {
         yes2ProgressTimer = null;
         if (yes2Cached) yes2SendProgress(yes2LastProgress, false);
-      }, Math.max(10, 500 - (now - yes2LastProgressSentAt)));
+      }, Math.max(10, 1000 - (now - yes2LastProgressSentAt)));
     }
     return;
   }
@@ -463,7 +477,7 @@ function yes2PrepareRewardOffer() {
   var ads = yes2AdsRuntime();
   var supported = !!(ads && typeof ads.showRewarded === 'function');
   try {
-    if (supported && typeof ads.isRewardedSupported === 'function') supported = !!ads.isRewardedSupported();
+    if (supported) supported = yes2SupportsAd('rewarded');
   } catch (e) { supported = false; }
   if (actions) actions.classList.toggle('hidden', !supported);
   yes2RenderSprintPoints();
@@ -476,7 +490,7 @@ async function watchRewardedBonus() {
   var ads = yes2AdsRuntime();
   if (!ads || typeof ads.showRewarded !== 'function') return;
   try {
-    if (typeof ads.isRewardedSupported === 'function' && !ads.isRewardedSupported()) return;
+    if (!yes2SupportsAd('rewarded')) return;
   } catch (e) { return; }
 
   yes2RewardBusy = true;
@@ -651,7 +665,7 @@ async function yes2ShowResultBanner() {
   var ads = yes2AdsRuntime();
   if (!ads || typeof ads.showBanner !== 'function') return;
   try {
-    if (typeof ads.isBannerSupported === 'function' && !ads.isBannerSupported()) return;
+    if (!yes2SupportsAd('banner')) return;
     await ads.showBanner('bottom');
     yes2BannerVisible = true;
   } catch (e) {
@@ -686,9 +700,7 @@ async function raceAgainWithAd() {
     var sdk = yes2Cached;
     var ads = yes2AdsRuntime();
     var canShow = !!(sdk && ads && typeof ads.showInterstitial === 'function');
-    if (canShow && typeof ads.isInterstitialSupported === 'function') {
-      canShow = !!ads.isInterstitialSupported();
-    }
+    if (canShow) canShow = yes2SupportsAd('interstitial');
     // Signal every player-chosen between-race break. The portal SDK, not the game,
     // applies its own first-ad delay and frequency caps. This also lets Inspector finish its ad check.
     if (canShow && !yes2PlatformPaused && !yes2RewardedOnThisResult) {
