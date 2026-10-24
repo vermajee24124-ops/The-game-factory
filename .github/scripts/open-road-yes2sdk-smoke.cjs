@@ -9,6 +9,8 @@ const gameJsPath = process.argv[2];
 if (!gameJsPath) throw new Error('Usage: node open-road-yes2sdk-smoke.cjs <built-game.js>');
 const source = fs.readFileSync(gameJsPath, 'utf8');
 assert.ok(source.includes("print: function (t) { if (Q.has('verbose')) console.log(t); }"), 'Emscripten stdout must not log in Inspector debug mode');
+assert.ok(source.includes('window.__openRoadSdkInitPromise'), 'game code must reuse the early HTML SDK-init promise');
+assert.ok(source.includes('window.__openRoadSdkInitCalled'), 'SDK initialization must be guarded as a one-shot action');
 assert.ok(source.includes("else if (Q.has('verbose')) console.warn(t);"), 'non-fatal Emscripten stderr must be quiet unless verbose mode is explicit');
 assert.ok(source.includes("toggleGamePause"), 'the in-game Pause/Resume action must be wired');
 assert.ok(source.includes("showRewarded('race-bonus-points'"), 'the results-screen rewarded ad must use the official wrapper');
@@ -149,7 +151,7 @@ async function waitFor(fn, label) {
   context.yes2FinishLoading();
   await waitFor(() => events.includes('startGameAsync'), 'startGameAsync');
   await waitFor(() => events.includes('gameplayStart'), 'gameplayStart');
-  assert.ok(events.indexOf('initializeAsync') >= 0, 'SDK must initialize');
+  assert.equal(events.filter(e => e === 'initializeAsync').length, 1, 'SDK initialization must be called exactly once');
   assert.ok(events.indexOf('progress:100') >= 0, 'loading progress must reach 100');
   assert.ok(events.indexOf('initializeAsync') < events.indexOf('startGameAsync'), 'initialize must precede startGameAsync');
   assert.ok(events.indexOf('startGameAsync') < events.indexOf('gameplayStart'), 'startGameAsync must precede gameplayStart');
