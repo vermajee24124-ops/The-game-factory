@@ -65,6 +65,18 @@ def patch_html(site: Path) -> None:
     )
     html = replace_once(
         html,
+        '<button id="btn-menu" aria-label="menu">&#9776;</button>\\n    <button id="btn-sound"',
+        '<button id="btn-menu" aria-label="menu">&#9776;</button>\\n    <button id="btn-pause" aria-label="pause game" title="Pause">&#9208;</button>\\n    <button id="btn-sound"',
+        "add a dedicated pause/resume button to the HUD",
+    )
+    html = replace_once(
+        html,
+        '<h2 id="results-title">FINISH</h2>\\n    <table id="results-table"></table>',
+        '<h2 id="results-title">FINISH</h2>\\n    <div id="reward-points" class="reward-points hidden">SPRINT POINTS: <b id="sprint-points">0</b> <span id="reward-status"></span></div>\\n    <div id="reward-actions" class="reward-actions hidden"><button class="go" id="reward-ad">Watch ad for +500 Sprint Points</button><button class="go" id="skip-reward">Continue without ad</button></div>\\n    <table id="results-table"></table>',
+        "add an opt-in rewarded bonus with a clear no-ad choice",
+    )
+    html = replace_once(
+        html,
         '<div id="menu" class="overlay">',
         '<div id="menu" class="overlay hidden">',
         "hide the setup menu until it is needed",
@@ -148,6 +160,21 @@ button, canvas, #stage {
 @media (orientation: landscape) {
   .orientation-hint { display: none !important; }
 }
+#topbar #btn-pause {
+  border-color: var(--accent);
+  font-weight: 900;
+  font-size: 21px;
+  opacity: 1;
+}
+#topbar #btn-pause.paused {
+  background: var(--accent);
+  color: #141414;
+}
+.reward-points { text-align: center; font-size: 14px; font-weight: 800; color: var(--accent); letter-spacing: .04em; }
+.reward-points b { font-size: 20px; margin: 0 4px; }
+#reward-status { display: block; margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--fg); letter-spacing: 0; }
+.reward-actions { display: flex; flex-wrap: wrap; gap: 10px; width: min(100%, 560px); }
+.reward-actions button { flex: 1 1 200px; min-height: 44px; font-size: 14px; line-height: 1.25; touch-action: manipulation; }
 """
     if "Open Road portal build: prevent long-press selection" not in css:
         css += additions
@@ -237,6 +264,9 @@ var yes2LoggedWarnings = Object.create(null);
 var yes2ReplayBusy = false;
 var yes2BannerVisible = false;
 var yes2HappyTimeSent = false;
+var yes2RewardBusy = false;
+var yes2RewardChoiceMade = false;
+var yes2RewardedOnThisResult = false;
 var yes2PlatformPaused = false;
 var yes2AdActive = false;
 var yes2HostAudioEnabled = true;
@@ -617,14 +647,14 @@ yes2SdkReady();
     js = replace_once(
         js,
         "  print: function (t) { console.log(t); },",
-        "  print: function (t) { if (Q.has('debug')) console.log(t); },",
+        "  print: function (t) { if (Q.has('verbose')) console.log(t); },",
         "suppress routine Emscripten stdout in portal builds",
     )
     # Emscripten can change the exact escaping around the Aborted() matcher between versions.
     # Patch the printErr callback by its stable function signature, preserving fatal error reporting.
     js, err_count = re.subn(
         r"(?m)^[ \t]*printErr:\s*(?:function\s*)?(?:\(\s*t\s*\)|t)\s*(?:=>)?\s*\{[^\n]*$",
-        r"  printErr: function (t) { var fatal = /^FATAL|Aborted\(|Assertion/.test(t); if (fatal) { if (window.console && console.error) console.error(t); showError(t); } else if (Q.has('debug')) console.warn(t); },",
+        r"  printErr: function (t) { var fatal = /^FATAL|Aborted\(|Assertion/.test(t); if (fatal) { if (window.console && console.error) console.error(t); showError(t); } else if (Q.has('verbose')) console.warn(t); },",
         js,
         count=1,
     )
