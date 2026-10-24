@@ -310,34 +310,48 @@ function yes2LogOnce(key, message, error) {
 function yes2SdkReady() {
   if (yes2Cached) return Promise.resolve(yes2Cached);
   if (!yes2ReadyPromise) {
-    yes2ReadyPromise = (async function () {
-      var sdk = null;
-      // The dashboard may inject its platform adapter asynchronously. Start polling as early as this script loads.
-      for (var i = 0; i < 150; i++) {
-        if (window.Yes2SDK && typeof window.Yes2SDK.initializeAsync === 'function') {
-          sdk = window.Yes2SDK;
-          break;
+    var bootstrap = window.__openRoadSdkInitPromise;
+    // Fallback for local/pre-dashboard previews where the inline early-init script did not
+    // see an SDK at parse time. The global guard makes initialization one-shot only.
+    if (!bootstrap && !window.__openRoadSdkInitCalled) {
+      var sdkNow = window.Yes2SDK;
+      if (sdkNow && typeof sdkNow.initializeAsync === 'function') {
+        window.__openRoadSdkInitCalled = true;
+        try {
+          var initResult = sdkNow.initializeAsync();
+          bootstrap = Promise.resolve(initResult).then(function () { return sdkNow; }).catch(function (error) {
+            window.__openRoadSdkInitError = error;
+            return null;
+          });
+          window.__openRoadSdkInitPromise = bootstrap;
+        } catch (error) {
+          window.__openRoadSdkInitError = error;
+          bootstrap = Promise.resolve(null);
+          window.__openRoadSdkInitPromise = bootstrap;
         }
-        await yes2Sleep(100);
       }
-      if (!sdk) {
-        yes2LogOnce('sdk-missing', 'Yes2SDK is not injected yet; gameplay remains available.');
+    }
+    if (!bootstrap && window.__openRoadSdkInitCalled) {
+      bootstrap = window.__openRoadSdkInitPromise || Promise.resolve(null);
+    }
+    if (!bootstrap) bootstrap = Promise.resolve(null);
+
+    yes2ReadyPromise = Promise.resolve(bootstrap).then(function (sdk) {
+      if (!sdk || typeof sdk.startGameAsync !== 'function') {
+        yes2LogOnce('sdk-missing', 'Yes2SDK is unavailable; the game remains playable without portal services.');
         return null;
       }
-      try {
-        await sdk.initializeAsync();
-        yes2Cached = sdk;
-        yes2BindPlatformEvents(sdk);
-        // Send only the latest known loading value when initialization is complete.
-        yes2LastProgressSent = -1;
-        yes2LastProgressSdk = sdk;
-        yes2SendProgress(yes2LastProgress, true);
-        return sdk;
-      } catch (e) {
-        yes2LogOnce('sdk-init', 'Yes2SDK initialization failed; gameplay remains available.', e);
-        return null;
-      }
-    })().finally(function () {
+      yes2Cached = sdk;
+      yes2BindPlatformEvents(sdk);
+      // Send the latest integer progress once init has completed; progress is throttled below.
+      yes2LastProgressSent = -1;
+      yes2LastProgressSdk = sdk;
+      yes2SendProgress(yes2LastProgress, true);
+      return sdk;
+    }).catch(function (error) {
+      yes2LogOnce('sdk-init', 'Yes2SDK initialization failed; gameplay remains available.', error);
+      return null;
+    }).finally(function () {
       if (!yes2Cached) yes2ReadyPromise = null;
     });
   }
@@ -356,14 +370,14 @@ function yes2SendProgress(value, force) {
   if (!force && n === yes2LastProgressSent && sdk === yes2LastProgressSdk) return;
 
   var now = Date.now();
-  // Inspector records every loading-progress event. Cap normal updates to four per second,
-  // but send 100 immediately so the host loading screen can dismiss without delay.
-  if (!force && n < 100 && yes2LastProgressSentAt && now - yes2LastProgressSentAt < 250) {
+  // Inspector records every loading-progress event. Cap normal updates to at most twice per second,
+  // and forward only changed integer percentages. Final 100 is sent immediately.
+  if (!force && n < 100 && yes2LastProgressSentAt && now - yes2LastProgressSentAt < 500) {
     if (!yes2ProgressTimer) {
       yes2ProgressTimer = setTimeout(function () {
         yes2ProgressTimer = null;
         if (yes2Cached) yes2SendProgress(yes2LastProgress, false);
-      }, Math.max(10, 250 - (now - yes2LastProgressSentAt)));
+      }, Math.max(10, 500 - (now - yes2LastProgressSentAt)));
     }
     return;
   }
