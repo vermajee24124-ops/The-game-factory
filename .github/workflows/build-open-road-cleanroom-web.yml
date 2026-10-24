@@ -1,0 +1,317 @@
+name: Build Open Road for Yes2Games
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - open-road-yes2games-web-build
+    paths:
+      - "projects/open-road-cleanroom-web/**"
+      - ".github/workflows/build-open-road-cleanroom-web.yml"
+      - ".github/scripts/open-road-yes2sdk-smoke.cjs"
+
+concurrency:
+  group: open-road-yes2games-build
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-web-archive:
+    name: Build and validate the HTML5 game ZIP
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Emscripten for the steering-physics rebuild
+        uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: 3.1.74
+
+      - name: Rebuild Open Road with tuned steering physics
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build git
+          WORK="$RUNNER_TEMP/openroad-engine-build"
+          PROJECT="$WORK/project"
+          ENGINE="$WORK/OpenNFS"
+          mkdir -p "$WORK"
+          git clone https://github.com/andrewnakas/opennfs-cleanroom.git "$PROJECT"
+          git -C "$PROJECT" checkout ce4fce657f23c82bb3b7235e9f7550ae2a7e49c8
+          git clone https://github.com/OpenNFS/OpenNFS.git "$ENGINE"
+          git -C "$ENGINE" checkout dcd9197
+          git -C "$ENGINE" submodule update --init --recursive
+          python -m pip install "numpy<2" Pillow
+
+          # Balance high-speed steering for better grip and less snap: useful response remains,
+          # but side-slip is damped more firmly and yaw correction is less abrupt.
+          python - "$PROJECT/ports/opennfs/patches.py" <<'PY'
+          import pathlib, sys
+          path = pathlib.Path(sys.argv[1])
+          source = path.read_text(encoding="utf-8")
+          changes = [
+              ("wheelFriction * 9.81f * 0.62f", "wheelFriction * 9.81f * 0.72f"),
+              (
+                  "float const rate{(request == 0.f ? 2.6f : 1.5f) * lock + 0.08f};",
+                  "float const speedKmh{std::fabs(m_vehicle->getCurrentSpeedKmHour())};\n"
+                  "                float const highSpeedResponse{1.f + 0.45f * std::clamp(speedKmh / 180.f, 0.f, 1.f)};\n"
+                  "                float const rate{(request == 0.f ? 2.6f : 1.5f) * lock + 0.08f * highSpeedResponse};",
+              ),
+              ("std::min(1.1f * assist * dt, 0.5f)", "std::min(1.65f * assist * dt, 0.5f)"),
+              ("std::min(3.0f * assist * dt, 0.5f)", "std::min(3.2f * assist * dt, 0.5f)"),
+              ("physics.mass * 0.0022f * speed * speed", "physics.mass * 0.0025f * speed * speed"),
+          ]
+          for old, new in changes:
+              count = source.count(old)
+              if count != 1:
+                  raise SystemExit(f"Stability patch stopped safely: expected one {old!r}, found {count}.")
+              source = source.replace(old, new, 1)
+          path.write_text(source, encoding="utf-8", newline="\n")
+          print("Stability tune verified: balanced steering lock, stronger side-slip damping, smoother yaw correction.")
+          PY
+
+          # Quick-sprint version of the three original circuits. Curvature minima are kept close
+          # to their earlier values so reducing distance does not turn every bend into a hairpin.
+          python - "$PROJECT/games/opennfs/synth_track.py" <<'PY'
+          import pathlib, sys
+          path = pathlib.Path(sys.argv[1])
+          source = path.read_text(encoding="utf-8")
+          changes = [
+              ('name="Cedar Ridge", blurb="Rolling hills, flowing bends", seed=7, radius=330.0,',
+               'name="Cedar Ridge", blurb="Quick sprint with flowing bends", seed=7, radius=260.0,'),
+              ('radial=[(70.0, 2, 0.6), (45.0, 3, 2.1), (18.0, 5, -1.27)], height=[(10.0, 1, -1.17), (5.0, 3, -0.57), (2.0, 5, 0.0)]',
+               'radial=[(35.0, 2, 0.6), (22.0, 3, 2.1), (10.0, 5, -1.27)], height=[(8.0, 1, -1.17), (4.0, 3, -0.57), (1.6, 5, 0.0)]'),
+              ('name="Harbor Loop", blurb="Flat out: long straights, fast sweepers", seed=21, radius=400.0,',
+               'name="Harbor Loop", blurb="Short sprint with fast sweepers", seed=21, radius=300.0,'),
+              ('radial=[(150.0, 2, 0.2), (22.0, 4, 1.1), (10.0, 6, 0.4)], height=[(3.0, 1, 0.5), (1.5, 2, 2.0)]',
+               'radial=[(70.0, 2, 0.2), (12.0, 4, 1.1), (6.0, 6, 0.4)], height=[(2.5, 1, 0.5), (1.2, 2, 2.0)]'),
+              ('name="Granite Pass", blurb="Tight and twisty mountain road", seed=33, radius=250.0,',
+               'name="Granite Pass", blurb="Short technical mountain sprint", seed=33, radius=200.0,'),
+              ('radial=[(48.0, 2, 1.0), (40.0, 3, 0.2), (26.0, 4, 2.0), (14.0, 7, 0.9)], height=[(15.0, 1, 2.0), (7.0, 2, 0.3), (3.0, 4, 1.0)]',
+               'radial=[(30.0, 2, 1.0), (25.0, 3, 0.2), (15.0, 4, 2.0), (8.0, 7, 0.9)], height=[(10.0, 1, 2.0), (5.0, 2, 0.3), (2.0, 4, 1.0)]'),
+          ]
+          for old, new in changes:
+              count = source.count(old)
+              if count != 1:
+                  raise SystemExit(f"Quick-track patch stopped safely: expected one {old!r}, found {count}.")
+              source = source.replace(old, new, 1)
+          path.write_text(source, encoding="utf-8", newline="\n")
+          print("Three original tracks tuned for shorter one-lap sprint races.")
+          PY
+
+          # The public clean-room source does not contain the owner's optional private track spec.
+          # Its asset script passes sys.argv into the imported cleaner, so explicitly disable that optional input.
+          python - "$PROJECT/games/opennfs/build_assets.py" <<'PY'
+          import pathlib, sys
+          path = pathlib.Path(sys.argv[1])
+          source = path.read_text(encoding="utf-8")
+          old = "    import clean_tracks\n    kept_tracks = clean_tracks.main()"
+          new = "    import clean_tracks\n    clean_tracks.SPEC = os.path.join(OUT, \".no-private-spec\")\n    kept_tracks = clean_tracks.main()"
+          if source.count(old) != 1:
+              raise SystemExit("Could not safely disable the optional private track-spec input.")
+          path.write_text(source.replace(old, new, 1), encoding="utf-8", newline="\n")
+          PY
+          python "$PROJECT/games/opennfs/build_assets.py" "$WORK/clean"
+          python "$PROJECT/ports/opennfs/prepare.py" "$ENGINE" "$WORK/port"
+          grep -Fq "wheelFriction * 9.81f * 0.72f" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq "highSpeedResponse" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq "std::min(1.65f * assist * dt, 0.5f)" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq "std::min(3.2f * assist * dt, 0.5f)" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq "physics.mass * 0.0025f * speed * speed" "$WORK/port/src/Physics/Car.cpp"
+          grep -Fq 'radius=260.0' "$PROJECT/games/opennfs/synth_track.py"
+          grep -Fq 'radius=300.0' "$PROJECT/games/opennfs/synth_track.py"
+          grep -Fq 'radius=200.0' "$PROJECT/games/opennfs/synth_track.py"
+
+          emcmake cmake -S "$PROJECT/ports/opennfs" -B "$WORK/build" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENGINE="$ENGINE" -DPORT="$WORK/port" \
+            -DDEV_NAMES=OFF -DWEB_FILL=0x00 -DWEB_FILL_MODE=WEB_FILL_KEEP_FREED
+          ninja -C "$WORK/build" -j2
+
+          # The upstream site builder contains Windows defaults. Change only its paths for this Linux CI run.
+          python - "$PROJECT/tools/make_site.py" "$WORK" "$EMSDK" <<'PY'
+          import pathlib, sys
+          path = pathlib.Path(sys.argv[1])
+          work = sys.argv[2]
+          emsdk = sys.argv[3]
+          source = path.read_text(encoding="utf-8")
+          source = source.replace('WORK = "D:/n64work/opennfs"', f'WORK = {work!r}')
+          old_ems = 'EMS = "D:/n64work/emsdk/upstream/emscripten"'
+          if source.count(old_ems) != 1:
+              raise SystemExit("Could not safely replace the upstream Emscripten path.")
+          source = source.replace(old_ems, f'EMS = {str(pathlib.Path(emsdk) / "upstream" / "emscripten")!r}', 1)
+          old_env = 'env = dict(os.environ, EM_CONFIG="D:/n64work/emsdk/.emscripten")'
+          if source.count(old_env) != 1:
+              raise SystemExit("Could not safely replace the upstream EM_CONFIG path.")
+          source = source.replace(old_env, 'env = dict(os.environ, EM_CONFIG=os.path.join(os.environ["EMSDK"], ".emscripten"))', 1)
+          path.write_text(source, encoding="utf-8", newline="\n")
+          PY
+          python "$PROJECT/tools/make_site.py" \
+            --out "$WORK/site" --assets "$WORK/clean" \
+            --build "$WORK/build" --port "$WORK/port"
+          test -s "$WORK/site/opennfs.wasm"
+          test -s "$WORK/site/opennfs.js"
+          test -s "$WORK/site/tracks/trk100.bin"
+          echo "OPENROAD_WORKDIR=$WORK" >> "$GITHUB_ENV"
+
+      - name: Customize rebuilt Open Road for Yes2Games
+        run: |
+          python projects/open-road-cleanroom-web/build_web.py --source "$OPENROAD_WORKDIR/site" --out "$RUNNER_TEMP/open-road-cleanroom"
+
+      - name: Record quick-sprint and stability tuning
+        shell: bash
+        run: |
+          set -euo pipefail
+          GAME="$RUNNER_TEMP/open-road-cleanroom"
+          python - "$GAME" <<'PY'
+          import json, pathlib, sys
+          game = pathlib.Path(sys.argv[1])
+          data = json.loads((game / "cars.json").read_text(encoding="utf-8"))
+          tracks = data.get("tracks", [])
+          lines = [
+              "# Open Road: quick-sprint and stability tuning",
+              "",
+              "- Default race length: one lap, even if a browser stored an older longer-lap setting.",
+              "- Five AI opponents are kept for a close race without extending the race duration.",
+              "- The three procedural routes are shortened and their elevation amplitude is reduced for smoother driving.",
+              "- Steering remains speed-sensitive; the cornering limit is balanced, lateral slip is damped more firmly, yaw correction is less abrupt, and high-speed downforce is slightly higher.",
+              "- Results screen and replay flow remain enabled. Yes2SDK ad requests are still limited to natural breaks and skipped safely when unsupported or unavailable.",
+              "",
+              "## Generated track lengths",
+              "",
+          ]
+          if not tracks:
+              raise SystemExit("No tracks in cars.json; cannot document the sprint build.")
+          for t in tracks:
+              lines.append(f"- {t.get('name', t.get('id', 'Track'))}: {t.get('length_m', 'unknown')} m per lap")
+          lines += [
+              "",
+              "Automated build, ZIP integrity, JavaScript syntax and mocked Yes2SDK smoke tests must pass before this archive is uploaded.",
+              "Real-world handling still needs a play test on the target phone and Yes2Games Inspector; the mock SDK is not portal certification.",
+          ]
+          (game / "QUICK-SPRINT-AND-STABILITY.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          print("Recorded generated track lengths in QUICK-SPRINT-AND-STABILITY.md")
+          PY
+
+      - name: Bundle the official Yes2Games JavaScript runtime helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          PACK_DIR="$RUNNER_TEMP/yes2sdk-package"
+          UNPACK_DIR="$RUNNER_TEMP/yes2sdk-unpacked"
+          GAME="$RUNNER_TEMP/open-road-cleanroom"
+          mkdir -p "$PACK_DIR" "$UNPACK_DIR"
+          npm pack @yes2games/js@latest --pack-destination "$PACK_DIR"
+          TARBALL="$(find "$PACK_DIR" -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          test -n "$TARBALL"
+          tar -xzf "$TARBALL" -C "$UNPACK_DIR" package/dist/yes2-runtime.js package/LICENSE
+          cp "$UNPACK_DIR/package/dist/yes2-runtime.js" "$GAME/yes2-runtime.js"
+          cp "$UNPACK_DIR/package/LICENSE" "$GAME/YES2GAMES-JS-LICENSE.txt"
+          test -s "$GAME/yes2-runtime.js"
+          test -s "$GAME/YES2GAMES-JS-LICENSE.txt"
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check "$RUNNER_TEMP/open-road-cleanroom/game.js"
+          node --check "$RUNNER_TEMP/open-road-cleanroom/yes2-runtime.js"
+          node --check .github/scripts/open-road-yes2sdk-smoke.cjs
+
+      - name: Test Yes2SDK start, lifecycle and ad guards with a mock platform
+        run: |
+          node .github/scripts/open-road-yes2sdk-smoke.cjs "$RUNNER_TEMP/open-road-cleanroom/game.js"
+
+      - name: Validate release files and create ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          GAME="$RUNNER_TEMP/open-road-cleanroom"
+          test -s "$GAME/index.html"
+          test -s "$GAME/style.css"
+          test -s "$GAME/game.js"
+          test -s "$GAME/opennfs.js"
+          test -s "$GAME/opennfs.wasm"
+          test -s "$GAME/assets.js"
+          test -s "$GAME/assets.bin"
+          test -s "$GAME/yes2-runtime.js"
+          test -s "$GAME/YES2GAMES-JS-LICENSE.txt"
+          test -s "$GAME/UPSTREAM-README.md"
+          test -s "$GAME/UPSTREAM-LICENSES.csv"
+          test -s "$GAME/QUICK-SPRINT-AND-STABILITY.md"
+          grep -q 'id="btn-pause"' "$GAME/index.html"
+          grep -q 'id="reward-ad"' "$GAME/index.html"
+          test -n "$(find "$GAME/tracks" -maxdepth 1 -type f -name '*.bin' -print -quit)"
+          grep -q 'class="overlay hidden"' "$GAME/index.html"
+          grep -q 'rotate-hint' "$GAME/index.html"
+          grep -q 'yes2FinishLoading' "$GAME/game.js"
+          grep -q 'yes2LastProgressSent' "$GAME/game.js"
+          grep -q 'yes2StartAttempted' "$GAME/game.js"
+          ! grep -q 'yes2StartRetries' "$GAME/game.js"
+          ! grep -Fq 'if (!yes2Cached) yes2ReadyPromise = null;' "$GAME/game.js"
+          grep -q 'return yes2SdkReady();' "$GAME/game.js"
+          test "$(grep -Foc 'sdkNow.initializeAsync()' "$GAME/game.js")" -eq 1
+          test "$(grep -Foc 'sdk.initializeAsync()' "$GAME/index.html")" -eq 1
+          test "$(grep -Foc 'sdk.startGameAsync()' "$GAME/game.js")" -eq 1
+          grep -q 'yes2sdk-early-init' "$GAME/index.html"
+          grep -q '__openRoadSdkInitPromise' "$GAME/index.html"
+          grep -q '__openRoadSdkInitCalled' "$GAME/game.js"
+          python - "$GAME/index.html" <<'PY'
+          import pathlib, sys
+          html = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+          early = html.index('id="yes2sdk-early-init"')
+          runtime = html.index('<script src="yes2-runtime.js">')
+          audio = html.index('<script src="audio.js">')
+          assert early < runtime < audio, "SDK bootstrap must run before runtime/game scripts"
+          print("Verified HTML SDK initialization script order.")
+          PY
+          grep -q 'function yes2SupportsAd(format)' "$GAME/game.js"
+          grep -q 'yes2SupportsAd('\''rewarded'\'')' "$GAME/game.js"
+          grep -q 'now - yes2LastProgressSentAt < 1500' "$GAME/game.js"
+          grep -q "if (Q.has('verbose')) console.log(t);" "$GAME/game.js"
+          grep -q 'var fatal =' "$GAME/game.js"
+          grep -Fq "else if (Q.has('verbose')) console.warn(t);" "$GAME/game.js"
+          grep -q 'startGameAsync' "$GAME/game.js"
+          grep -q 'yes2BindPlatformEvents' "$GAME/game.js"
+          grep -q 'Yes2Runtime.ads' "$GAME/game.js"
+          grep -q 'startGameAsync' "$GAME/game.js"
+          grep -q 'setPlatformMuted' "$GAME/audio.js"
+          grep -Fq "print: function (t) { if (Q.has('verbose')) console.log(t); }" "$GAME/game.js"
+          grep -Fq "printErr: function (t) { var fatal" "$GAME/game.js"
+          grep -q 'yes2SendProgress' "$GAME/game.js"
+          grep -q 'toggleGamePause' "$GAME/game.js"
+          grep -q 'showRewarded' "$GAME/game.js"
+          grep -q 'yes2RewardedOnThisResult' "$GAME/game.js"
+          grep -q 'skipRewardedBonus' "$GAME/game.js"
+          grep -q 'yes2-runtime.js' "$GAME/index.html"
+          grep -q 'data-yes2-canvas' "$GAME/index.html"
+          grep -q 'laps: 1' "$GAME/game.js"
+          grep -q 'choice.laps = 1' "$GAME/game.js"
+          cd "$GAME"
+          zip -qr "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" .
+          unzip -t "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip"
+          unzip -Z1 "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" | grep -qx 'index.html'
+          unzip -Z1 "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" | grep -qx 'UPSTREAM-LICENSES.csv'
+          unzip -Z1 "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" | grep -qx 'QUICK-SPRINT-AND-STABILITY.md'
+          echo "Release archive created: $(du -h "$GITHUB_WORKSPACE/Open-Road-Yes2Games.zip" | cut -f1)"
+
+      - name: Upload HTML5 game ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: Open-Road-Yes2Games-WebBuild
+          path: Open-Road-Yes2Games.zip
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,48 @@
+# Open Road: Yes2Games-ready web build
+
+This folder builds a standalone ZIP for the browser version of **Open Road: Cleanroom Edition**. GitHub Actions rebuilds its WebAssembly engine from pinned upstream source commits, applies a shorter quick-sprint track design and balanced handling tune, patches the HTML/CSS/JavaScript shell, then packages the generated tracks.
+
+## Changes in this build
+
+- Shows the loading screen immediately and starts the default race only after the one-time Yes2SDK initialization promise has settled and the car/track catalogue is ready.
+- Removes the player setup screen from startup. The car and track use the game's defaults.
+- Forces **5 AI opponents** on every race, even if an old browser setting or URL parameter says otherwise.
+- Forces a **one-lap quick sprint** by default, including after an older browser has saved a longer lap setting. The three procedural circuits are shortened but retain their different identities and corner styles; their elevations are also softened slightly.
+- Hides the change-car action and keeps the pause menu to a simple **Back to race** action.
+- Prevents ordinary browser selection, long-press context menus and text dragging over the game area and driving controls.
+- Balances the actual WebAssembly car physics: a moderate speed-sensitive cornering limit, gradual high-speed steering response, stronger lateral-slip damping, smoother yaw correction and slightly more downforce for better stability.
+- Requests full-screen and landscape orientation from a user gesture. Mobile browsers and embedded game portals can deny orientation locking; when that happens, a small prompt asks the player to rotate the device.
+- Includes the official `yes2-runtime.js` helper from `@yes2games/js` plus its licence text. The Dashboard supplies the actual `window.Yes2SDK` platform SDK when bundling a build; no platform SDK or private key is hard-coded into this ZIP.
+- Runs an inline bootstrap as the first author script. The Dashboard injects `window.Yes2SDK` before author scripts, so this calls `initializeAsync()` immediately and shares its one-shot promise with game code instead of trying to initialize later from the engine-ready callback.
+- Sends only changed integer loading-progress values, capped at one normal update every 1.5 seconds. Final 100% is sent immediately before the single `startGameAsync()` call.
+- Uses the official JavaScript wrapper `window.Yes2Runtime.ads` for interstitials and simple banners. An interstitial is requested only when the player chooses **Race again** at a natural break. Platform SDKs apply their own frequency rules. The game pauses and audio is muted when the ad actually starts, then resumes for both completion and no-fill outcomes. Missing SDK, unsupported format or no-fill does not block play.
+- Handles Yes2SDK `pause`, `resume`, `audioEnabledChange`, and account-dialog events, including a separate platform audio-mute state that preserves the player's own sound preference.
+- Suppresses routine Emscripten stdout and non-fatal engine messages in normal portal builds, while preserving fatal engine errors. Verbose output is available only with an explicit `?verbose=1` query flag; the Inspector's `?debug` flag does not enable routine engine logging.
+- Shows a bottom banner on the results screen via the wrapper when that format is supported; hides it before a race starts. Banners are not available on every portal.
+- Signals the optional `Yes2SDK.game.happyTime()` hook after a first-place finish when supported.
+- Rebuilds the actual WebAssembly engine with a modest high-speed steering tune: the speed-sensitive steering lock is increased slightly, its high-speed minimum is raised, and steering-angle response is 20% faster. The steering lock still decreases with speed instead of being forced to maximum at all speeds.
+- Preserves the upstream credits and downloads the upstream README and asset licence ledger into the ZIP.
+
+No API keys or other secrets are embedded. The results screen has an optional rewarded-ad offer for 500 local Sprint Points. Points are granted only after the SDK confirms the ad was viewed; they are stored on the device and are not a cash balance or a promise of real-world earnings.
+
+## Build it on GitHub
+
+1. Open the **Actions** tab in this repository.
+2. Choose **Build Open Road for Yes2Games**.
+3. Press **Run workflow** on branch `open-road-yes2games-web-build`.
+4. When the workflow succeeds, open that run and download the `Open-Road-Yes2Games-WebBuild` artifact.
+5. Extract the artifact ZIP if needed. The game archive inside has `index.html` at its root, along with the WebAssembly files and track packs.
+
+The workflow rebuilds the Open Road WebAssembly engine, checks track geometry and handling patch points, enforces the one-lap default, records generated track lengths, checks JavaScript syntax, verifies that the HTML SDK bootstrap precedes runtime/game scripts, and tests exactly-once `initializeAsync()` / `startGameAsync()`, SDK-gated engine start, 1.5-second progress throttling, gameplay lifecycle, pause/resume, platform audio mute, interstitial/rewarded flow and reward gating with a mock SDK. It also verifies required files and ZIP structure. These automated checks do not replace certification or a real-device test.
+
+## Upload to Yes2Games
+
+Upload the ZIP containing `index.html` from the Yes2Games dashboard as an HTML5 / JavaScript web game. Select the Yes2SDK integration for the build/platform where the dashboard offers it, then use the dashboard preview/QA checks to verify loading, gameplay lifecycle, interstitials and banners.
+
+The ZIP includes the small JavaScript helper, not the platform's real SDK. Real ads require the Yes2Games dashboard to inject `window.Yes2SDK` for an approved platform. Opening the ZIP locally is expected to run without paid ads. The code is defensive when the runtime is absent, an ad has no fill, or that platform doesn't support a format. Actual earnings are never guaranteed.
+
+## Important limits
+
+- The workflow pins upstream source commits for repeatable engine builds. If upstream files or expected patch points change, the workflow deliberately stops rather than packaging an incomplete or untuned build. The ZIP includes the upstream README and asset licence ledger; keep those notices when distributing the game.
+- Landscape orientation cannot be forced on every phone/browser/embedded portal. The game asks for full-screen + orientation lock from a player gesture. If the browser denies it, the player must turn the device sideways.
+- Test the artifact in the Yes2Games Inspector/preview first. This workflow does not submit the game to portals, approve monetization, or claim that live-platform QA passed.
