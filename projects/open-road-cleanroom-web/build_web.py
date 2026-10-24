@@ -368,6 +368,143 @@ function yes2SetPlatformMute() {
   }
 }
 
+function syncPauseButton() {
+  var button = $('btn-pause');
+  if (!button) return;
+  var paused = !!game.userPaused;
+  button.textContent = paused ? '▶' : 'Ⅱ';
+  button.setAttribute('aria-label', paused ? 'resume game' : 'pause game');
+  button.setAttribute('title', paused ? 'Resume' : 'Pause');
+  button.classList.toggle('paused', paused);
+}
+
+function toggleGamePause() {
+  if (!game.ready || !game.loaded || !game.state || game.state.phase === 2 || game.menuOpen) return;
+  game.userPaused = !game.userPaused;
+  if (game.userPaused) {
+    held = {};
+    pushInput();
+    setPaused(true);
+    if (window.GameAudio) GameAudio.setActive(false);
+    yes2GameplayStop();
+  } else {
+    setPaused(false);
+    pushInput();
+    yes2SetPlatformMute();
+    if (window.GameAudio) GameAudio.setActive(true);
+    yes2GameplayStart();
+    if (window.Module && Module.canvas) Module.canvas.focus();
+  }
+  syncPauseButton();
+}
+
+function yes2GetSprintPoints() {
+  try {
+    var points = Number(localStorage.getItem('or.sprintPoints') || 0);
+    return Number.isFinite(points) && points > 0 ? Math.floor(points) : 0;
+  } catch (e) { return 0; }
+}
+
+function yes2RenderSprintPoints() {
+  var panel = $('reward-points');
+  var value = $('sprint-points');
+  if (panel) panel.classList.remove('hidden');
+  if (value) value.textContent = String(yes2GetSprintPoints());
+}
+
+function yes2GrantSprintPoints(amount) {
+  var total = yes2GetSprintPoints() + amount;
+  try { localStorage.setItem('or.sprintPoints', String(total)); } catch (e) {}
+  yes2RenderSprintPoints();
+  var status = $('reward-status');
+  if (status) status.textContent = '+' + amount + ' points earned!';
+}
+
+function yes2PrepareRewardOffer() {
+  yes2RewardChoiceMade = false;
+  var actions = $('reward-actions');
+  var ads = yes2AdsRuntime();
+  var supported = !!(ads && typeof ads.showRewarded === 'function');
+  try {
+    if (supported && typeof ads.isRewardedSupported === 'function') supported = !!ads.isRewardedSupported();
+  } catch (e) { supported = false; }
+  if (actions) actions.classList.toggle('hidden', !supported);
+  yes2RenderSprintPoints();
+  var status = $('reward-status');
+  if (status) status.textContent = '';
+}
+
+async function watchRewardedBonus() {
+  if (yes2RewardBusy || yes2RewardChoiceMade) return;
+  var ads = yes2AdsRuntime();
+  if (!ads || typeof ads.showRewarded !== 'function') return;
+  try {
+    if (typeof ads.isRewardedSupported === 'function' && !ads.isRewardedSupported()) return;
+  } catch (e) { return; }
+
+  yes2RewardBusy = true;
+  var rewardGranted = false;
+  var restored = false;
+  var button = $('reward-ad');
+  if (button) button.disabled = true;
+  function restoreRewardedAd() {
+    if (restored) return;
+    restored = true;
+    yes2AdActive = false;
+    yes2SetPlatformMute();
+    if (!yes2PlatformPaused && !game.menuOpen) {
+      setPaused(false);
+      if (window.GameAudio) GameAudio.setActive(true);
+    }
+  }
+  function grantOnce() {
+    if (rewardGranted) return;
+    rewardGranted = true;
+    yes2GrantSprintPoints(500);
+    yes2RewardChoiceMade = true;
+    var actions = $('reward-actions');
+    if (actions) actions.classList.add('hidden');
+  }
+  try {
+    yes2GameplayStop();
+    var outcome = await ads.showRewarded('race-bonus-points', {
+      beforeAd: function () {
+        yes2AdActive = true;
+        yes2RewardedOnThisResult = true;
+        setPaused(true);
+        if (window.GameAudio) GameAudio.setActive(false);
+        yes2SetPlatformMute();
+      },
+      adViewed: grantOnce,
+      adDismissed: function () {
+        var status = $('reward-status');
+        if (status) status.textContent = 'No points awarded because the ad was skipped.';
+      },
+      noFill: function () {
+        var status = $('reward-status');
+        if (status) status.textContent = 'No ad is available right now. You can still race.';
+      },
+      afterAd: restoreRewardedAd
+    });
+    if (outcome === 'viewed') grantOnce();
+  } catch (e) {
+    yes2LogOnce('rewarded-error', 'Rewarded ad unavailable; the race remains playable.', e);
+    var status = $('reward-status');
+    if (status) status.textContent = 'No ad available. You can continue without it.';
+  } finally {
+    restoreRewardedAd();
+    yes2RewardBusy = false;
+    if (button) button.disabled = false;
+  }
+}
+
+function skipRewardedBonus() {
+  if (yes2RewardBusy) return;
+  yes2RewardChoiceMade = true;
+  var actions = $('reward-actions');
+  if (actions) actions.classList.add('hidden');
+}
+
 function yes2BindPlatformEvents(sdk) {
   if (yes2SdkEventsBound || !sdk || typeof sdk.on !== 'function') return;
   yes2SdkEventsBound = true;
@@ -517,7 +654,7 @@ async function raceAgainWithAd() {
     }
     // Signal every player-chosen between-race break. The portal SDK, not the game,
     // applies its own first-ad delay and frequency caps. This also lets Inspector finish its ad check.
-    if (canShow && !yes2PlatformPaused) {
+    if (canShow && !yes2PlatformPaused && !yes2RewardedOnThisResult) {
       yes2GameplayStop(sdk);
       yes2HideBanner();
       try {
@@ -700,6 +837,62 @@ yes2SdkReady();
         "  if (Q.has('autostart') || Q.has('dump')) startRace();",
         "  startRace();",
         "auto-start the default race instead of displaying the setup menu",
+    )
+    # Portal-ready pause/reward wiring. Apply these to the fully patched source so every
+    # replacement is checked against the final game.js rather than an earlier intermediate form.
+    js = replace_once(
+        js,
+        "  if (game.menuOpen) mask = 0;",
+        "  if (game.menuOpen || game.userPaused) mask = 0;",
+        "prevent stuck driving input while manually paused",
+    )
+    js = replace_once(
+        js,
+        "  if (!game.menuOpen && (mask & (BIT.left | BIT.right)) && game.state && Number(game.state.speed) >= 125) {",
+        "  if (!game.menuOpen && !game.userPaused && (mask & (BIT.left | BIT.right)) && game.state && Number(game.state.speed) >= 125) {",
+        "disable steering assist when manually paused",
+    )
+    js = replace_once(
+        js,
+        "function openMenu() {\n  if (!game.loaded) return;\n  game.menuOpen = true;\n  yes2GameplayStop();\n  yes2HideBanner();",
+        "function openMenu() {\n  if (!game.loaded) return;\n  game.menuOpen = true;\n  game.userPaused = false;\n  syncPauseButton();\n  yes2GameplayStop();\n  yes2HideBanner();",
+        "synchronize pause state when opening menu",
+    )
+    js = replace_once(
+        js,
+        "function closeMenu() {\n  game.menuOpen = false;\n  yes2HideBanner();",
+        "function closeMenu() {\n  game.menuOpen = false;\n  game.userPaused = false;\n  syncPauseButton();\n  yes2HideBanner();",
+        "synchronize pause state when closing menu",
+    )
+    js = replace_once(
+        js,
+        "function startRace() {\n  choice.opponents = 5;\n  choice.laps = 1;\n  yes2HappyTimeSent = false;\n  yes2HideBanner();",
+        "function startRace() {\n  choice.opponents = 5;\n  choice.laps = 1;\n  yes2HappyTimeSent = false;\n  yes2RewardedOnThisResult = false;\n  yes2RewardChoiceMade = false;\n  yes2HideBanner();",
+        "reset rewarded state on a new race",
+    )
+    js = replace_once(
+        js,
+        "  $('results').classList.remove('hidden');\n  yes2ShowResultBanner();",
+        "  $('results').classList.remove('hidden');\n  yes2PrepareRewardOffer();\n  yes2ShowResultBanner();",
+        "offer rewarded bonus on the results screen",
+    )
+    js = replace_once(
+        js,
+        "    $('topbar').classList.remove('hidden');",
+        "    $('topbar').classList.remove('hidden');\n    syncPauseButton();",
+        "initialize the pause button after the HUD loads",
+    )
+    js = replace_once(
+        js,
+        "$('btn-menu').addEventListener('click', openMenu);",
+        "$('btn-menu').addEventListener('click', openMenu);\n$('btn-pause').addEventListener('click', toggleGamePause);\n$('reward-ad').addEventListener('click', watchRewardedBonus);\n$('skip-reward').addEventListener('click', skipRewardedBonus);",
+        "wire pause and opt-in rewarded bonus actions",
+    )
+    js = replace_once(
+        js,
+        "if (!perf.shadows || game.menuOpen || Q.has('ff'))",
+        "if (!perf.shadows || game.menuOpen || game.userPaused || Q.has('ff'))",
+        "skip performance logging while game is paused",
     )
     write_text(path, js)
 
