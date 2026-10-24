@@ -151,7 +151,13 @@ async function waitFor(fn, label) {
   context.yes2FinishLoading();
   await waitFor(() => events.includes('startGameAsync'), 'startGameAsync');
   await waitFor(() => events.includes('gameplayStart'), 'gameplayStart');
+  // Repeated callers share the same boot promise; neither init nor the platform-ready signal may repeat.
+  await context.yes2SdkReady();
+  context.yes2FinishLoading();
+  context.yes2FinishLoading();
+  await new Promise(resolve => setTimeout(resolve, 30));
   assert.equal(events.filter(e => e === 'initializeAsync').length, 1, 'SDK initialization must be called exactly once');
+  assert.equal(events.filter(e => e === 'startGameAsync').length, 1, 'startGameAsync must be called exactly once');
   assert.ok(events.indexOf('progress:100') >= 0, 'loading progress must reach 100');
   assert.ok(events.indexOf('initializeAsync') < events.indexOf('startGameAsync'), 'initialize must precede startGameAsync');
   assert.ok(events.indexOf('startGameAsync') < events.indexOf('gameplayStart'), 'startGameAsync must precede gameplayStart');
@@ -184,11 +190,11 @@ async function waitFor(fn, label) {
   // Repeated per-frame values must not flood the SDK/Inspector event log.
   const progressBefore = progressCalls;
   for (let i = 0; i < 100; i++) context.yes2Progress(47);
-  await new Promise(resolve => setTimeout(resolve, 300));
+  await new Promise(resolve => setTimeout(resolve, 100));
   context.yes2Progress(48);
-  await new Promise(resolve => setTimeout(resolve, 300));
+  await new Promise(resolve => setTimeout(resolve, 1600));
   const progressDelta = progressCalls - progressBefore;
-  assert.ok(progressDelta <= 3, 'loading progress must be deduplicated and limited to at most a few calls per second');
+  assert.ok(progressDelta <= 2, 'loading progress must be coalesced to no more than two updates in this 1.7-second window');
 
   // A player-selected natural break must be signalled immediately; the portal applies its own ad policy.
   await context.raceAgainWithAd();
@@ -229,6 +235,7 @@ async function waitFor(fn, label) {
     result: 'PASS',
     checks: [
       'SDK initialize → loading progress → startGameAsync → gameplayStart order',
+      'initializeAsync and startGameAsync each called exactly once even when lifecycle hooks repeat',
       'pause/resume event handlers',
       'dedicated manual pause/resume button and audio state',
       'platform audio enabled/disabled events',
