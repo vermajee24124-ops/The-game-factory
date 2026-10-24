@@ -65,14 +65,14 @@ def patch_html(site: Path) -> None:
     )
     html = replace_once(
         html,
-        '<button id="btn-menu" aria-label="menu">&#9776;</button>\\n    <button id="btn-sound"',
-        '<button id="btn-menu" aria-label="menu">&#9776;</button>\\n    <button id="btn-pause" aria-label="pause game" title="Pause">&#9208;</button>\\n    <button id="btn-sound"',
+        '<button id="btn-sound"',
+        '<button id="btn-pause" aria-label="pause game" title="Pause">&#9208;</button>\n    <button id="btn-sound"',
         "add a dedicated pause/resume button to the HUD",
     )
     html = replace_once(
         html,
-        '<h2 id="results-title">FINISH</h2>\\n    <table id="results-table"></table>',
-        '<h2 id="results-title">FINISH</h2>\\n    <div id="reward-points" class="reward-points hidden">SPRINT POINTS: <b id="sprint-points">0</b> <span id="reward-status"></span></div>\\n    <div id="reward-actions" class="reward-actions hidden"><button class="go" id="reward-ad">Watch ad for +500 Sprint Points</button><button class="go" id="skip-reward">Continue without ad</button></div>\\n    <table id="results-table"></table>',
+        '<table id="results-table"></table>',
+        '<div id="reward-points" class="reward-points hidden">SPRINT POINTS: <b id="sprint-points">0</b> <span id="reward-status"></span></div>\n    <div id="reward-actions" class="reward-actions hidden"><button class="go" id="reward-ad">Watch ad for +500 Sprint Points</button><button class="go" id="skip-reward">Continue without ad</button></div>\n    <table id="results-table"></table>',
         "add an opt-in rewarded bonus with a clear no-ad choice",
     )
     html = replace_once(
