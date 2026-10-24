@@ -876,7 +876,7 @@ yes2SdkReady();
     js = replace_once(
         js,
         "}).catch(function () { /* menu falls back to defaults */ }).then(function () {\n  startRace();\n});",
-        "}).catch(function () { /* menu falls back to defaults */ }).then(function () {\\n  return yes2SdkReady();\\n}).then(function () {\\n  startRace();\\n});",
+        "}).catch(function () { /* menu falls back to defaults */ }).then(function () {\n  return yes2SdkReady();\n}).then(function () {\n  startRace();\n});",
         "wait for the one-time SDK initialization before loading the WebAssembly engine",
     )
     # Portal-ready pause/reward wiring. Apply these to the fully patched source so every
