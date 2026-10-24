@@ -313,38 +313,73 @@ function yes2LogOnce(key, message, error) {
 }
 
 function yes2SdkReady() {
-  // Use one permanent promise. The HTML bootstrap initializes first; this only reuses it,
-  // or performs one guarded fallback initialization if the dashboard injected SDK late.
   if (yes2ReadyPromise) return yes2ReadyPromise;
-  var bootstrap = window.__openRoadSdkInitPromise;
-  if (!bootstrap && !window.__openRoadSdkInitCalled) {
-    var sdkNow = window.Yes2SDK;
-    if (sdkNow && typeof sdkNow.initializeAsync === 'function') {
-      window.__openRoadSdkInitCalled = true;
-      bootstrap = Promise.resolve().then(function () {
-        return sdkNow.initializeAsync();
-      }).then(function () {
-        return sdkNow;
+
+  // The dashboard normally injects the SDK before our scripts, but an Inspector reload
+  // or slow script can make it arrive later. Do not cache a resolved-null promise in that
+  // race: wait for the SDK or the shared bootstrap promise, then initialize exactly once.
+  yes2ReadyPromise = new Promise(function (resolve) {
+    var settled = false;
+    var timer = null;
+    function resolveOnce(sdk) {
+      if (settled) return;
+      settled = true;
+      if (timer) clearInterval(timer);
+      resolve(sdk || null);
+    }
+    function tryStartInitialization() {
+      if (settled) return true;
+      var sdk = window.Yes2SDK;
+      var existing = window.__openRoadSdkInitPromise;
+
+      if (existing) {
+        Promise.resolve(existing).then(function (readySdk) {
+          resolveOnce(readySdk || null);
+        }).catch(function (error) {
+          window.__openRoadSdkInitError = error;
+          resolveOnce(null);
+        });
+        return true;
+      }
+
+      if (!sdk || typeof sdk.initializeAsync !== 'function') return false;
+
+      if (!window.__openRoadSdkInitCalled) {
+        window.__openRoadSdkInitCalled = true;
+        try {
+          window.__openRoadSdkInitPromise = Promise.resolve(sdk.initializeAsync()).then(function () {
+            return sdk;
+          }).catch(function (error) {
+            window.__openRoadSdkInitError = error;
+            return null;
+          });
+        } catch (error) {
+          window.__openRoadSdkInitError = error;
+          window.__openRoadSdkInitPromise = Promise.resolve(null);
+        }
+      }
+
+      Promise.resolve(window.__openRoadSdkInitPromise).then(function (readySdk) {
+        resolveOnce(readySdk || null);
       }).catch(function (error) {
         window.__openRoadSdkInitError = error;
-        return null;
+        resolveOnce(null);
       });
-      window.__openRoadSdkInitPromise = bootstrap;
+      return true;
     }
-  }
-  if (!bootstrap && window.__openRoadSdkInitCalled) {
-    bootstrap = window.__openRoadSdkInitPromise || Promise.resolve(null);
-  }
-  if (!bootstrap) bootstrap = Promise.resolve(null);
 
-  yes2ReadyPromise = Promise.resolve(bootstrap).then(function (sdk) {
+    if (!tryStartInitialization()) {
+      timer = setInterval(function () {
+        tryStartInitialization();
+      }, 100);
+    }
+  }).then(function (sdk) {
     if (!sdk || typeof sdk.startGameAsync !== 'function') {
       yes2LogOnce('sdk-missing', 'Yes2SDK is unavailable; gameplay remains playable without portal services.');
       return null;
     }
     yes2Cached = sdk;
     yes2BindPlatformEvents(sdk);
-    // Reset the throttle for this SDK instance and send initial loading progress once.
     yes2LastProgressSent = -1;
     yes2LastProgressSentAt = 0;
     yes2LastProgressSdk = sdk;
@@ -354,7 +389,7 @@ function yes2SdkReady() {
     yes2LogOnce('sdk-init', 'Yes2SDK initialization failed; gameplay remains available.', error);
     return null;
   });
-  // Never clear or recreate this promise: that could re-run initialization.
+
   return yes2ReadyPromise;
 }
 function yes2AdsRuntime() {
