@@ -8,6 +8,10 @@ const vm = require('node:vm');
 const gameJsPath = process.argv[2];
 if (!gameJsPath) throw new Error('Usage: node open-road-yes2sdk-smoke.cjs <built-game.js>');
 const source = fs.readFileSync(gameJsPath, 'utf8');
+assert.ok(source.includes("print: function (t) { if (Q.has('verbose')) console.log(t); }"), 'Emscripten stdout must not log in Inspector debug mode');
+assert.ok(source.includes("else if (Q.has('verbose')) console.warn(t);"), 'non-fatal Emscripten stderr must be quiet unless verbose mode is explicit');
+assert.ok(source.includes("toggleGamePause"), 'the in-game Pause/Resume action must be wired');
+assert.ok(source.includes("showRewarded('race-bonus-points'"), 'the results-screen rewarded ad must use the official wrapper');
 const startMark = '// ---------------------------------------------------------------- Yes2SDK lifecycle, ads, orientation and input guards';
 const endMark = '// ---------------------------------------------------------------- input';
 const start = source.indexOf(startMark);
@@ -22,8 +26,10 @@ const pauseFlags = [];
 const platformMutes = [];
 const activeAudioStates = [];
 let interstitialCount = 0;
+let rewardedCount = 0;
 let progressCalls = 0;
 let mutedDuringInterstitial = false;
+let mutedDuringRewardedAd = false;
 let startRaceCount = 0;
 
 const element = {
@@ -36,9 +42,11 @@ const element = {
   style: {},
   textContent: '',
   disabled: false,
+  attributes: {},
+  setAttribute(name, value) { this.attributes[name] = String(value); },
   focus() {}
 };
-const game = { ready: true, menuOpen: false, state: { phase: 1 }, loaded: true };
+const game = { ready: true, menuOpen: false, userPaused: false, state: { phase: 1 }, loaded: true };
 const mockAudio = {
   setActive(on) { activeAudioStates.push(!!on); },
   setPlatformMuted(on) { platformMutes.push(!!on); },
@@ -68,13 +76,29 @@ const mockAds = {
     callbacks.afterAd();
   },
   async showBanner(position) { events.push('showBanner:' + position); },
-  hideBanner() { events.push('hideBanner'); }
+  hideBanner() { events.push('hideBanner'); },
+  isRewardedSupported() { return true; },
+  async showRewarded(placement, callbacks) {
+    rewardedCount++;
+    events.push('showRewarded:' + placement);
+    callbacks.beforeAd();
+    mutedDuringRewardedAd = platformMutes.at(-1) === true;
+    await new Promise(resolve => setTimeout(resolve, 1));
+    callbacks.adViewed();
+    callbacks.afterAd();
+    return 'viewed';
+  }
+};
+const storedValues = new Map();
+const fakeStorage = {
+  getItem(key) { return storedValues.has(key) ? storedValues.get(key) : null; },
+  setItem(key, value) { storedValues.set(key, String(value)); }
 };
 const fakeWindow = {
   Yes2SDK: mockSdk,
   Yes2Runtime: { ads: mockAds },
   GameAudio: mockAudio,
-  Module: { _web_set_flag(flag, value) { pauseFlags.push([flag, value]); } },
+  Module: { _web_set_flag(flag, value) { pauseFlags.push([flag, value]); }, canvas: { focus() { events.push('canvasFocus'); } } },
   addEventListener() {}
 };
 const fakeDocument = {
@@ -93,12 +117,17 @@ const context = {
   URLSearchParams,
   setTimeout,
   clearTimeout,
+  localStorage: fakeStorage,
+  held: { touch: 1 },
+  BIT: { left: 4, right: 8 },
+  pushInput() { events.push('pushInput'); },
   setInterval() { return 0; },
   clearInterval() {},
   matchMedia: () => ({ matches: false }),
   Q: { has: () => false, get: () => null },
   game,
   Module: fakeWindow.Module,
+  localStorage: fakeStorage,
   GameAudio: mockAudio,
   $: () => element,
   setPaused(value) { pauseFlags.push(['paused', !!value]); },
@@ -138,6 +167,18 @@ async function waitFor(fn, label) {
   sdkHandlers.resume();
   assert.ok(platformMutes.at(-1) === false, 'resume with host audio enabled must unmute platform audio');
 
+  // The new HUD button must stop steering/gameplay and then resume without opening the menu.
+  context.toggleGamePause();
+  assert.equal(game.userPaused, true, 'pause button must set the manual paused state');
+  assert.equal(element.textContent, '▶', 'pause button should turn into a resume icon');
+  assert.ok(pauseFlags.some(x => x[0] === 'paused' && x[1] === true), 'pause button must pause the engine');
+  assert.equal(activeAudioStates.at(-1), false, 'manual pause must silence game audio');
+  context.toggleGamePause();
+  assert.equal(game.userPaused, false, 'second press must resume the game');
+  assert.equal(element.textContent, 'Ⅱ', 'resume should restore the pause icon');
+  assert.ok(pauseFlags.some(x => x[0] === 'paused' && x[1] === false), 'resume must unpause the engine');
+  assert.equal(activeAudioStates.at(-1), true, 'resume must restore game audio');
+
   // Repeated per-frame values must not flood the SDK/Inspector event log.
   const progressBefore = progressCalls;
   for (let i = 0; i < 100; i++) context.yes2Progress(47);
@@ -167,15 +208,34 @@ async function waitFor(fn, label) {
   assert.equal(interstitialCount, 2, 'each player-chosen natural break should be signalled to platform pacing');
   assert.ok(startRaceCount >= 2, 'replay must always continue after ad completion');
 
+  // Reward is optional and is granted only if the official runtime reports that the video was viewed.
+  context.yes2PrepareRewardOffer();
+  await context.watchRewardedBonus();
+  assert.equal(rewardedCount, 1, 'results screen must be able to request a rewarded ad');
+  assert.equal(context.yes2GetSprintPoints(), 500, 'rewarded completion should award the advertised points exactly once');
+  assert.equal(mutedDuringRewardedAd, true, 'audio must be muted during a rewarded video');
+  assert.equal(context.yes2RewardedOnThisResult, true, 'a rewarded ad must mark this result screen as having shown an ad');
+
+  // Do not chain a second ad immediately after the rewarded video on the same result screen.
+  await context.raceAgainWithAd();
+  assert.equal(interstitialCount, 2, 'interstitial must be skipped on the same result screen after a rewarded ad');
+  context.yes2RewardedOnThisResult = false; // next race/result is a new ad opportunity
+  await context.raceAgainWithAd();
+  assert.equal(interstitialCount, 3, 'an interstitial can be requested again at a later natural break');
+
   console.log(JSON.stringify({
     result: 'PASS',
     checks: [
       'SDK initialize → loading progress → startGameAsync → gameplayStart order',
       'pause/resume event handlers',
+      'dedicated manual pause/resume button and audio state',
       'platform audio enabled/disabled events',
       'loading progress is deduplicated and rate-limited',
       'interstitial mute/restore and replay continuation',
       'results banner uses official runtime and hides at next race',
+      'rewarded ad awards 500 points only on viewed outcome',
+      'rewarded ad pauses/mutes and avoids chaining an interstitial on same result',
+      'Emscripten console logs gated behind explicit verbose flag',
       'all player-chosen natural breaks are signalled to platform pacing',
       'gameplayStop/gameplayStart lifecycle'
     ],
