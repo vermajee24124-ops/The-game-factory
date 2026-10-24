@@ -276,7 +276,7 @@ var yes2Cached = null;
 var yes2GameplayActive = false;
 var yes2StartComplete = false;
 var yes2StartInProgress = false;
-var yes2StartRetries = 0;
+var yes2StartAttempted = false;
 var yes2SdkEventsBound = false;
 var yes2LastProgress = 0;
 var yes2LastProgressSent = -1;
@@ -309,56 +309,50 @@ function yes2LogOnce(key, message, error) {
 }
 
 function yes2SdkReady() {
-  if (yes2Cached) return Promise.resolve(yes2Cached);
-  if (!yes2ReadyPromise) {
-    var bootstrap = window.__openRoadSdkInitPromise;
-    // Fallback for local/pre-dashboard previews where the inline early-init script did not
-    // see an SDK at parse time. The global guard makes initialization one-shot only.
-    if (!bootstrap && !window.__openRoadSdkInitCalled) {
-      var sdkNow = window.Yes2SDK;
-      if (sdkNow && typeof sdkNow.initializeAsync === 'function') {
-        window.__openRoadSdkInitCalled = true;
-        try {
-          var initResult = sdkNow.initializeAsync();
-          bootstrap = Promise.resolve(initResult).then(function () { return sdkNow; }).catch(function (error) {
-            window.__openRoadSdkInitError = error;
-            return null;
-          });
-          window.__openRoadSdkInitPromise = bootstrap;
-        } catch (error) {
-          window.__openRoadSdkInitError = error;
-          bootstrap = Promise.resolve(null);
-          window.__openRoadSdkInitPromise = bootstrap;
-        }
-      }
-    }
-    if (!bootstrap && window.__openRoadSdkInitCalled) {
-      bootstrap = window.__openRoadSdkInitPromise || Promise.resolve(null);
-    }
-    if (!bootstrap) bootstrap = Promise.resolve(null);
-
-    yes2ReadyPromise = Promise.resolve(bootstrap).then(function (sdk) {
-      if (!sdk || typeof sdk.startGameAsync !== 'function') {
-        yes2LogOnce('sdk-missing', 'Yes2SDK is unavailable; the game remains playable without portal services.');
+  // Use one permanent promise. The HTML bootstrap initializes first; this only reuses it,
+  // or performs one guarded fallback initialization if the dashboard injected SDK late.
+  if (yes2ReadyPromise) return yes2ReadyPromise;
+  var bootstrap = window.__openRoadSdkInitPromise;
+  if (!bootstrap && !window.__openRoadSdkInitCalled) {
+    var sdkNow = window.Yes2SDK;
+    if (sdkNow && typeof sdkNow.initializeAsync === 'function') {
+      window.__openRoadSdkInitCalled = true;
+      bootstrap = Promise.resolve().then(function () {
+        return sdkNow.initializeAsync();
+      }).then(function () {
+        return sdkNow;
+      }).catch(function (error) {
+        window.__openRoadSdkInitError = error;
         return null;
-      }
-      yes2Cached = sdk;
-      yes2BindPlatformEvents(sdk);
-      // Send the latest integer progress once init has completed; progress is throttled below.
-      yes2LastProgressSent = -1;
-      yes2LastProgressSdk = sdk;
-      yes2SendProgress(yes2LastProgress, true);
-      return sdk;
-    }).catch(function (error) {
-      yes2LogOnce('sdk-init', 'Yes2SDK initialization failed; gameplay remains available.', error);
-      return null;
-    }).finally(function () {
-      if (!yes2Cached) yes2ReadyPromise = null;
-    });
+      });
+      window.__openRoadSdkInitPromise = bootstrap;
+    }
   }
+  if (!bootstrap && window.__openRoadSdkInitCalled) {
+    bootstrap = window.__openRoadSdkInitPromise || Promise.resolve(null);
+  }
+  if (!bootstrap) bootstrap = Promise.resolve(null);
+
+  yes2ReadyPromise = Promise.resolve(bootstrap).then(function (sdk) {
+    if (!sdk || typeof sdk.startGameAsync !== 'function') {
+      yes2LogOnce('sdk-missing', 'Yes2SDK is unavailable; gameplay remains playable without portal services.');
+      return null;
+    }
+    yes2Cached = sdk;
+    yes2BindPlatformEvents(sdk);
+    // Reset the throttle for this SDK instance and send initial loading progress once.
+    yes2LastProgressSent = -1;
+    yes2LastProgressSentAt = 0;
+    yes2LastProgressSdk = sdk;
+    yes2SendProgress(0, true);
+    return sdk;
+  }).catch(function (error) {
+    yes2LogOnce('sdk-init', 'Yes2SDK initialization failed; gameplay remains available.', error);
+    return null;
+  });
+  // Never clear or recreate this promise: that could re-run initialization.
   return yes2ReadyPromise;
 }
-
 function yes2AdsRuntime() {
   // The official @yes2games/js wrapper handles portal adapters, no-fill and stale callbacks.
   return window.Yes2Runtime && window.Yes2Runtime.ads ? window.Yes2Runtime.ads : null;
@@ -386,12 +380,12 @@ function yes2SendProgress(value, force) {
   var now = Date.now();
   // Inspector records every loading-progress event. Cap normal updates to at most once per second,
   // and forward only changed integer percentages. Final 100 is sent immediately.
-  if (!force && n < 100 && yes2LastProgressSentAt && now - yes2LastProgressSentAt < 1000) {
+  if (!force && n < 100 && yes2LastProgressSentAt && now - yes2LastProgressSentAt < 1500) {
     if (!yes2ProgressTimer) {
       yes2ProgressTimer = setTimeout(function () {
         yes2ProgressTimer = null;
         if (yes2Cached) yes2SendProgress(yes2LastProgress, false);
-      }, Math.max(10, 1000 - (now - yes2LastProgressSentAt)));
+      }, Math.max(10, 1500 - (now - yes2LastProgressSentAt)));
     }
     return;
   }
@@ -629,31 +623,23 @@ function yes2GameplayStop(sdkOverride) {
 }
 
 function yes2FinishLoading() {
-  // Called only from the engine's ready callback, after the WebAssembly game and required assets have loaded.
-  if (!game.ready || yes2StartComplete || yes2StartInProgress) return;
+  // One call after the WebAssembly engine says the game is interactive.
+  if (!game.ready || yes2StartComplete || yes2StartInProgress || yes2StartAttempted) return;
+  yes2StartAttempted = true;
   yes2StartInProgress = true;
   yes2SdkReady().then(async function (sdk) {
-    if (!sdk || typeof sdk.startGameAsync !== 'function') {
-      throw new Error('Yes2SDK is not available yet');
-    }
-    // Final loading value is sent once, only after the engine reports ready.
+    if (!sdk || typeof sdk.startGameAsync !== 'function') return;
     yes2Progress(100);
     yes2BindPlatformEvents(sdk);
     await sdk.startGameAsync();
     yes2StartComplete = true;
-    yes2StartRetries = 0;
     yes2GameplayStart(sdk);
   }).catch(function (e) {
-    yes2LogOnce('start-game', 'Yes2SDK startGameAsync has not completed yet; the game remains playable.', e);
+    yes2LogOnce('start-game', 'Yes2SDK startGameAsync did not complete; gameplay remains available.', e);
   }).finally(function () {
     yes2StartInProgress = false;
-    if (!yes2StartComplete && yes2StartRetries < 20 && game.ready) {
-      yes2StartRetries++;
-      setTimeout(yes2FinishLoading, 1000);
-    }
   });
 }
-
 function yes2HideBanner() {
   var ads = yes2AdsRuntime();
   if (!ads || typeof ads.hideBanner !== 'function') return;
@@ -880,12 +866,18 @@ yes2SdkReady();
         "keep keyboard replay on the same safe ad path",
     )
 
-    # Start immediately after the track/car catalogue is ready. The loading overlay remains visible.
+    # Start after the single SDK initialization promise has settled, before the engine/asset download begins.
     js = replace_once(
         js,
         "  if (Q.has('autostart') || Q.has('dump')) startRace();",
         "  startRace();",
         "auto-start the default race instead of displaying the setup menu",
+    )
+    js = replace_once(
+        js,
+        "}).catch(function () { /* menu falls back to defaults */ }).then(function () {\\n  startRace();\\n});",
+        "}).catch(function () { /* menu falls back to defaults */ }).then(function () {\\n  return yes2SdkReady();\\n}).then(function () {\\n  startRace();\\n});",
+        "wait for the one-time SDK initialization before loading the WebAssembly engine",
     )
     # Portal-ready pause/reward wiring. Apply these to the fully patched source so every
     # replacement is checked against the final game.js rather than an earlier intermediate form.
