@@ -22,6 +22,51 @@ if (start < 0 || end < 0) {
   throw new Error('Could not find the Yes2SDK lifecycle helper block in the built game.');
 }
 const helper = source.slice(start, end);
+
+// Regression test: Inspector can inject the SDK after the first game script begins.
+// A missing global must not be cached as a permanently resolved-null startup promise.
+const readyStart = helper.indexOf('function yes2SdkReady() {');
+const readyEnd = helper.indexOf('\nfunction yes2AdsRuntime()', readyStart);
+assert.ok(readyStart >= 0 && readyEnd > readyStart, 'SDK readiness function must be present');
+const readyOnly = helper.slice(readyStart, readyEnd);
+const lateEvents = [];
+const lateSdk = {
+  async initializeAsync() { lateEvents.push('initializeAsync'); },
+  setLoadingProgress(n) { lateEvents.push('progress:' + n); },
+  async startGameAsync() { lateEvents.push('startGameAsync'); },
+  on() {},
+  game: { gameplayStart() {}, gameplayStop() {} }
+};
+const lateContext = {
+  window: {},
+  Promise,
+  setInterval,
+  clearInterval,
+  yes2ReadyPromise: null,
+  yes2Cached: null,
+  yes2LastProgressSent: -1,
+  yes2LastProgressSentAt: 0,
+  yes2LastProgressSdk: null,
+  yes2LogOnce() {},
+  yes2BindPlatformEvents() {},
+  yes2SendProgress(n) { lateEvents.push('sent:' + n); }
+};
+vm.runInNewContext(
+  'var yes2ReadyPromise = null; var yes2Cached = null; var yes2LastProgressSent = -1; ' +
+  'var yes2LastProgressSentAt = 0; var yes2LastProgressSdk = null; ' +
+  readyOnly,
+  lateContext,
+  { filename: 'yes2sdk-late-injection-regression.js' }
+);
+const lateReadyPromise = lateContext.yes2SdkReady();
+setTimeout(() => { lateContext.window.Yes2SDK = lateSdk; }, 60);
+const resolvedLateSdk = await Promise.race([
+  lateReadyPromise,
+  new Promise((_, reject) => setTimeout(() => reject(new Error('Late-injected SDK was never detected')), 1500))
+]);
+assert.equal(resolvedLateSdk, lateSdk, 'SDK readiness must wait for a late-injected SDK');
+assert.equal(lateEvents.filter(e => e === 'initializeAsync').length, 1, 'late SDK must initialize exactly once');
+
 const events = [];
 const sdkHandlers = Object.create(null);
 const pauseFlags = [];
