@@ -1,6 +1,6 @@
 # Game Factory Live Research Watch
 
-- Retrieved at (UTC): 2026-10-18T09:33:01.629505+00:00
+- Retrieved at (UTC): 2026-10-25T09:46:52.920815+00:00
 - Uses public metadata endpoints only; no LLM/Gemini quota is consumed by this watcher.
 - A result is a candidate for human/agent review, not automatic approval to install or ship it.
 
@@ -20,38 +20,38 @@ Status: **ok**
 Source: https://api.github.com/search/repositories?q=Godot%20MCP%20AI%20agent&sort=updated&per_page=8
 Status: **ok**
 
-- [jorgeaktas/godot-mcp](https://github.com/jorgeaktas/godot-mcp) | updated: 2026-10-18T06:53:48Z | stars: 0 | license: NOASSERTION
-  - Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents
-- [nexarioneo/godot-copilot](https://github.com/nexarioneo/godot-copilot) | updated: 2026-10-18T06:29:22Z | stars: 0 | license: MIT
-  - AI agent chat dock for the Godot 4 editor: multi-provider (OpenAI-compatible + Anthropic), tool execution, subagents, MCP and an action(target) permission system. Early version, expect bugs.
-- [Le762/godot-mcp](https://github.com/Le762/godot-mcp) | updated: 2026-10-18T05:07:12Z | stars: 0 | license: NOASSERTION
-  - Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents
-- [Denizp83431/godot-mcp](https://github.com/Denizp83431/godot-mcp) | updated: 2026-10-17T22:19:13Z | stars: 0 | license: NOASSERTION
-  - Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents
-- [karinhill66/godot-mcp](https://github.com/karinhill66/godot-mcp) | updated: 2026-10-17T22:01:56Z | stars: 0 | license: NOASSERTION
-  - Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents
-- [hashimoto5835/godot-mcp](https://github.com/hashimoto5835/godot-mcp) | updated: 2026-10-17T21:32:46Z | stars: 0 | license: NOASSERTION
-  - Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents
-- [nataliar87/godot-mcp](https://github.com/nataliar87/godot-mcp) | updated: 2026-10-17T21:28:01Z | stars: 0 | license: NOASSERTION
-  - Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents
-- [lozkan56/godot-mcp](https://github.com/lozkan56/godot-mcp) | updated: 2026-10-17T21:14:09Z | stars: 0 | license: NOASSERTION
-  - Give your AI assistant eyes and hands in the Godot editor: scene editing, input injection, deterministic playtesting, and live game state for agents
+- [dcc-mcp/dcc-mcp-godot](https://github.com/dcc-mcp/dcc-mcp-godot) | updated: 2026-10-25T08:38:11Z | stars: 3 | license: MIT
+  - Godot 4 MCP editor adapter for AI agents to author scenes, scripts, UI and 2D games, inspect runtime state and run playtests through typed tools in the DCC-MCP ecosystem.
+- [dcc-mcp/dcc-asset-godot-store](https://github.com/dcc-mcp/dcc-asset-godot-store) | updated: 2026-10-25T02:51:15Z | stars: 0 | license: MIT
+  - Experimental DCC-MCP provider skill for AI agents to search, inspect, and download free Godot Asset Store packages with license and checksum metadata for Godot project workflows.
+- [Thepizzapie/BuildersGate](https://github.com/Thepizzapie/BuildersGate) | updated: 2026-10-25T02:42:34Z | stars: 32 | license: MIT
+  - Agentic game development for building games with AI Agents. Run one session per seat: art, gameplay, narrative, QA, audio, tech all in 1 spot
+- [hybridindie/godot-mcp](https://github.com/hybridindie/godot-mcp) | updated: 2026-10-25T02:32:00Z | stars: 43 | license: MIT
+  - Combination of Godot Addon and MCP server for AI driven development — drive a live Godot editor from an AI agent
+- [seradotcom/semwright](https://github.com/seradotcom/semwright) | updated: 2026-10-25T01:57:03Z | stars: 7 | license: Apache-2.0
+  - Open runtime for AI agents to use real software.
+- [tthung1997/pingpal](https://github.com/tthung1997/pingpal) | updated: 2026-10-24T17:43:39Z | stars: 0 | license: MIT
+  - A tiny always-on-top desktop character that shows what your AI agents are doing, driven by an embedded MCP server. Built with Godot 4.
+- [kv-chiu/mcd-desktop-pet](https://github.com/kv-chiu/mcd-desktop-pet) | updated: 2026-10-25T09:46:34Z | stars: 108 | license: MIT
+  - 【2026麦当劳程序员创意开发大赛参赛作品】🍟 麦当劳 mcd-mcp-server 桌宠「薯条小宝」：午休提醒、自动活动优惠领券、餐品营养搭配、提醒订单状态，支持 Webui 控制台与 AI Agent Skill / CLI，采用godot控制动画+ts服务端、react radix webui
+- [fennaraOfficial/fennara-godot-ai](https://github.com/fennaraOfficial/fennara-godot-ai) | updated: 2026-10-24T14:48:36Z | stars: 312 | license: MIT
+  - AI chat and agent tooling for Godot, with both MCP support and in-built native chat window.
 
 ## Hugging Face Godot models
 
 Source: https://huggingface.co/api/models?search=godot&limit=10&sort=lastModified&direction=-1
 Status: **ok**
 
+- [rbrasga/Godoter3.8-27B-GGUF](https://huggingface.co/rbrasga/Godoter3.8-27B-GGUF) | updated: 2026-10-22T17:32:19.000Z | task: image-text-to-text
+- [rbrasga/Godoter3.8-27B](https://huggingface.co/rbrasga/Godoter3.8-27B) | updated: 2026-10-22T17:31:02.000Z | task: image-text-to-text
+- [mradermacher/Godoter3.8-27B-i1-GGUF](https://huggingface.co/mradermacher/Godoter3.8-27B-i1-GGUF) | updated: 2026-10-21T11:59:08.000Z | task: not stated
+- [mradermacher/Godoter3.8-27B-GGUF](https://huggingface.co/mradermacher/Godoter3.8-27B-GGUF) | updated: 2026-10-21T09:23:39.000Z | task: not stated
 - [arunsrajan/qwen3.5-2b-godot-thinking-GGUF](https://huggingface.co/arunsrajan/qwen3.5-2b-godot-thinking-GGUF) | updated: 2026-10-11T11:14:03.000Z | task: not stated
 - [arunsrajan/qwen3.5-2b-godot-thinking](https://huggingface.co/arunsrajan/qwen3.5-2b-godot-thinking) | updated: 2026-10-11T10:59:30.000Z | task: image-text-to-text
 - [arunsrajan/qwen3.5-2b-godot-docs-GGUF](https://huggingface.co/arunsrajan/qwen3.5-2b-godot-docs-GGUF) | updated: 2026-10-11T08:45:38.000Z | task: not stated
 - [arunsrajan/qwen3.5-2b-godot-docs](https://huggingface.co/arunsrajan/qwen3.5-2b-godot-docs) | updated: 2026-10-11T08:29:54.000Z | task: image-text-to-text
 - [mradermacher/Godoter-27B-GGUF](https://huggingface.co/mradermacher/Godoter-27B-GGUF) | updated: 2026-10-07T19:33:35.000Z | task: not stated
 - [Janstnkel/Godoter-27B](https://huggingface.co/Janstnkel/Godoter-27B) | updated: 2026-09-07T17:03:35.000Z | task: text-generation
-- [3bse/Llama3-Godot4-Senior](https://huggingface.co/3bse/Llama3-Godot4-Senior) | updated: 2026-07-10T20:02:18.000Z | task: not stated
-- [GoDotWebs/dotwebs-1](https://huggingface.co/GoDotWebs/dotwebs-1) | updated: 2026-07-10T06:26:03.000Z | task: text-generation
-- [SaltShakerStudio/Qwen2.5-GodotCoder](https://huggingface.co/SaltShakerStudio/Qwen2.5-GodotCoder) | updated: 2026-07-06T17:21:05.000Z | task: text-generation
-- [h1st0ry3D/Godoter-27B-MLX-4bit](https://huggingface.co/h1st0ry3D/Godoter-27B-MLX-4bit) | updated: 2026-07-02T08:14:23.000Z | task: text-generation
 
 ## Review rules
 
