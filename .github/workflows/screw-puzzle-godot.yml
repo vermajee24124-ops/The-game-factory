@@ -10,7 +10,7 @@ on:
       - ".github/workflows/screw-puzzle-godot.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   godot-check:
@@ -29,6 +29,18 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check pillow numpy
           python games/bolt-and-board/tools/generate_assets.py
+
+      - name: Store generated assets in project branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add games/bolt-and-board/assets/
+          if ! git diff --cached --quiet; then
+            git commit -m "Add generated Bolt and Board game assets"
+            git push
+          else
+            echo "Generated assets are already current."
+          fi
 
       - name: Download Godot 4.7.2 Stable
         shell: bash
@@ -56,18 +68,25 @@ jobs:
           sudo apt-get install -y xvfb
           xvfb-run -a Godot_v4.7.2-stable_linux.x86_64 --path . --script res://tests/capture_preview.gd
 
+      - name: Create project ZIP for download
+        if: success()
+        run: |
+          cd games/bolt-and-board
+          zip -qr "$GITHUB_WORKSPACE/bolt-and-board-godot-project.zip" . -x ".godot/*" "artifacts/*"
+
       - name: Write validation summary
         if: always()
         run: |
           mkdir -p games/bolt-and-board/artifacts
           printf 'Workflow: Screw Puzzle - Godot Validation\nCommit: %s\nRun: %s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > games/bolt-and-board/artifacts/ci_validation.txt
 
-      - name: Upload preview and validation evidence
+      - name: Upload preview, project package and validation evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bolt-and-board-validation
           path: |
+            bolt-and-board-godot-project.zip
             games/bolt-and-board/artifacts/
             games/bolt-and-board/docs/TEST_STATUS.md
           if-no-files-found: warn
