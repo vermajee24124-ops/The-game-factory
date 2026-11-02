@@ -1,0 +1,26 @@
+; Original mobile 3D screw-removal puzzle project.
+config_version=5
+
+[application]
+config/name="Bolt & Board Puzzle"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7")
+config/icon="res://icon.svg"
+config/description="An original mobile 3D screw-removal puzzle game."
+
+[display]
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/size/window_width_override=540
+window/size/window_height_override=960
+window/handheld/orientation=1
+window/stretch/mode="canvas_items"
+
+[rendering]
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/default_filters/use_nearest_mipmap_filter=true
+environment/defaults/default_clear_color=Color(0.0352941, 0.0509804, 0.0745098, 1)
+
+[input_devices]
+pointing/emulate_touch_from_mouse=true
