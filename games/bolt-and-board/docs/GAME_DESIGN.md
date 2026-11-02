@@ -9,19 +9,22 @@
 
 ## Current prototype
 - Two to five stacked board layers.
-- Four corner screws per layer, with more screws on later levels.
-- Deterministic board placement based on the level number.
+- Six deterministic screw layouts selected by level and board layer.
+- Board placement and board size vary deterministically with the level number.
 - Board occlusion collision included in the tap ray query.
 - Individual screw objects with metallic heads, shafts, washers and thread rings.
-- Hint, restart, level progression and local progress save.
+- Level Select with sequential unlocks and local progress save.
+- Pause, resume, restart, return to menu and persistent sound setting.
+- Completion summary with elapsed time, hint count and a simple three-star score.
 
 ## Important distinction
 The current 30 levels are procedural variations of the same core board stack. They are not yet 30 handcrafted, professionally balanced commercial levels.
 
 ## Production roadmap
-- More board silhouettes, angles and interlocking layouts.
+- More board silhouettes, angles and genuinely different interlocking layouts.
 - Optional screw tray capacity and color-match modes.
-- Authored and solver-validated levels.
-- Tutorial, accessibility settings and save migration.
-- Monetization, ads consent/privacy and Play policy checks only after core gameplay QA.
+- Authored and solver-validated campaign levels.
+- First-run tutorial, accessibility settings and save migration.
 - Android performance and touch testing on physical devices.
+- Release AAB and secure release signing; never store a release key in the public repository.
+- Monetization, ads consent/privacy and Play policy checks only after core gameplay QA.
