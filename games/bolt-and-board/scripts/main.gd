@@ -35,6 +35,7 @@ var next_level_button: Button
 var menu_sound_button: Button
 var pause_sound_button: Button
 var pause_button: Button
+var level_buttons: Array[Button] = []
 var hint_button: Button
 var is_paused: bool = false
 var hints_used: int = 0
@@ -451,6 +452,7 @@ func _create_level_select_overlay() -> void:
 	grid.add_theme_constant_override("h_separation", 10)
 	grid.add_theme_constant_override("v_separation", 10)
 	scroll.add_child(grid)
+	level_buttons.clear()
 	for level in range(1, MAX_LEVEL + 1):
 		var level_button := Button.new()
 		level_button.custom_minimum_size = Vector2(170.0, 72.0)
@@ -458,6 +460,7 @@ func _create_level_select_overlay() -> void:
 		level_button.disabled = not PuzzleRules.is_level_unlocked(level, highest_unlocked_level)
 		level_button.pressed.connect(_on_level_selected.bind(level))
 		_style_button(level_button, level == highest_unlocked_level)
+		level_buttons.append(level_button)
 		grid.add_child(level_button)
 	var back_button := Button.new()
 	back_button.text = "BACK"
@@ -535,6 +538,11 @@ func _show_menu() -> void:
 
 
 func _show_level_select() -> void:
+	for level in range(level_buttons.size()):
+		var level_button: Button = level_buttons[level]
+		var level_number: int = level + 1
+		level_button.disabled = not PuzzleRules.is_level_unlocked(level_number, highest_unlocked_level)
+		level_button.text = "LEVEL %02d\n%s" % [level_number, "UNLOCKED" if not level_button.disabled else "LOCKED"]
 	menu_overlay.visible = false
 	finish_overlay.visible = false
 	pause_overlay.visible = false
@@ -961,7 +969,7 @@ func _on_hint_pressed() -> void:
 
 func _format_time(seconds: float) -> String:
 	var whole_seconds: int = maxi(0, int(seconds))
-	return "%02d:%02d" % [whole_seconds / 60, whole_seconds % 60]
+	return "%02d:%02d" % [int(whole_seconds / 60), whole_seconds % 60]
 
 
 func _update_hud() -> void:
