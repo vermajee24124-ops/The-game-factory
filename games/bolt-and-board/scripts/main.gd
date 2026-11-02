@@ -27,8 +27,18 @@ var progress_label: Label
 var status_label: Label
 var menu_overlay: ColorRect
 var finish_overlay: ColorRect
+var level_select_overlay: ColorRect
+var pause_overlay: ColorRect
 var finish_title: Label
+var finish_summary: Label
+var next_level_button: Button
+var menu_sound_button: Button
+var pause_sound_button: Button
+var pause_button: Button
 var hint_button: Button
+var is_paused: bool = false
+var hints_used: int = 0
+var level_elapsed: float = 0.0
 
 var wood_materials: Array = []
 var metal_material: StandardMaterial3D
@@ -48,6 +58,11 @@ func _ready() -> void:
 	_create_game_root()
 	_create_ui()
 	_show_menu()
+
+
+func _process(delta: float) -> void:
+	if game_started and not is_paused:
+		level_elapsed += delta
 
 
 func _create_materials() -> void:
@@ -150,17 +165,38 @@ func _load_progress() -> void:
 	var config := ConfigFile.new()
 	if config.load("user://wood_metal_progress.cfg") == OK:
 		highest_unlocked_level = clampi(int(config.get_value("progress", "highest_level", 1)), 1, MAX_LEVEL)
+		is_muted = bool(config.get_value("settings", "muted", false))
 
 
 func _save_progress() -> void:
 	var config := ConfigFile.new()
 	config.set_value("progress", "highest_level", highest_unlocked_level)
+	config.set_value("settings", "muted", is_muted)
 	config.save("user://wood_metal_progress.cfg")
+
+
+func _toggle_sound() -> void:
+	is_muted = not is_muted
+	_save_progress()
+	_update_sound_button_labels()
+	if not is_muted:
+		_play_sfx("ui_click")
+
+
+func _update_sound_button_labels() -> void:
+	var label_text := "SOUND: OFF" if is_muted else "SOUND: ON"
+	if menu_sound_button != null:
+		menu_sound_button.text = label_text
+	if pause_sound_button != null:
+		pause_sound_button.text = label_text
 
 
 func start_preview() -> void:
 	menu_overlay.visible = false
 	finish_overlay.visible = false
+	level_select_overlay.visible = false
+	pause_overlay.visible = false
+	is_paused = false
 	game_started = true
 	level_index = min(3, MAX_LEVEL)
 	_load_level(level_index)
@@ -258,6 +294,13 @@ func _create_ui() -> void:
 	_style_button(restart_button, false)
 	top_row.add_child(restart_button)
 
+	pause_button = Button.new()
+	pause_button.text = "PAUSE"
+	pause_button.custom_minimum_size = Vector2(92.0, 54.0)
+	pause_button.pressed.connect(_on_pause_pressed)
+	_style_button(pause_button, false)
+	top_row.add_child(pause_button)
+
 	var bottom_panel := PanelContainer.new()
 	bottom_panel.add_theme_stylebox_override("panel", _make_panel_style())
 	bottom_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
@@ -302,7 +345,7 @@ func _create_ui() -> void:
 	menu_overlay.add_child(menu_center)
 	var menu_panel := PanelContainer.new()
 	menu_panel.add_theme_stylebox_override("panel", _make_panel_style())
-	menu_panel.custom_minimum_size = Vector2(560.0, 340.0)
+	menu_panel.custom_minimum_size = Vector2(560.0, 470.0)
 	menu_center.add_child(menu_panel)
 	var menu_box := VBoxContainer.new()
 	menu_box.add_theme_constant_override("separation", 18)
@@ -318,12 +361,25 @@ func _create_ui() -> void:
 	subtitle.add_theme_font_size_override("font_size", 18)
 	menu_box.add_child(subtitle)
 	var play_button := Button.new()
-	play_button.text = "PLAY"
-	play_button.custom_minimum_size = Vector2(0.0, 70.0)
-	play_button.add_theme_font_size_override("font_size", 26)
+	play_button.text = "CONTINUE"
+	play_button.custom_minimum_size = Vector2(0.0, 64.0)
+	play_button.add_theme_font_size_override("font_size", 25)
 	play_button.pressed.connect(_on_play_pressed)
 	_style_button(play_button, true)
 	menu_box.add_child(play_button)
+
+	var level_select_button := Button.new()
+	level_select_button.text = "SELECT LEVEL"
+	level_select_button.custom_minimum_size = Vector2(0.0, 54.0)
+	level_select_button.pressed.connect(_show_level_select)
+	_style_button(level_select_button, false)
+	menu_box.add_child(level_select_button)
+
+	menu_sound_button = Button.new()
+	menu_sound_button.custom_minimum_size = Vector2(0.0, 48.0)
+	menu_sound_button.pressed.connect(_toggle_sound)
+	_style_button(menu_sound_button, false)
+	menu_box.add_child(menu_sound_button)
 
 	finish_overlay = _make_overlay()
 	ui_root.add_child(finish_overlay)
@@ -342,14 +398,123 @@ func _create_ui() -> void:
 	finish_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	finish_title.add_theme_font_size_override("font_size", 30)
 	finish_box.add_child(finish_title)
-	var next_button := Button.new()
-	next_button.text = "NEXT LEVEL"
-	next_button.custom_minimum_size = Vector2(0.0, 68.0)
-	next_button.add_theme_font_size_override("font_size", 24)
-	next_button.pressed.connect(_on_next_pressed)
-	_style_button(next_button, true)
-	finish_box.add_child(next_button)
+	finish_summary = Label.new()
+	finish_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	finish_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	finish_summary.add_theme_font_size_override("font_size", 18)
+	finish_box.add_child(finish_summary)
+	next_level_button = Button.new()
+	next_level_button.text = "NEXT LEVEL"
+	next_level_button.custom_minimum_size = Vector2(0.0, 68.0)
+	next_level_button.add_theme_font_size_override("font_size", 24)
+	next_level_button.pressed.connect(_on_next_pressed)
+	_style_button(next_level_button, true)
+	finish_box.add_child(next_level_button)
 	finish_overlay.visible = false
+
+	_create_level_select_overlay()
+	_create_pause_overlay()
+	_update_sound_button_labels()
+
+
+func _create_level_select_overlay() -> void:
+	level_select_overlay = _make_overlay()
+	level_select_overlay.visible = false
+	ui_root.add_child(level_select_overlay)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	level_select_overlay.add_child(center)
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", _make_panel_style())
+	panel.custom_minimum_size = Vector2(620.0, 900.0)
+	center.add_child(panel)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
+	panel.add_child(box)
+	var heading := Label.new()
+	heading.text = "CHOOSE A LEVEL"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 28)
+	box.add_child(heading)
+	var note := Label.new()
+	note.text = "Complete a level to unlock the next one."
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	note.add_theme_font_size_override("font_size", 16)
+	box.add_child(note)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_child(scroll)
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	scroll.add_child(grid)
+	for level in range(1, MAX_LEVEL + 1):
+		var level_button := Button.new()
+		level_button.custom_minimum_size = Vector2(170.0, 72.0)
+		level_button.text = "LEVEL %02d\n%s" % [level, "UNLOCKED" if PuzzleRules.is_level_unlocked(level, highest_unlocked_level) else "LOCKED"]
+		level_button.disabled = not PuzzleRules.is_level_unlocked(level, highest_unlocked_level)
+		level_button.pressed.connect(_on_level_selected.bind(level))
+		_style_button(level_button, level == highest_unlocked_level)
+		grid.add_child(level_button)
+	var back_button := Button.new()
+	back_button.text = "BACK"
+	back_button.custom_minimum_size = Vector2(0.0, 54.0)
+	back_button.pressed.connect(_show_menu)
+	_style_button(back_button, false)
+	box.add_child(back_button)
+
+
+func _create_pause_overlay() -> void:
+	pause_overlay = _make_overlay()
+	pause_overlay.visible = false
+	ui_root.add_child(pause_overlay)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	pause_overlay.add_child(center)
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", _make_panel_style())
+	panel.custom_minimum_size = Vector2(540.0, 600.0)
+	center.add_child(panel)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 14)
+	panel.add_child(box)
+	var heading := Label.new()
+	heading.text = "PAUSED"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 32)
+	box.add_child(heading)
+	var resume_button := Button.new()
+	resume_button.text = "RESUME"
+	resume_button.custom_minimum_size = Vector2(0.0, 58.0)
+	resume_button.pressed.connect(_resume_game)
+	_style_button(resume_button, true)
+	box.add_child(resume_button)
+	var restart_button := Button.new()
+	restart_button.text = "RESTART LEVEL"
+	restart_button.custom_minimum_size = Vector2(0.0, 54.0)
+	restart_button.pressed.connect(_on_restart_pressed)
+	_style_button(restart_button, false)
+	box.add_child(restart_button)
+	pause_sound_button = Button.new()
+	pause_sound_button.custom_minimum_size = Vector2(0.0, 54.0)
+	pause_sound_button.pressed.connect(_toggle_sound)
+	_style_button(pause_sound_button, false)
+	box.add_child(pause_sound_button)
+	var levels_button := Button.new()
+	levels_button.text = "LEVEL SELECT"
+	levels_button.custom_minimum_size = Vector2(0.0, 54.0)
+	levels_button.pressed.connect(_show_level_select)
+	_style_button(levels_button, false)
+	box.add_child(levels_button)
+	var menu_button := Button.new()
+	menu_button.text = "MAIN MENU"
+	menu_button.custom_minimum_size = Vector2(0.0, 54.0)
+	menu_button.pressed.connect(_show_menu)
+	_style_button(menu_button, false)
+	box.add_child(menu_button)
 
 
 func _make_overlay() -> ColorRect:
@@ -362,31 +527,77 @@ func _make_overlay() -> ColorRect:
 func _show_menu() -> void:
 	menu_overlay.visible = true
 	finish_overlay.visible = false
+	level_select_overlay.visible = false
+	pause_overlay.visible = false
 	game_started = false
-	status_label.text = "Your original 3D screw puzzle prototype"
+	is_paused = false
+	status_label.text = "Remove exposed screws, clear the top board, then work downward."
 
 
-func _on_play_pressed() -> void:
+func _show_level_select() -> void:
 	menu_overlay.visible = false
+	finish_overlay.visible = false
+	pause_overlay.visible = false
+	level_select_overlay.visible = true
+	game_started = false
+	is_paused = false
+
+
+func _on_level_selected(selected_level: int) -> void:
+	if not PuzzleRules.is_level_unlocked(selected_level, highest_unlocked_level):
+		return
+	_start_level(selected_level)
+
+
+func _start_level(selected_level: int) -> void:
+	level_index = clampi(selected_level, 1, MAX_LEVEL)
+	menu_overlay.visible = false
+	finish_overlay.visible = false
+	level_select_overlay.visible = false
+	pause_overlay.visible = false
+	is_paused = false
 	game_started = true
-	level_index = clampi(highest_unlocked_level, 1, MAX_LEVEL)
 	_load_level(level_index)
 	_play_sfx("ui_click")
 
 
+func _resume_game() -> void:
+	pause_overlay.visible = false
+	is_paused = false
+	game_started = true
+
+
+func _on_pause_pressed() -> void:
+	if not game_started:
+		return
+	game_started = false
+	is_paused = true
+	pause_overlay.visible = true
+	_update_sound_button_labels()
+
+
+func _on_play_pressed() -> void:
+	_start_level(highest_unlocked_level)
+
+
 func _on_restart_pressed() -> void:
-	if game_started:
+	if game_started or is_paused:
+		pause_overlay.visible = false
+		is_paused = false
+		game_started = true
 		_load_level(level_index)
 		_play_sfx("ui_click")
 
 
 func _on_next_pressed() -> void:
 	finish_overlay.visible = false
-	level_index = mini(level_index + 1, MAX_LEVEL)
+	if level_index >= MAX_LEVEL:
+		_show_level_select()
+		return
+	level_index += 1
 	highest_unlocked_level = maxi(highest_unlocked_level, level_index)
 	_save_progress()
-	_load_level(level_index)
-	_play_sfx("ui_click")
+	_start_level(level_index)
 
 
 func _load_level(number: int) -> void:
@@ -396,6 +607,8 @@ func _load_level(number: int) -> void:
 	screws.clear()
 	total_screws = 0
 	removed_screws = 0
+	hints_used = 0
+	level_elapsed = 0.0
 	next_board_id = 0
 	next_screw_id = 0
 	finish_overlay.visible = false
@@ -464,22 +677,37 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 	}
 	boards.append(board_data)
 
-	var sx: float = width * 0.42
-	var sz: float = depth * 0.40
-	var local_points: Array[Vector2] = [
-		Vector2(-sx, -sz), Vector2(sx, -sz),
-		Vector2(-sx, sz), Vector2(sx, sz)
-	]
-	if number >= 4 and layer == 0:
-		local_points.append(Vector2(0.0, -sz))
-		local_points.append(Vector2(0.0, sz))
-	if number >= 8 and layer == 0:
-		local_points.append(Vector2(-sx, 0.0))
-		local_points.append(Vector2(sx, 0.0))
-
+	var local_points := _build_screw_points(width, depth, number, layer)
 	for point in local_points:
 		var world_position := Vector3(center_x + point.x, y + 0.17, center_z + point.y)
 		_create_screw(board_id, world_position)
+
+
+func _build_screw_points(width: float, depth: float, level: int, layer: int) -> Array[Vector2]:
+	var sx: float = width * 0.42
+	var sz: float = depth * 0.40
+	var points: Array[Vector2] = [
+		Vector2(-sx, -sz), Vector2(sx, -sz),
+		Vector2(-sx, sz), Vector2(sx, sz)
+	]
+	var pattern: int = posmod(level + layer * 2, 6)
+	match pattern:
+		1:
+			points.append(Vector2(0.0, -sz))
+			points.append(Vector2(0.0, sz))
+		2:
+			points.append(Vector2(-sx, 0.0))
+			points.append(Vector2(sx, 0.0))
+		3, 5:
+			points.append(Vector2(0.0, -sz))
+			points.append(Vector2(0.0, sz))
+			points.append(Vector2(-sx, 0.0))
+			points.append(Vector2(sx, 0.0))
+			if pattern == 5:
+				points.append(Vector2.ZERO)
+		4:
+			points.append(Vector2.ZERO)
+	return points
 
 
 func _add_box(parent: Node3D, size: Vector3, material: Material, local_position: Vector3) -> void:
@@ -703,10 +931,15 @@ func _check_level_complete() -> void:
 		if not bool(board["removed"]):
 			return
 	game_started = false
+	is_paused = false
 	highest_unlocked_level = maxi(highest_unlocked_level, mini(level_index + 1, MAX_LEVEL))
 	_save_progress()
 	_play_sfx("level_complete")
+	var stars: int = 3 if hints_used == 0 else (2 if hints_used <= 2 else 1)
+	var star_text := "★".repeat(stars) + "☆".repeat(3 - stars)
 	finish_title.text = "LEVEL %d COMPLETE!" % level_index
+	finish_summary.text = "%s\nHints used: %d   Time: %s" % [star_text, hints_used, _format_time(level_elapsed)]
+	next_level_button.text = "LEVEL SELECT" if level_index >= MAX_LEVEL else "NEXT LEVEL"
 	finish_overlay.visible = true
 	status_label.text = "Great work!"
 
@@ -717,12 +950,18 @@ func _on_hint_pressed() -> void:
 		var screw: Dictionary = screws[screw_id]
 		if not bool(screw["removed"]) and _is_screw_accessible(screw):
 			current_hint_id = str(screw_id)
+			hints_used += 1
 			var head: MeshInstance3D = screw["head"]
 			head.material_override = gold_material
 			status_label.text = "Hint: tap the glowing gold screw."
 			_play_sfx("ui_click")
 			return
 	status_label.text = "No available screw found."
+
+
+func _format_time(seconds: float) -> String:
+	var whole_seconds: int = maxi(0, int(seconds))
+	return "%02d:%02d" % [whole_seconds / 60, whole_seconds % 60]
 
 
 func _update_hud() -> void:
