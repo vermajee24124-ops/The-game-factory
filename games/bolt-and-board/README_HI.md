@@ -17,7 +17,7 @@
 ## Cloud validation
 2 नवंबर 2026 को GitHub Actions पर Godot Engine 4.7.2 Stable चलाया गया। Headless project import/parse, gameplay smoke tests और Xvfb preview capture सफल हुए। Rendered preview GitHub Actions artifact में उपलब्ध है।
 
-यह cloud runner Mesa software OpenGL पर चला; इसका प्रदर्शन आपके Android फोन के प्रदर्शन का प्रमाण नहीं है। Android APK/AAB export और असली फोन पर touch/performance जाँच अभी बाकी हैं। पूरा रिकॉर्ड `docs/TEST_STATUS.md` में है।
+यह cloud runner Mesa software OpenGL पर चला; इसका प्रदर्शन आपके Android फोन के प्रदर्शन का प्रमाण नहीं है। शुरुआती prototype के tests पास हुए थे। Level Select, pause और progression के नए regression tests जोड़े गए हैं; उनका नया CI result आने के बाद ही उन्हें verified माना जाएगा। पूरा रिकॉर्ड `docs/TEST_STATUS.md` में है।
 
 ## प्रोजेक्ट खोलना
 1. ZIP को extract करें।
@@ -44,7 +44,7 @@ xvfb-run -a godot --path . --script res://tests/capture_preview.gd
 Screenshot `artifacts/godot_preview.png` में बनेगा।
 
 ## Android export
-`export_presets.cfg.example` non-secret starting point है। Android SDK, JDK, Godot export templates और valid release signing key चाहिए। Keystore/password को repository या chat में कभी commit न करें। Release signing और Play Store listing अंतिम अलग चरण हैं।
+`export_presets.cfg` में ARM64 debug APK preset है। `.github/workflows/screw-puzzle-android.yml` GitHub Actions में Android SDK, JDK 17 और matching Godot templates लगाकर test APK बनाने के लिए है। सफल build पर `bolt-and-board-android-debug` artifact में APK मिलेगा। यह debug/test APK है, Play Store release नहीं। Package ID `com.example.boltandboard` placeholder है और publish करने से पहले बदलना होगा। Release AAB, निजी release signing key और physical Android QA अभी बाकी हैं। किसी भी signing key या password को public repository में commit न करें।
 
 ## जरूरी स्थिति
 यह एक tested prototype है, final commercial release नहीं। इसमें अभी सीमित procedural board patterns हैं; 30 levels 30 अलग hand-designed puzzles नहीं हैं। पहले Android device test और फिर level variety, art polish, settings/accessibility, monetization, privacy और store policy का काम जरूरी है।
