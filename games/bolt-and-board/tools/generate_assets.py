@@ -3,7 +3,7 @@
 from pathlib import Path
 import math, random, struct, wave
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 TEXTURES = ROOT / "assets" / "textures"
@@ -40,6 +40,51 @@ for c, value in enumerate((32, 49, 65)):
     surface[:, :, c] = value + surface_noise
 Image.fromarray(np.uint8(np.clip(surface, 0, 255)), "RGB").save(TEXTURES / "dark_surface.png", optimize=True)
 
+def make_icon(size: int, transparent: bool = False) -> Image.Image:
+    scale = size / 512.0
+    bg = (0, 0, 0, 0) if transparent else (23, 35, 51, 255)
+    image = Image.new("RGBA", (size, size), bg)
+    draw = ImageDraw.Draw(image)
+
+    def pts(values):
+        return [(int(x * scale), int(y * scale)) for x, y in values]
+
+    if not transparent:
+        draw.rounded_rectangle((int(12 * scale), int(12 * scale), int(500 * scale), int(500 * scale)),
+                               radius=int(104 * scale), fill=(23, 35, 51, 255),
+                               outline=(91, 115, 136, 255), width=max(1, int(5 * scale)))
+
+    # Three original wooden planks, drawn in a simple isometric style.
+    planks = [
+        ([(76, 176), (405, 176), (448, 240), (119, 240)], [(119, 240), (448, 240), (448, 276), (119, 276)], (183, 121, 68, 255), (112, 68, 40, 255)),
+        ([(76, 126), (405, 126), (448, 190), (119, 190)], [(119, 190), (448, 190), (448, 226), (119, 226)], (201, 143, 83, 255), (126, 78, 44, 255)),
+        ([(76, 76), (405, 76), (448, 140), (119, 140)], [(119, 140), (448, 140), (448, 176), (119, 176)], (219, 162, 99, 255), (143, 88, 48, 255)),
+    ]
+    for top, side, top_color, side_color in planks:
+        draw.polygon(pts(side), fill=side_color)
+        draw.polygon(pts(top), fill=top_color, outline=(91, 57, 34, 255))
+        draw.line(pts([(95, top[0][1] + 12), (390, top[0][1] + 12)]),
+                 fill=(237, 190, 132, 180), width=max(1, int(5 * scale)))
+
+    # Four steel screw heads on the top plank.
+    for cx, cy in [(145, 97), (379, 97), (165, 140), (360, 140)]:
+        r = 17
+        box = (int((cx-r)*scale), int((cy-r)*scale), int((cx+r)*scale), int((cy+r)*scale))
+        draw.ellipse(box, fill=(46, 61, 74, 255), outline=(226, 235, 239, 255), width=max(1, int(5 * scale)))
+        inner = (int((cx-11)*scale), int((cy-11)*scale), int((cx+11)*scale), int((cy+11)*scale))
+        draw.ellipse(inner, fill=(194, 207, 216, 255), outline=(87, 104, 119, 255), width=max(1, int(2 * scale)))
+        draw.line(pts([(cx-8, cy), (cx+8, cy)]), fill=(44, 56, 68, 255), width=max(2, int(5 * scale)))
+        draw.line(pts([(cx, cy-8), (cx, cy+8)]), fill=(44, 56, 68, 255), width=max(2, int(5 * scale)))
+    return image
+
+
+ICONS = ROOT / "assets" / "icons"
+ICONS.mkdir(parents=True, exist_ok=True)
+make_icon(192, False).save(ICONS / "main_192x192.png", optimize=True)
+make_icon(432, True).save(ICONS / "adaptive_foreground_432x432.png", optimize=True)
+Image.new("RGBA", (432, 432), (23, 35, 51, 255)).save(ICONS / "adaptive_background_432x432.png", optimize=True)
+
+
 def tone(name: str, frequencies: list[float], duration: float, decay: float, volume: float, noise: float = 0.0) -> None:
     rate = 22050
     count = int(rate * duration)
@@ -64,4 +109,4 @@ tone("ui_click", [620, 880], 0.085, 15, 0.16)
 tone("screw_remove", [260, 390, 520], 0.24, 7, 0.20, 0.035)
 tone("board_clear", [110, 165, 220], 0.45, 4, 0.28, 0.025)
 tone("level_complete", [523, 659, 784, 1046], 0.72, 1.8, 0.18)
-print("Generated 3 original textures and 4 original SFX files.")
+print("Generated 3 original textures, 3 Android launcher icons and 4 original SFX files.")
