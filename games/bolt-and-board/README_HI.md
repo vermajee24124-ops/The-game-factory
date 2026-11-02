@@ -14,14 +14,16 @@
 - Restart, Hint, progress HUD, level-complete screen और local save।
 - Headless gameplay tests और Xvfb screenshot capture।
 
-## इस शाखा का GitHub स्थान
-`games/bolt-and-board/`
+## Cloud validation
+2 नवंबर 2026 को GitHub Actions पर Godot Engine 4.7.2 Stable चलाया गया। Headless project import/parse, gameplay smoke tests और Xvfb preview capture सफल हुए। Rendered preview GitHub Actions artifact में उपलब्ध है।
 
-## Godot में खोलना
-1. ZIP को extract करें या GitHub से इस branch का source लें।
+यह cloud runner Mesa software OpenGL पर चला; इसका प्रदर्शन आपके Android फोन के प्रदर्शन का प्रमाण नहीं है। Android APK/AAB export और असली फोन पर touch/performance जाँच अभी बाकी हैं। पूरा रिकॉर्ड `docs/TEST_STATUS.md` में है।
+
+## प्रोजेक्ट खोलना
+1. ZIP को extract करें।
 2. Godot 4.7.2 Stable में `project.godot` import करें।
 3. `Main.tscn` run करें।
-4. PLAY दबाकर exposed screw heads पर tap करें।
+4. PLAY दबाएँ. चमकते/दिख रहे screw head पर tap करें. ऊपर की board पहले हटेगी; उसके नीचे के screws उसके बाद खुलेंगे।
 
 ## Headless checks
 Godot executable और Python dependencies मौजूद हों तो:
@@ -41,11 +43,11 @@ xvfb-run -a godot --path . --script res://tests/capture_preview.gd
 
 Screenshot `artifacts/godot_preview.png` में बनेगा।
 
-## ईमानदार स्थिति
-यह एक expanded prototype है, final commercial release नहीं। इस काम के container में Godot binary डाउनलोड/चलाने का नेटवर्क उपलब्ध नहीं था। इसलिए Godot parser/runtime, असली screenshot, Android export और आपके फोन पर performance/touch अभी verified नहीं हैं। GitHub Actions में अलग validation workflow जोड़ा गया है; उसके सफल परिणाम और वास्तविक Android device test के बाद ही build को verified कहा जाएगा।
+## Android export
+`export_presets.cfg.example` non-secret starting point है। Android SDK, JDK, Godot export templates और valid release signing key चाहिए। Keystore/password को repository या chat में कभी commit न करें। Release signing और Play Store listing अंतिम अलग चरण हैं।
 
-## Android release
-Release APK/AAB के लिए compatible Android SDK, JDK, Godot export templates और signing key चाहिए। Keystore/password को repository या chat में कभी commit न करें। Release signing और Play Store listing अंतिम अलग चरण हैं।
+## जरूरी स्थिति
+यह एक tested prototype है, final commercial release नहीं। इसमें अभी सीमित procedural board patterns हैं; 30 levels 30 अलग hand-designed puzzles नहीं हैं। पहले Android device test और फिर level variety, art polish, settings/accessibility, monetization, privacy और store policy का काम जरूरी है।
 
 ## License
-इस folder के original game source MIT-licensed है। Engine और भविष्य में जोड़े जाने वाले third-party components अपने-अपने notices के अधीन रहेंगे। `LICENSE` और `THIRD_PARTY_NOTICES.md` पढ़ें।
+इस folder के original game files MIT-licensed हैं। `LICENSE` और `THIRD_PARTY_NOTICES.md` पढ़ें। Godot engine और भविष्य में जोड़े जाने वाले third-party components अपने license notices के अधीन रहेंगे।
