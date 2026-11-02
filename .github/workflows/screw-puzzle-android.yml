@@ -1,0 +1,108 @@
+name: Bolt & Board - Android Debug APK
+
+on:
+  push:
+    branches:
+      - screw-puzzle-3d
+    paths:
+      - "games/bolt-and-board/**"
+      - ".github/workflows/screw-puzzle-android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bolt-and-board-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout game project
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android build packages
+        run: |
+          sdkmanager --install \
+            "platforms;android-35" \
+            "build-tools;35.0.1" \
+            "cmake;3.10.2.4988404" \
+            "ndk;28.1.13356709"
+
+      - name: Download Godot 4.7.2 editor
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/godot"
+          curl -fL --retry 3 "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip" -o "$RUNNER_TEMP/godot/editor.zip"
+          unzip -q "$RUNNER_TEMP/godot/editor.zip" -d "$RUNNER_TEMP/godot"
+          chmod +x "$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64"
+          echo "$RUNNER_TEMP/godot" >> "$GITHUB_PATH"
+
+      - name: Install matching Android export templates
+        shell: bash
+        run: |
+          curl -fL --retry 3 "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz" -o "$RUNNER_TEMP/godot/templates.tpz"
+          mkdir -p "$RUNNER_TEMP/godot/templates-src"
+          unzip -q "$RUNNER_TEMP/godot/templates.tpz" -d "$RUNNER_TEMP/godot/templates-src"
+          TEMPLATE_FILE="$(find "$RUNNER_TEMP/godot/templates-src" -type f -name android_debug.apk -print -quit)"
+          test -n "$TEMPLATE_FILE"
+          TEMPLATE_ROOT="$(dirname "$TEMPLATE_FILE")"
+          DEST="$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          mkdir -p "$DEST"
+          cp -a "$TEMPLATE_ROOT"/. "$DEST"/
+          printf '4.7.2.stable\n' > "$DEST/version.txt"
+
+      - name: Configure Godot Android SDK paths and debug signing
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.android" "$HOME/.config/godot"
+          keytool -genkeypair -noprompt -keystore "$HOME/.android/debug.keystore" \
+            -storepass android -keypass android -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US" -storetype PKCS12
+          cat > "$HOME/.config/godot/editor_settings-4.7.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/debug_keystore = "$HOME/.android/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOF
+
+      - name: Generate textures, sounds and launcher icons
+        run: |
+          python -m pip install --disable-pip-version-check pillow numpy
+          python games/bolt-and-board/tools/generate_assets.py
+
+      - name: Import project and validate scripts
+        working-directory: games/bolt-and-board
+        run: Godot_v4.7.2-stable_linux.x86_64 --headless --editor --path . --quit
+
+      - name: Export ARM64 debug APK
+        working-directory: games/bolt-and-board
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          Godot_v4.7.2-stable_linux.x86_64 --headless --path . --export-debug "Android Debug" "$GITHUB_WORKSPACE/artifacts/BoltAndBoard-debug.apk"
+          test -s "$GITHUB_WORKSPACE/artifacts/BoltAndBoard-debug.apk"
+          unzip -t "$GITHUB_WORKSPACE/artifacts/BoltAndBoard-debug.apk"
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: bolt-and-board-android-debug
+          path: artifacts/BoltAndBoard-debug.apk
+          if-no-files-found: error
+          retention-days: 14
