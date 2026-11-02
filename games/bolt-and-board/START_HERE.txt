@@ -1,0 +1,10 @@
+BOLT & BOARD PUZZLE — START HERE
+
+This folder contains a Godot 4.7.2 mobile 3D puzzle prototype.
+
+Project entry: project.godot
+Main scene: Main.tscn
+
+For cloud validation, use the screw-puzzle-3d branch and open the repository's Actions tab. Look for "Screw Puzzle - Godot Validation". The workflow downloads Godot on a hosted GitHub runner, imports the project, runs the headless tests and captures a screenshot using Xvfb.
+
+This folder is source code, not an APK/AAB. Godot runtime and Android device validation are pending.
