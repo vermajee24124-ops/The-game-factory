@@ -26,3 +26,11 @@ static func is_board_cleared(board_screw_ids: Array, screw_states: Dictionary) -
 		if screw_states.has(screw_id) and not bool(screw_states[screw_id].get("removed", false)):
 			return false
 	return true
+
+
+static func is_level_unlocked(level: int, highest_unlocked: int) -> bool:
+	return level >= 1 and level <= highest_unlocked and level <= 30
+
+
+static func get_pattern_index(level: int, layer: int) -> int:
+	return posmod(level + layer * 2, 6)
