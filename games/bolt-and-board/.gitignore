@@ -1,0 +1,10 @@
+.godot/
+.export/
+android/build/
+android/.gradle/
+build/
+artifacts/
+*.keystore
+*.jks
+*.p12
+export_presets.cfg
