@@ -7,7 +7,8 @@ static func is_screw_accessible(screw_position: Vector3, own_board_id: int, boar
 			continue
 		if int(board.get("id", -1)) == own_board_id:
 			continue
-		if float(board.get("y", -100.0)) <= screw_position.y - 0.18:
+		# A screw head protrudes above its own beam; only a meaningfully higher beam can cover it.
+		if float(board.get("y", -100.0)) + 0.17 <= screw_position.y + 0.06:
 			continue
 		var center: Vector2 = board.get("center", Vector2.ZERO)
 		var half_width: float = float(board.get("width", 0.0)) * 0.5 - 0.04
