@@ -1065,10 +1065,10 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 	edge_material.albedo_color = Color("#D2A16A")
 	edge_material.metallic = 0.12
 	edge_material.roughness = 0.52
-	_add_box(board_node, Vector3(width - 0.10, 0.025, 0.035), edge_material, Vector3(0.0, 0.15, depth * 0.5 - 0.025))
-	_add_box(board_node, Vector3(width - 0.10, 0.025, 0.035), edge_material, Vector3(0.0, 0.15, -depth * 0.5 + 0.025))
-	_add_box(board_node, Vector3(0.035, 0.025, depth - 0.10), edge_material, Vector3(width * 0.5 - 0.025, 0.15, 0.0))
-	_add_box(board_node, Vector3(0.035, 0.025, depth - 0.10), edge_material, Vector3(-width * 0.5 + 0.025, 0.15, 0.0))
+	_add_box(board_node, Vector3(width - 0.10, 0.025, 0.035), edge_material, Vector3(0.0, 0.225, depth * 0.5 - 0.025))
+	_add_box(board_node, Vector3(width - 0.10, 0.025, 0.035), edge_material, Vector3(0.0, 0.225, -depth * 0.5 + 0.025))
+	_add_box(board_node, Vector3(0.035, 0.025, depth - 0.10), edge_material, Vector3(width * 0.5 - 0.025, 0.225, 0.0))
+	_add_box(board_node, Vector3(0.035, 0.025, depth - 0.10), edge_material, Vector3(-width * 0.5 + 0.025, 0.225, 0.0))
 
 	# A real collider prevents taps passing through a visible upper board.
 	var board_body := StaticBody3D.new()
