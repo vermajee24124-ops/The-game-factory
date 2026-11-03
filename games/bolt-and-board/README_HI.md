@@ -7,6 +7,8 @@
 - हर layer में 2 से 4 अलग wooden plates, metallic screws, washers और thread details के साथ procedural 3D puzzle।
 - Original generated wood, brushed-steel और dark-surface textures।
 - Android touch और desktop mouse के लिए screen-space screw picking, ताकि board पर सीधा tap करने से screw चुने।
+- अलग रंग के screw heads और तीन matching colour toolboxes।
+- Five-slot spare tray: screw निकालकर tray में रखें, फिर matching colour box दबाकर sort करें।
 - Full-screen UI root अब gameplay touch को block नहीं करता; covered screws फिर भी select नहीं हो सकते।
 - ऊपरी बोर्ड के collider से नीचे छिपे screw पर tap रोकना।
 - Screw removal और board-clear animations।
