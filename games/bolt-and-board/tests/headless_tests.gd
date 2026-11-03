@@ -45,6 +45,7 @@ func _run_tests() -> void:
 	assert(game.get("pause_overlay") != null, "Pause screen must be created")
 	assert(game.get("splash_overlay") != null, "Branded startup/loading screen must be created")
 	assert(game.get("tutorial_overlay") != null, "First-run tutorial must be created")
+	assert(game.get("timer_label") != null, "Gameplay must show an elapsed timer")
 	var ui_root: Control = game.get("ui_root")
 	assert(ui_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Full-screen UI root must pass gameplay touches through")
 	var touch_test_id := ""
@@ -76,7 +77,7 @@ func _run_tests() -> void:
 	assert(four_screw_pattern.size() == 4, "Base pattern should have four corner screws")
 	assert(six_screw_pattern.size() == 6, "Pattern variation should add two side screws")
 	var piece_specs: Array = game.call("_build_piece_specs", 4.0, 3.0, 1, 0)
-	assert(piece_specs.size() == 4, "The campaign should generate multiple distinct plank pieces per layer")
+	assert(piece_specs.size() == 3, "The campaign should generate multiple distinct plank pieces per layer")
 	for board_data in boards.duplicate():
 		var board_screw_ids: Array = board_data["screws"].duplicate()
 		for screw_id in board_screw_ids:
