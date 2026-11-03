@@ -75,19 +75,18 @@ func _run_tests() -> void:
 	var six_screw_pattern: Array = game.call("_build_screw_points", 4.0, 3.0, 1, 0)
 	assert(four_screw_pattern.size() == 4, "Base pattern should have four corner screws")
 	assert(six_screw_pattern.size() == 6, "Pattern variation should add two side screws")
-	var top_screws: Array = boards[0]["screws"].duplicate()
-	for screw_id in top_screws:
-		game.call("_try_remove_screw", str(screw_id))
-	assert(bool(boards[0]["removed"]), "Top board should clear after all its screws are removed")
-	var lower_screws: Array = boards[1]["screws"].duplicate()
-	for screw_id in lower_screws:
-		game.call("_try_remove_screw", str(screw_id))
-	assert(bool(boards[1]["removed"]), "Lower board should clear after upper board is removed")
-	assert(int(game.get("removed_screws")) == int(game.get("total_screws")), "Every screw should be removable in sequence")
+	var piece_specs: Array = game.call("_build_piece_specs", 4.0, 3.0, 1, 0)
+	assert(piece_specs.size() == 4, "The campaign should generate multiple distinct plank pieces per layer")
+	for board_data in boards.duplicate():
+		var board_screw_ids: Array = board_data["screws"].duplicate()
+		for screw_id in board_screw_ids:
+			game.call("_try_remove_screw", str(screw_id))
+		assert(bool(board_data["removed"]), "Every board piece should clear after its own screws are removed")
+	assert(int(game.get("removed_screws")) == int(game.get("total_screws")), "Every screw should be removable in layer order")
 	assert(bool(game.get("finish_overlay").visible), "Level completion should show its result screen")
 	assert(str(game.get("next_level_button").text) == "NEXT LEVEL", "Normal levels should offer the next level")
 	game.call("_on_next_pressed")
 	assert(int(game.get("level_index")) == 2, "Next should load the following level")
 	assert(int(game.get("highest_unlocked_level")) == 2, "Completing a level should unlock the next one")
-	print("PASS: puzzle rules, touch picking, startup flow, level locks, menus, pause/resume, level completion and progression")
+	print("PASS: puzzle rules, multi-piece layers, touch picking, startup flow, level locks, menus, pause/resume, completion and progression")
 	quit(0)
