@@ -2,7 +2,7 @@
 
 ## Latest Godot validation
 
-https://github.com/vermajee24124-ops/The-game-factory/actions/runs/41593473319
+https://github.com/vermajee24124-ops/The-game-factory/actions/runs/41593846155
 
 **PASS** Godot 4.7.2 Stable project import, script parsing, gameplay regression tests और Xvfb/Mesa screenshot capture सफल हुए।
 
@@ -20,12 +20,12 @@ Screenshot cloud renderer का visual check है। यह वास्त�
 
 ## Latest Android ARM64 debug build
 
-https://github.com/vermajee24124-ops/The-game-factory/actions/runs/41593473277
+https://github.com/vermajee24124-ops/The-game-factory/actions/runs/41593846197
 
-**PASS** Godot Android export ने ARM64 debug APK सफलतापूर्वक बनाया और APK ZIP integrity check पास हुई।
+**PASS** Godot Android export ने ARM64 debug APK सफलतापूर्वक बनाया। Outer artifact ZIP और extracted APK दोनों के ZIP integrity checks पास हुए।
 
-- Commit: cd26d028c6caf0b2298edd48cf6827e3d16b7f03
-- APK SHA-256: db7c18544272ff91e59e32b1e93c67645467b8333f437632be9aad70a50a8116
+- Commit: 474d3501ca3c5c746dcdcc02184d1be5891ee94c
+- APK SHA-256: ddf9327c9915a9360594136345bc0e0b59ff0068581471aa0aa531be9e812b95
 - Package ID: com.example.boltandboard (placeholder)
 - Build type: debug/test, not a Play Store release.
 
