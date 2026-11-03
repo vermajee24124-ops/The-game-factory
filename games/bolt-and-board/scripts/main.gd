@@ -1028,20 +1028,9 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 	game_root.add_child(board_node)
 
 	var board_mesh := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3(width, 0.30, depth)
-	board_mesh.mesh = box
+	board_mesh.mesh = _build_beveled_plank_mesh(width, depth, 0.30, 0.055)
 	board_mesh.material_override = wood_materials[(layer + number) % wood_materials.size()]
 	board_node.add_child(board_mesh)
-
-	# Raised inset top and warm edge band create a finished toy-wood look.
-	var top_face := MeshInstance3D.new()
-	var top_box := BoxMesh.new()
-	top_box.size = Vector3(maxf(0.1, width - 0.12), 0.035, maxf(0.1, depth - 0.12))
-	top_face.mesh = top_box
-	top_face.material_override = wood_materials[(layer + number + 1) % wood_materials.size()]
-	top_face.position.y = 0.162
-	board_node.add_child(top_face)
 
 	# A real collider prevents taps passing through a visible upper board.
 	var board_body := StaticBody3D.new()
@@ -1054,14 +1043,6 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 	board_collision.shape = board_shape
 	board_body.add_child(board_collision)
 	board_node.add_child(board_body)
-
-	var edge_mat := StandardMaterial3D.new()
-	edge_mat.albedo_color = Color("#704224")
-	edge_mat.roughness = 0.84
-	_add_box(board_node, Vector3(width - 0.10, 0.045, 0.045), edge_mat, Vector3(0.0, 0.186, depth * 0.5 - 0.03))
-	_add_box(board_node, Vector3(width - 0.10, 0.045, 0.045), edge_mat, Vector3(0.0, 0.186, -depth * 0.5 + 0.03))
-	_add_box(board_node, Vector3(0.045, 0.045, depth - 0.10), edge_mat, Vector3(width * 0.5 - 0.03, 0.186, 0.0))
-	_add_box(board_node, Vector3(0.045, 0.045, depth - 0.10), edge_mat, Vector3(-width * 0.5 + 0.03, 0.186, 0.0))
 
 	var board_data: Dictionary = {
 		"id": board_id,
@@ -1082,6 +1063,73 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 	for point in local_points:
 		var world_position: Vector3 = board_node.to_global(Vector3(point.x, 0.17, point.y))
 		_create_screw(board_id, world_position)
+
+
+func _add_plank_triangle(surface: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, normal: Vector3, uv_a: Vector2, uv_b: Vector2, uv_c: Vector2) -> void:
+	surface.set_normal(normal)
+	surface.set_uv(uv_a)
+	surface.add_vertex(a)
+	surface.set_normal(normal)
+	surface.set_uv(uv_b)
+	surface.add_vertex(b)
+	surface.set_normal(normal)
+	surface.set_uv(uv_c)
+	surface.add_vertex(c)
+
+
+func _build_beveled_plank_mesh(width: float, depth: float, height: float, bevel: float) -> ArrayMesh:
+	var half_width: float = width * 0.5
+	var half_height: float = height * 0.5
+	var half_depth: float = depth * 0.5
+	var chamfer: float = clampf(bevel, 0.01, minf(width, height) * 0.24)
+	var cross_section: Array[Vector2] = [
+		Vector2(-half_width + chamfer, -half_height),
+		Vector2(half_width - chamfer, -half_height),
+		Vector2(half_width, -half_height + chamfer),
+		Vector2(half_width, half_height - chamfer),
+		Vector2(half_width - chamfer, half_height),
+		Vector2(-half_width + chamfer, half_height),
+		Vector2(-half_width, half_height - chamfer),
+		Vector2(-half_width, -half_height + chamfer)
+	]
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+
+	# Extruded octagonal cross-section: flat faces with real chamfered long edges.
+	for edge_index in range(cross_section.size()):
+		var current: Vector2 = cross_section[edge_index]
+		var next_point: Vector2 = cross_section[(edge_index + 1) % cross_section.size()]
+		var edge: Vector2 = next_point - current
+		var normal := Vector3(edge.y, -edge.x, 0.0).normalized()
+		var a := Vector3(current.x, current.y, -half_depth)
+		var b := Vector3(next_point.x, next_point.y, -half_depth)
+		var c := Vector3(next_point.x, next_point.y, half_depth)
+		var d := Vector3(current.x, current.y, half_depth)
+		var uv_a := Vector2((current.x + half_width) / width, 0.0)
+		var uv_b := Vector2((next_point.x + half_width) / width, 0.0)
+		var uv_c := Vector2((next_point.x + half_width) / width, 1.0)
+		var uv_d := Vector2((current.x + half_width) / width, 1.0)
+		_add_plank_triangle(surface, a, b, c, normal, uv_a, uv_b, uv_c)
+		_add_plank_triangle(surface, a, c, d, normal, uv_a, uv_c, uv_d)
+
+	# Close both end caps with correctly oriented face normals.
+	var front_center := Vector3(0.0, 0.0, -half_depth)
+	var back_center := Vector3(0.0, 0.0, half_depth)
+	for point_index in range(cross_section.size()):
+		var p0: Vector2 = cross_section[point_index]
+		var p1: Vector2 = cross_section[(point_index + 1) % cross_section.size()]
+		var front_a := Vector3(p0.x, p0.y, -half_depth)
+		var front_b := Vector3(p1.x, p1.y, -half_depth)
+		var back_a := Vector3(p0.x, p0.y, half_depth)
+		var back_b := Vector3(p1.x, p1.y, half_depth)
+		var uv_center := Vector2(0.5, 0.5)
+		var uv_p0 := Vector2(p0.x / width + 0.5, p0.y / height + 0.5)
+		var uv_p1 := Vector2(p1.x / width + 0.5, p1.y / height + 0.5)
+		_add_plank_triangle(surface, front_center, front_b, front_a, Vector3.BACK, uv_center, uv_p1, uv_p0)
+		_add_plank_triangle(surface, back_center, back_a, back_b, Vector3.FORWARD, uv_center, uv_p0, uv_p1)
+
+	surface.generate_tangents()
+	return surface.commit()
 
 
 func _build_screw_points(width: float, depth: float, level: int, layer: int) -> Array[Vector2]:
