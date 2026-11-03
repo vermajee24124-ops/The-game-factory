@@ -76,14 +76,40 @@ func _run_tests() -> void:
 	var six_screw_pattern: Array = game.call("_build_screw_points", 4.0, 3.0, 1, 0)
 	assert(four_screw_pattern.size() == 4, "Base pattern should have four corner screws")
 	assert(six_screw_pattern.size() == 6, "Pattern variation should add two side screws")
-	var piece_specs: Array = game.call("_build_piece_specs", 4.0, 3.0, 1, 0)
-	assert(piece_specs.size() == 3, "The campaign should generate multiple distinct plank pieces per layer")
-	for board_data in boards.duplicate():
-		var board_screw_ids: Array = board_data["screws"].duplicate()
-		for screw_id in board_screw_ids:
-			game.call("_try_remove_screw", str(screw_id))
-		assert(bool(board_data["removed"]), "Every board piece should clear after its own screws are removed")
-	assert(int(game.get("removed_screws")) == int(game.get("total_screws")), "Every screw should be removable in layer order")
+	var piece_specs: Array = game.call("_build_piece_specs", 4.0, 4.5, 1, 0)
+	assert(piece_specs.size() == 4, "Interlocked campaign layouts must contain several beams")
+	assert(game.get("toolbox_buttons").size() == 3, "Three colour sorting boxes must be available")
+	assert(game.get("spare_slot_limit") == 5, "Spare tray must start with five slots")
+	var angled_cover := {
+		"id": 9, "center": Vector2.ZERO, "width": 4.0, "depth": 1.0,
+		"y": 0.46, "rotation_y": PI * 0.25, "removed": false
+	}
+	var angled_states: Array = [lower_board, angled_cover]
+	assert(not Rules.is_screw_accessible(Vector3(0.707, 0.17, -0.707), 1, angled_states), "Rotated upper beams must block covered screws")
+	var safety_steps := 0
+	while int(game.get("removed_screws")) < int(game.get("total_screws")) and safety_steps < 300:
+		var selected_id := ""
+		var current_screws: Dictionary = game.get("screws")
+		for screw_id in current_screws.keys():
+			var screw_state: Dictionary = current_screws[screw_id]
+			if not bool(screw_state["removed"]) and bool(game.call("_is_screw_accessible", screw_state)):
+				selected_id = str(screw_id)
+				break
+		assert(not selected_id.is_empty(), "There must always be a reachable screw until the puzzle is cleared")
+		game.call("_try_remove_screw", selected_id)
+		var tray_contents: Array = game.get("spare_screw_ids")
+		if tray_contents.size() >= 4:
+			for color_id in range(3):
+				game.call("_on_toolbox_pressed", color_id)
+		safety_steps += 1
+	for color_id in range(3):
+		game.call("_on_toolbox_pressed", color_id)
+	boards = game.get("boards")
+	assert(int(game.get("removed_screws")) == int(game.get("total_screws")), "Every screw must be collectable")
+	assert(int(game.get("sorted_screws")) == int(game.get("total_screws")), "Every collected screw must be sortable into its matching colour box")
+	assert((game.get("spare_screw_ids") as Array).is_empty(), "The spare tray must be empty at level completion")
+	for board_data in boards:
+		assert(bool(board_data["removed"]), "Every beam must fall after all of its screws are removed")
 	assert(bool(game.get("finish_overlay").visible), "Level completion should show its result screen")
 	assert(str(game.get("next_level_button").text) == "NEXT LEVEL", "Normal levels should offer the next level")
 	game.call("_on_next_pressed")
