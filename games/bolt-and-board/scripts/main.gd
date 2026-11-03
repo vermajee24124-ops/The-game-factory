@@ -70,6 +70,17 @@ var toolbox_target_index: int = 0
 var toolbox_target_progress: int = 0
 var fail_overlay: ColorRect
 var metal_material: StandardMaterial3D
+var screw_hole_mesh: CylinderMesh
+var screw_shaft_mesh: CylinderMesh
+var screw_washer_mesh: CylinderMesh
+var screw_washer_lip_mesh: CylinderMesh
+var screw_head_mesh: CylinderMesh
+var screw_rim_mesh: TorusMesh
+var screw_thread_mesh: ArrayMesh
+var screw_hit_shape: SphereShape3D
+var screw_slot_horizontal_mesh: BoxMesh
+var screw_slot_vertical_mesh: BoxMesh
+var screw_slot_material: StandardMaterial3D
 var dark_metal_material: StandardMaterial3D
 var blocked_material: StandardMaterial3D
 var gold_material: StandardMaterial3D
@@ -80,6 +91,7 @@ var floor_material: StandardMaterial3D
 func _ready() -> void:
 	_load_progress()
 	_create_materials()
+	_create_screw_mesh_cache()
 	_create_audio()
 	_create_world()
 	_create_camera()
@@ -167,6 +179,66 @@ func _create_materials() -> void:
 	var floor_texture := load("res://assets/textures/dark_surface.png") as Texture2D
 	if floor_texture != null:
 		floor_material.albedo_texture = floor_texture
+
+
+func _create_screw_mesh_cache() -> void:
+	screw_hole_mesh = CylinderMesh.new()
+	screw_hole_mesh.top_radius = 0.145
+	screw_hole_mesh.bottom_radius = 0.145
+	screw_hole_mesh.height = 0.018
+	screw_hole_mesh.radial_segments = 24
+
+	screw_shaft_mesh = CylinderMesh.new()
+	screw_shaft_mesh.top_radius = 0.052
+	screw_shaft_mesh.bottom_radius = 0.052
+	screw_shaft_mesh.height = 0.31
+	screw_shaft_mesh.radial_segments = 24
+
+	screw_washer_mesh = CylinderMesh.new()
+	screw_washer_mesh.top_radius = 0.185
+	screw_washer_mesh.bottom_radius = 0.185
+	screw_washer_mesh.height = 0.035
+	screw_washer_mesh.radial_segments = 32
+
+	screw_washer_lip_mesh = CylinderMesh.new()
+	screw_washer_lip_mesh.top_radius = 0.17
+	screw_washer_lip_mesh.bottom_radius = 0.17
+	screw_washer_lip_mesh.height = 0.012
+	screw_washer_lip_mesh.radial_segments = 32
+
+	screw_head_mesh = CylinderMesh.new()
+	screw_head_mesh.top_radius = 0.118
+	screw_head_mesh.bottom_radius = 0.145
+	screw_head_mesh.height = 0.105
+	screw_head_mesh.radial_segments = 32
+
+	screw_rim_mesh = TorusMesh.new()
+	screw_rim_mesh.inner_radius = 0.137
+	screw_rim_mesh.outer_radius = 0.151
+	screw_rim_mesh.rings = 24
+	screw_rim_mesh.ring_segments = 8
+
+	screw_thread_mesh = _build_thread_mesh(0.055, 0.25, 0.058, 0.012)
+	screw_hit_shape = SphereShape3D.new()
+	screw_hit_shape.radius = 0.34
+
+	screw_slot_horizontal_mesh = BoxMesh.new()
+	screw_slot_horizontal_mesh.size = Vector3(0.145, 0.014, 0.022)
+	screw_slot_vertical_mesh = BoxMesh.new()
+	screw_slot_vertical_mesh.size = Vector3(0.022, 0.014, 0.145)
+	screw_slot_material = StandardMaterial3D.new()
+	screw_slot_material.albedo_color = Color("#26313C")
+	screw_slot_material.metallic = 0.82
+	screw_slot_material.roughness = 0.28
+
+
+func _add_shared_mesh(parent: Node3D, mesh: Mesh, material: Material, local_position: Vector3) -> MeshInstance3D:
+	var instance := MeshInstance3D.new()
+	instance.mesh = mesh
+	instance.material_override = material
+	instance.position = local_position
+	parent.add_child(instance)
+	return instance
 
 
 func _create_audio() -> void:
@@ -1324,79 +1396,46 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 		var owning_board: Dictionary = boards[board_index_for_hole]
 		var owning_center: Vector2 = owning_board["center"]
 		var hole := MeshInstance3D.new()
-		var hole_mesh := CylinderMesh.new()
-		hole_mesh.top_radius = 0.145
-		hole_mesh.bottom_radius = 0.145
-		hole_mesh.height = 0.018
-		hole.mesh = hole_mesh
+		hole.mesh = screw_hole_mesh
 		hole.material_override = hole_material
 		hole.position = Vector3(world_position.x - owning_center.x, 0.245, world_position.z - owning_center.y)
 		(owning_board["node"] as Node3D).add_child(hole)
 
 	var shaft := MeshInstance3D.new()
-	var shaft_mesh := CylinderMesh.new()
-	shaft_mesh.top_radius = 0.052
-	shaft_mesh.bottom_radius = 0.052
-	shaft_mesh.height = 0.31
-	shaft_mesh.radial_segments = 24
-	shaft.mesh = shaft_mesh
+	shaft.mesh = screw_shaft_mesh
 	shaft.material_override = dark_metal_material
 	shaft.position = Vector3(0.0, -0.08, 0.0)
 	screw_root.add_child(shaft)
 
 	var thread := MeshInstance3D.new()
 	thread.name = "HelicalThread"
-	thread.mesh = _build_thread_mesh(0.055, 0.25, 0.058, 0.012)
+	thread.mesh = screw_thread_mesh
 	thread.material_override = metal_material
 	thread.position.y = -0.075
 	screw_root.add_child(thread)
 
 	var washer := MeshInstance3D.new()
-	var washer_mesh := CylinderMesh.new()
-	washer_mesh.top_radius = 0.185
-	washer_mesh.bottom_radius = 0.185
-	washer_mesh.height = 0.035
-	washer_mesh.radial_segments = 32
-	washer.mesh = washer_mesh
+	washer.mesh = screw_washer_mesh
 	washer.material_override = dark_metal_material
 	washer.position = Vector3(0.0, 0.075, 0.0)
 	screw_root.add_child(washer)
 
 	var washer_lip := MeshInstance3D.new()
-	var lip_mesh := CylinderMesh.new()
-	lip_mesh.top_radius = 0.17
-	lip_mesh.bottom_radius = 0.17
-	lip_mesh.height = 0.012
-	lip_mesh.radial_segments = 32
-	washer_lip.mesh = lip_mesh
+	washer_lip.mesh = screw_washer_lip_mesh
 	washer_lip.material_override = metal_material
 	washer_lip.position = Vector3(0.0, 0.098, 0.0)
 	screw_root.add_child(washer_lip)
 
 	var head := MeshInstance3D.new()
-	var head_mesh := CylinderMesh.new()
-	head_mesh.top_radius = 0.118
-	head_mesh.bottom_radius = 0.145
-	head_mesh.height = 0.105
-	head_mesh.radial_segments = 32
-	head.mesh = head_mesh
+	head.mesh = screw_head_mesh
 	head.material_override = screw_color_materials[posmod(next_screw_id * 3 + board_id, screw_color_materials.size())]
 	head.position = Vector3(0.0, 0.09, 0.0)
 	screw_root.add_child(head)
 
-	var slot_mat := StandardMaterial3D.new()
-	slot_mat.albedo_color = Color("#26313C")
-	slot_mat.metallic = 0.82
-	slot_mat.roughness = 0.28
-	_add_box(screw_root, Vector3(0.145, 0.014, 0.022), slot_mat, Vector3(0.0, 0.147, 0.0))
-	_add_box(screw_root, Vector3(0.022, 0.014, 0.145), slot_mat, Vector3(0.0, 0.148, 0.0))
+	_add_shared_mesh(screw_root, screw_slot_horizontal_mesh, screw_slot_material, Vector3(0.0, 0.147, 0.0))
+	_add_shared_mesh(screw_root, screw_slot_vertical_mesh, screw_slot_material, Vector3(0.0, 0.148, 0.0))
 	var head_rim := MeshInstance3D.new()
-	var rim_mesh := TorusMesh.new()
-	rim_mesh.inner_radius = 0.137
-	rim_mesh.outer_radius = 0.151
-	rim_mesh.rings = 24
-	rim_mesh.ring_segments = 8
-	head_rim.mesh = rim_mesh
+	head_rim.mesh = screw_rim_mesh
 	head_rim.material_override = metal_material
 	head_rim.position.y = 0.143
 	screw_root.add_child(head_rim)
@@ -1407,9 +1446,7 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 	area.collision_mask = 0
 	area.set_meta("screw_id", screw_id)
 	var collision := CollisionShape3D.new()
-	var sphere := SphereShape3D.new()
-	sphere.radius = 0.34
-	collision.shape = sphere
+	collision.shape = screw_hit_shape
 	collision.position = Vector3(0.0, 0.04, 0.0)
 	area.add_child(collision)
 	screw_root.add_child(area)
