@@ -1511,6 +1511,7 @@ func _spawn_screw_pop(world_position: Vector3, color_id: int) -> void:
 	ring.mesh = ring_mesh
 	var ring_material := StandardMaterial3D.new()
 	ring_material.albedo_color = screw_color_materials[posmod(color_id, screw_color_materials.size())].albedo_color
+	ring_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	ring_material.emission_enabled = true
 	ring_material.emission = ring_material.albedo_color
 	ring_material.emission_energy_multiplier = 1.5
