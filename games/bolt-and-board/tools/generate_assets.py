@@ -28,11 +28,51 @@ for cx, cy, rx, ry in ((125, 140, 22, 10), (385, 350, 31, 13), (270, 65, 17, 8))
         base[:, :, c] += knot * scale
 Image.fromarray(np.uint8(np.clip(base, 0, 255)), "RGB").save(TEXTURES / "wood_oak.png", optimize=True)
 
+# Subtle OpenGL-style normal and roughness maps give the wood grain real light response.
+wood_height = (
+    np.sin(x * 0.085 + np.sin(y * 0.018) * 2.7) * 0.42
+    + np.sin(x * 0.027 + y * 0.011) * 0.18
+    + np.sin(x * 0.41 + np.sin(y * 0.09)) * 0.05
+    + rng.normal(0.0, 0.025, (SIZE, SIZE))
+)
+for cx, cy, rx, ry in ((125, 140, 22, 10), (385, 350, 31, 13), (270, 65, 17, 8)):
+    d = np.sqrt(((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2)
+    wood_height += np.sin(d * 8.5) * np.exp(-d * 0.85) * 0.12
+dh_y, dh_x = np.gradient(wood_height)
+normal_x = -dh_x * 2.8
+normal_y = -dh_y * 2.8
+normal_z = np.ones_like(normal_x)
+normal_length = np.sqrt(normal_x * normal_x + normal_y * normal_y + normal_z * normal_z)
+wood_normal = np.stack((
+    normal_x / normal_length * 0.5 + 0.5,
+    normal_y / normal_length * 0.5 + 0.5,
+    normal_z / normal_length * 0.5 + 0.5,
+), axis=2)
+Image.fromarray(np.uint8(np.clip(wood_normal * 255, 0, 255)), "RGB").save(TEXTURES / "wood_oak_normal.png", optimize=True)
+wood_roughness = np.clip(0.76 + (np.sin(x * 0.12 + y * 0.008) * 0.035) + rng.normal(0, 0.018, (SIZE, SIZE)), 0.62, 0.91)
+Image.fromarray(np.uint8(wood_roughness * 255), "L").save(TEXTURES / "wood_oak_roughness.png", optimize=True)
+
+# A lighter maple surface keeps the puzzle visually separated from its table.
+table_grain = np.sin(x * 0.06 + np.sin(y * 0.012) * 2.0) * 5.0 + np.sin(x * 0.018 + y * 0.01) * 2.5
+table_noise = rng.normal(0, 1.7, (SIZE, SIZE))
+table_base = np.zeros((SIZE, SIZE, 3), dtype=np.float32)
+for channel, value in enumerate((207, 178, 139)):
+    table_base[:, :, channel] = value + table_grain + table_noise
+Image.fromarray(np.uint8(np.clip(table_base, 0, 255)), "RGB").save(TEXTURES / "maple_table.png", optimize=True)
+
 steel_noise = rng.normal(0, 2.0, (SIZE, SIZE)) + np.sin(y * 0.9) * 1.7
 steel = np.zeros((SIZE, SIZE, 3), dtype=np.float32)
 for c, value in enumerate((181, 195, 207)):
     steel[:, :, c] = value + steel_noise
 Image.fromarray(np.uint8(np.clip(steel, 0, 255)), "RGB").save(TEXTURES / "brushed_steel.png", optimize=True)
+steel_height = np.sin(y * 0.9) * 0.22 + rng.normal(0.0, 0.015, (SIZE, SIZE))
+steel_dy, steel_dx = np.gradient(steel_height)
+steel_nx = -steel_dx * 3.5
+steel_ny = -steel_dy * 3.5
+steel_nz = np.ones_like(steel_nx)
+steel_len = np.sqrt(steel_nx * steel_nx + steel_ny * steel_ny + steel_nz * steel_nz)
+steel_normal = np.stack((steel_nx / steel_len * 0.5 + 0.5, steel_ny / steel_len * 0.5 + 0.5, steel_nz / steel_len * 0.5 + 0.5), axis=2)
+Image.fromarray(np.uint8(np.clip(steel_normal * 255, 0, 255)), "RGB").save(TEXTURES / "brushed_steel_normal.png", optimize=True)
 
 surface_noise = rng.normal(0, 2.4, (SIZE, SIZE)) + np.sin(x * 0.25) * 0.5
 surface = np.zeros((SIZE, SIZE, 3), dtype=np.float32)
@@ -109,4 +149,4 @@ tone("ui_click", [620, 880], 0.085, 15, 0.16)
 tone("screw_remove", [260, 390, 520], 0.24, 7, 0.20, 0.035)
 tone("board_clear", [110, 165, 220], 0.45, 4, 0.28, 0.025)
 tone("level_complete", [523, 659, 784, 1046], 0.72, 1.8, 0.18)
-print("Generated 3 original textures, 3 Android launcher icons and 4 original SFX files.")
+print("Generated original wood/table/steel PBR maps, launcher icons and original SFX files.")
