@@ -90,7 +90,7 @@ func _process(delta: float) -> void:
 
 
 func _create_materials() -> void:
-	for color_value in [Color("#B77A43"), Color("#367FA2"), Color("#7B4934"), Color("#D6B985"), Color("#3D8A5C")]:
+	for color_value in [Color("#D9954A"), Color("#3CA7C0"), Color("#C46A4A"), Color("#EBCB87"), Color("#5AAB72")]:
 		var wood := StandardMaterial3D.new()
 		wood.albedo_color = color_value
 		wood.roughness = 0.88
@@ -152,7 +152,7 @@ func _create_materials() -> void:
 	hole_material.roughness = 1.0
 
 	floor_material = StandardMaterial3D.new()
-	floor_material.albedo_color = Color("#B9AA91")
+	floor_material.albedo_color = Color("#D0CBC1")
 	floor_material.roughness = 0.92
 	var floor_texture := load("res://assets/textures/maple_table.png") as Texture2D
 	var floor_normal := load("res://assets/textures/wood_oak_normal.png") as Texture2D
@@ -278,13 +278,13 @@ func _create_world() -> void:
 
 	var sunlight := DirectionalLight3D.new()
 	sunlight.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
-	sunlight.light_energy = 1.10
+	sunlight.light_energy = 1.02
 	sunlight.light_color = Color("#FFF5E6")
 	sunlight.shadow_enabled = true
 	sunlight.shadow_bias = 0.10
-	sunlight.shadow_normal_bias = 0.28
-	sunlight.shadow_blur = 1.35
-	sunlight.shadow_opacity = 0.58
+	sunlight.shadow_normal_bias = 0.42
+	sunlight.shadow_blur = 2.8
+	sunlight.shadow_opacity = 0.30
 	sunlight.directional_shadow_mode = 0
 	sunlight.directional_shadow_max_distance = 12.0
 	add_child(sunlight)
