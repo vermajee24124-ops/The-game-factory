@@ -136,7 +136,7 @@ func _run_tests() -> void:
 				selected_id = str(screw_id)
 				break
 		if not _expect(not selected_id.is_empty(), "There must always be a reachable screw until the puzzle is cleared"):
-		return
+			return
 		game.call("_try_remove_screw", selected_id)
 		var tray_contents: Array = game.get("spare_screw_ids")
 		if tray_contents.size() >= 4:
@@ -154,7 +154,7 @@ func _run_tests() -> void:
 		return
 	for board_data in boards:
 		if not _expect(bool(board_data["removed"]), "Every beam must fall after all of its screws are removed"):
-		return
+			return
 	if not _expect(bool(game.get("finish_overlay").visible), "Level completion should show its result screen"):
 		return
 	if not _expect(str(game.get("next_level_button").text) == "NEXT LEVEL", "Normal levels should offer the next level"):
