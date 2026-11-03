@@ -100,7 +100,7 @@ func _run_tests() -> void:
 	boards = game.get("boards")
 	screws = game.get("screws")
 	var toolbox_targets: Array = Rules.build_toolbox_targets([4, 2, 1, 0], 0, 4)
-	if not _expect(toolbox_targets.size() == 3, "Toolbox targets should split color counts into batches of three"):
+	if not _expect(toolbox_targets.size() == 4, "Four non-empty color batches should be created from the supplied counts"):
 		return
 	if not _expect(int(toolbox_targets[0]["goal"]) == 3 and int(toolbox_targets[1]["goal"]) == 1, "Final color batch may be smaller than three"):
 		return
