@@ -623,6 +623,10 @@ func _load_level(number: int) -> void:
 	current_hint_id = ""
 
 	var layer_count: int = PuzzleRules.get_layer_count(number)
+	# Keep the full stack comfortably visible on small portrait screens.
+	var zoom_step: float = float(layer_count - 2)
+	camera.position = Vector3(0.0, 8.4 + zoom_step * 0.65, 11.6 + zoom_step * 0.85)
+	camera.look_at(Vector3(0.0, 0.30 + zoom_step * 0.06, 0.0), Vector3.UP)
 	for layer in range(layer_count):
 		var width: float = 3.55 + float(layer) * 0.72 + float(number % 3) * 0.10
 		var depth: float = 2.45 + float(layer) * 0.52 + float(number % 2) * 0.12
@@ -855,7 +859,18 @@ func _refresh_screw_visuals() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not game_started or finish_overlay.visible:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE or event.keycode == KEY_BACK:
+			if pause_overlay.visible:
+				_resume_game()
+			elif game_started:
+				_on_pause_pressed()
+			elif level_select_overlay.visible:
+				_show_menu()
+			elif finish_overlay.visible:
+				_show_level_select()
+			return
+	if not game_started or is_paused or finish_overlay.visible:
 		return
 	if event is InputEventScreenTouch and event.pressed:
 		_handle_tap(event.position)
