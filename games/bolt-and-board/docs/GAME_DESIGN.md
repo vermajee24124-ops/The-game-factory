@@ -14,6 +14,13 @@ The loading screen does not claim to download online content. Ads, online rankin
 4. That plate animates away independently; other plates in the same layer remain.
 5. Clear the upper layer to expose lower plates, then clear every plate to finish.
 
+## Visual quality pass
+- Procedural wood grain plus generated normal and roughness maps for wood and brushed steel.
+- Procedural sky, filmic tone mapping, warm/cool lighting, soft directional shadows and restrained glow.
+- 2x mobile 3D MSAA and non-nearest mipmap filtering.
+- Detailed tapered screw head, machined rim and color-coded removal ring feedback.
+- Separate original sounds for color match and a full tray.
+
 ## Current prototype
 - Two to five stacked layers, each built from two to four separate wooden plates.
 - Four deterministic plate-layout families: paired horizontal planks, three vertical planks, a three-piece side-and-center layout and three horizontal strips.
