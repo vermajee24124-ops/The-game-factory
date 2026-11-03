@@ -174,7 +174,7 @@ func _create_materials() -> void:
 	hole_material.roughness = 1.0
 
 	floor_material = StandardMaterial3D.new()
-	floor_material.albedo_color = Color("#172534")
+	floor_material.albedo_color = Color("#FFFFFF")
 	floor_material.roughness = 0.95
 	var floor_texture := load("res://assets/textures/dark_surface.png") as Texture2D
 	if floor_texture != null:
@@ -291,8 +291,9 @@ func _style_button(button: Button, primary: bool = false) -> void:
 	button.add_theme_stylebox_override("normal", normal)
 	button.add_theme_stylebox_override("hover", hover)
 	button.add_theme_stylebox_override("pressed", pressed)
-	button.add_theme_color_override("font_color", Color("#172333"))
-	button.add_theme_color_override("font_hover_color", Color("#101B25"))
+	button.add_theme_color_override("font_color", Color("#1B2938") if primary else Color("#F3EADD"))
+	button.add_theme_color_override("font_hover_color", Color("#101B25") if primary else Color("#FFFFFF"))
+	button.add_theme_color_override("font_pressed_color", Color("#101B25") if primary else Color("#F3EADD"))
 	button.add_theme_font_size_override("font_size", 18)
 
 
@@ -416,9 +417,9 @@ func _create_world() -> void:
 	platform_box.size = Vector3(8.4, 0.32, 7.0)
 	platform.mesh = platform_box
 	var platform_mat := StandardMaterial3D.new()
-	platform_mat.albedo_color = Color("#25394A")
-	platform_mat.metallic = 0.34
-	platform_mat.roughness = 0.38
+	platform_mat.albedo_color = Color("#765438")
+	platform_mat.metallic = 0.10
+	platform_mat.roughness = 0.62
 	platform.material_override = platform_mat
 	platform.position = Vector3(0.0, -0.91, 0.0)
 	add_child(platform)
@@ -1254,7 +1255,7 @@ func _load_level(number: int) -> void:
 
 func _build_piece_specs(width: float, depth: float, level: int, layer: int) -> Array:
 	var specs: Array = []
-	match posmod(level * 2 + layer * 3, 4):
+	match posmod(level * 2 + layer * 3, 6):
 		0:
 			for z_sign in [-1.0, 1.0]:
 				specs.append({"x": 0.0, "z": z_sign * depth * 0.26, "width": width * 0.94, "depth": depth * 0.42})
@@ -1268,6 +1269,14 @@ func _build_piece_specs(width: float, depth: float, level: int, layer: int) -> A
 		3:
 			for z_offset in [-0.33, 0.0, 0.33]:
 				specs.append({"x": 0.0, "z": z_offset * depth, "width": width * 0.94, "depth": depth * 0.27})
+		4:
+			specs.append({"x": -width * 0.34, "z": 0.0, "width": width * 0.27, "depth": depth * 0.92})
+			specs.append({"x": width * 0.18, "z": -depth * 0.28, "width": width * 0.58, "depth": depth * 0.31})
+			specs.append({"x": width * 0.18, "z": depth * 0.28, "width": width * 0.58, "depth": depth * 0.31})
+		5:
+			for x_sign in [-1.0, 1.0]:
+				for z_sign in [-1.0, 1.0]:
+					specs.append({"x": x_sign * width * 0.25, "z": z_sign * depth * 0.26, "width": width * 0.44, "depth": depth * 0.42})
 	return specs
 
 
@@ -1300,13 +1309,13 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 	board_node.add_child(top_mesh)
 
 	var edge_material := StandardMaterial3D.new()
-	edge_material.albedo_color = Color("#D2A16A")
-	edge_material.metallic = 0.12
-	edge_material.roughness = 0.52
-	_add_box(board_node, Vector3(width - 0.10, 0.025, 0.035), edge_material, Vector3(0.0, 0.225, depth * 0.5 - 0.025))
-	_add_box(board_node, Vector3(width - 0.10, 0.025, 0.035), edge_material, Vector3(0.0, 0.225, -depth * 0.5 + 0.025))
-	_add_box(board_node, Vector3(0.035, 0.025, depth - 0.10), edge_material, Vector3(width * 0.5 - 0.025, 0.225, 0.0))
-	_add_box(board_node, Vector3(0.035, 0.025, depth - 0.10), edge_material, Vector3(-width * 0.5 + 0.025, 0.225, 0.0))
+	edge_material.albedo_color = Color("#C69052")
+	edge_material.metallic = 0.66
+	edge_material.roughness = 0.31
+	_add_rounded_rail(board_node, width - 0.16, 0.028, Vector3(0.0, 0.244, depth * 0.5 - 0.058), true, edge_material)
+	_add_rounded_rail(board_node, width - 0.16, 0.028, Vector3(0.0, 0.244, -depth * 0.5 + 0.058), true, edge_material)
+	_add_rounded_rail(board_node, depth - 0.16, 0.028, Vector3(width * 0.5 - 0.058, 0.244, 0.0), false, edge_material)
+	_add_rounded_rail(board_node, depth - 0.16, 0.028, Vector3(-width * 0.5 + 0.058, 0.244, 0.0), false, edge_material)
 
 	# A real collider prevents taps passing through a visible upper board.
 	var board_body := StaticBody3D.new()
@@ -1320,13 +1329,6 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 	board_body.add_child(board_collision)
 	board_node.add_child(board_body)
 
-	var edge_mat := StandardMaterial3D.new()
-	edge_mat.albedo_color = Color("#5A3826")
-	edge_mat.roughness = 0.9
-	_add_box(board_node, Vector3(width, 0.055, 0.055), edge_mat, Vector3(0.0, 0.155, depth * 0.5 - 0.03))
-	_add_box(board_node, Vector3(width, 0.055, 0.055), edge_mat, Vector3(0.0, 0.155, -depth * 0.5 + 0.03))
-	_add_box(board_node, Vector3(0.055, 0.055, depth), edge_mat, Vector3(width * 0.5 - 0.03, 0.155, 0.0))
-	_add_box(board_node, Vector3(0.055, 0.055, depth), edge_mat, Vector3(-width * 0.5 + 0.03, 0.155, 0.0))
 
 	var board_data: Dictionary = {
 		"id": board_id,
@@ -1369,6 +1371,23 @@ func _build_screw_points(width: float, depth: float, level: int, layer: int) -> 
 		4:
 			points.append(Vector2.ZERO)
 	return points
+
+
+func _add_rounded_rail(parent: Node3D, length: float, radius: float, local_position: Vector3, horizontal: bool, material: Material) -> void:
+	var rail := MeshInstance3D.new()
+	var capsule := CapsuleMesh.new()
+	capsule.radius = radius
+	capsule.height = maxf(length, radius * 2.0)
+	capsule.radial_segments = 12
+	capsule.rings = 6
+	rail.mesh = capsule
+	rail.material_override = material
+	rail.position = local_position
+	if horizontal:
+		rail.rotation_degrees.z = 90.0
+	else:
+		rail.rotation_degrees.x = 90.0
+	parent.add_child(rail)
 
 
 func _add_box(parent: Node3D, size: Vector3, material: Material, local_position: Vector3) -> void:

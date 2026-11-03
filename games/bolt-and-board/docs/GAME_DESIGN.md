@@ -23,7 +23,7 @@ The loading screen does not claim to download online content. Ads, online rankin
 
 ## Current prototype
 - Two to five stacked layers, each built from two to four separate wooden plates.
-- Four deterministic plate-layout families: paired horizontal planks, three vertical planks, a three-piece side-and-center layout and three horizontal strips.
+- Six deterministic plate-layout families: paired horizontal planks, three vertical planks, side-and-center pieces, three horizontal strips, an L-shaped arrangement and four corner plates.
 - Six deterministic screw layouts capped at six screws per plate; board placement and size vary with the level number.
 - Elapsed-time HUD for active gameplay.
 - Board occlusion collision included in the tap ray query, with exposed-screw screen-space touch picking as a reliable mobile fallback.
@@ -39,7 +39,7 @@ The current 30 levels combine procedural plate layouts and screw patterns. They 
 
 ## Production roadmap
 - More board silhouettes, angles and genuinely different interlocking layouts.
-- Optional screw tray capacity and color-match modes.
+- Solver-checked color-toolbox sequences, five-slot temporary storage and later booster types.
 - Authored and solver-validated campaign levels.
 - First-run tutorial, accessibility settings and save migration.
 - Android performance and touch testing on physical devices.
@@ -50,11 +50,19 @@ The current 30 levels combine procedural plate layouts and screw patterns. They 
 ## Premium redesign branch
 
 The `premium-screw-puzzle` branch adds:
-- PBR wood and brushed-steel materials with generated normal/roughness maps.
-- Four screw colors, a seven-slot sorting tray, triple-color matches and a retry state when the tray fills.
+- PBR wood and brushed-steel materials with generated normal/roughness maps, plus a warm walnut stage and rounded brass-style plate edging.
+- Four screw colors, a five-slot temporary tray, active color toolboxes and a retry state when the tray fills.
 - More detailed screw threads, washer lips, raised wood tops, edge trim and metallic stage detailing.
 - Filmic tone mapping, restrained glow, MSAA and a mobile-first lighting rig.
 - Touch drag camera orbit and pinch zoom.
 - Stronger screw extraction and board-fall animation timing.
 
 Renderer choice remains the Godot Mobile renderer to balance visual quality with Android device support. The game still requires real-device performance and touch QA before it can be called production-ready.
+
+
+## Current sorting loop
+- Each screw has one of four colors.
+- The active toolbox accepts only its target color, in batches of up to three screws.
+- Screws of other colors occupy the five temporary slots.
+- When the next toolbox becomes active, matching screws already stored in the tray transfer automatically.
+- Filling all five temporary slots fails the attempt; all color counts are generated from the level's actual screws.

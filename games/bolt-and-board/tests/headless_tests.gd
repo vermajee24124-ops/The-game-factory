@@ -109,7 +109,11 @@ func _run_tests() -> void:
 	assert(four_screw_pattern.size() == 4, "Base pattern should have four corner screws")
 	assert(six_screw_pattern.size() == 6, "Pattern variation should add two side screws")
 	var piece_specs: Array = game.call("_build_piece_specs", 4.0, 3.0, 1, 0)
-	assert(piece_specs.size() == 3, "The campaign should generate multiple distinct plank pieces per layer")
+	assert(piece_specs.size() == 3, "The side-and-center layout should have three planks")
+	var l_layout: Array = game.call("_build_piece_specs", 4.0, 3.0, 2, 0)
+	var four_piece_layout: Array = game.call("_build_piece_specs", 4.0, 3.0, 1, 1)
+	assert(l_layout.size() == 3, "The L-shaped level layout should have three planks")
+	assert(four_piece_layout.size() == 4, "The four-corner layout should have four independent planks")
 	game.set("tray_colors", [])
 	for board_data in boards.duplicate():
 		var board_screw_ids: Array = board_data["screws"].duplicate()

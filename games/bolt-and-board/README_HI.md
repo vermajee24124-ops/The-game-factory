@@ -11,8 +11,9 @@
 - ऊपरी बोर्ड के collider से नीचे छिपे screw पर tap रोकना।
 - Screw removal और board-clear animations।
 - Generated sound effects।
-- 30 procedural level variations, 2 से 5 layers और हर layer में 2 से 3 अलग-अलग रंगों वाली plates।
-- हर level में running timer और संतुलित screw count।
+- 30 procedural level variations, 2 से 5 layers और छह अलग plate-layout families।
+- हर level में running timer, चार color toolboxes और पाँच-slot temporary storage।
+- PBR wood/steel textures, rounded brass-style plank edging और shared screw meshes।
 - Branded splash/loading screen, first-run tutorial, level select, restart, Hint, progress HUD, level-complete screen और local save।
 - Headless gameplay tests और Xvfb screenshot capture।
 

@@ -55,8 +55,8 @@ Image.fromarray(np.uint8(np.clip(72 + np.abs(np.sin(y * 0.9)) * 20 + rng.normal(
 
 surface_noise = rng.normal(0, 2.4, (SIZE, SIZE)) + np.sin(x * 0.25) * 0.5
 surface = np.zeros((SIZE, SIZE, 3), dtype=np.float32)
-for c, value in enumerate((32, 49, 65)):
-    surface[:, :, c] = value + surface_noise
+for c, value in enumerate((70, 50, 34)):
+    surface[:, :, c] = value + surface_noise + grain * (0.62 if c == 0 else 0.34)
 Image.fromarray(np.uint8(np.clip(surface, 0, 255)), "RGB").save(TEXTURES / "dark_surface.png", optimize=True)
 
 def make_icon(size: int, transparent: bool = False) -> Image.Image:
