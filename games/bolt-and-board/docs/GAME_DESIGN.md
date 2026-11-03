@@ -8,11 +8,11 @@
 The loading screen does not claim to download online content. Ads, online rankings and purchases are not implemented; they need separate SDK, privacy and consent work.
 
 ## Core loop
-1. Inspect stacked wooden boards.
-2. Tap screws that are not occluded by a board above them. Touch input uses screen-space picking with an accessibility radius, then keeps the board-occlusion rule.
-3. Remove every screw holding an exposed wooden plate.
-4. That plate animates away independently; other plates in the same layer remain.
-5. Clear the upper layer to expose lower plates, then clear every plate to finish.
+1. Inspect a stack of interlocked wooden beams from a readable portrait top-down camera.
+2. Tap an exposed, coloured screw. The screw animates into a five-slot spare tray.
+3. Tap the matching Coral, Ocean or Gold toolbox to sort every stored screw of that colour.
+4. Each beam falls away after all its screws are extracted, revealing beams below it.
+5. Clear every beam and sort every screw to complete the level.
 
 ## Current prototype
 - Two to five stacked layers, each built from two to four separate wooden plates.
@@ -32,7 +32,7 @@ The current 30 levels combine procedural plate layouts and screw patterns. They 
 
 ## Production roadmap
 - More board silhouettes, angles and genuinely different interlocking layouts.
-- Optional screw tray capacity and color-match modes.
+- More authored level definitions and solver-validated colour-sorting sequences.
 - Authored and solver-validated campaign levels.
 - First-run tutorial, accessibility settings and save migration.
 - Android performance and touch testing on physical devices.
