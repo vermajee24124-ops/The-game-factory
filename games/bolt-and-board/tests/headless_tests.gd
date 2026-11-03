@@ -47,6 +47,13 @@ func _run_tests() -> void:
 	assert(bool(game.get("is_paused")), "Pause should stop gameplay input")
 	game.call("_resume_game")
 	assert(bool(game.get("game_started")), "Resume should return to gameplay")
+	var back_key := InputEventKey.new()
+	back_key.pressed = true
+	back_key.keycode = KEY_ESCAPE
+	game.call("_unhandled_input", back_key)
+	assert(bool(game.get("is_paused")), "Android/escape back key should pause active gameplay")
+	game.call("_unhandled_input", back_key)
+	assert(bool(game.get("game_started")), "Back key should resume from the pause overlay")
 	var four_screw_pattern: Array = game.call("_build_screw_points", 4.0, 3.0, 0, 0)
 	var six_screw_pattern: Array = game.call("_build_screw_points", 4.0, 3.0, 1, 0)
 	assert(four_screw_pattern.size() == 4, "Base pattern should have four corner screws")
