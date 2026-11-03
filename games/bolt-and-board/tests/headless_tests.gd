@@ -110,9 +110,8 @@ func _run_tests() -> void:
 		generated_capacity += int(target["goal"])
 	if not _expect(generated_capacity == int(game.get("total_screws")), "Every level screw must belong to exactly one color toolbox"):
 		return
-	game.set("toolbox_targets", [{"color": 0, "goal": 1}, {"color": 1, "goal": 1}])
-	game.set("toolbox_target_index", 0)
-	game.set("toolbox_target_progress", 0)
+	var transfer_targets: Array[Dictionary] = [{"color": 0, "goal": 1}, {"color": 1, "goal": 1}]
+	game.call("_set_toolbox_targets", transfer_targets)
 	game.set("tray_colors", [])
 	if not _expect(bool(game.call("_add_screw_to_tray", 1)), "A non-target color should enter temporary storage"):
 		return
@@ -124,9 +123,8 @@ func _run_tests() -> void:
 		return
 	if not _expect((game.get("tray_colors") as Array).is_empty(), "Buffered screws should auto-transfer when their toolbox becomes active"):
 		return
-	game.set("toolbox_targets", [{"color": 0, "goal": 9}])
-	game.set("toolbox_target_index", 0)
-	game.set("toolbox_target_progress", 0)
+	var failure_targets: Array[Dictionary] = [{"color": 0, "goal": 9}]
+	game.call("_set_toolbox_targets", failure_targets)
 	game.set("tray_colors", [])
 	for color_id in [1, 2, 3, 1, 2]:
 		game.call("_add_screw_to_tray", color_id)

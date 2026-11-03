@@ -814,7 +814,11 @@ func _build_toolbox_targets() -> void:
 		if exposed_counts[color_id] > most_exposed:
 			most_exposed = exposed_counts[color_id]
 			first_color = color_id
-	toolbox_targets = PuzzleRules.build_toolbox_targets(color_counts, first_color, screw_color_materials.size())
+	_set_toolbox_targets(PuzzleRules.build_toolbox_targets(color_counts, first_color, screw_color_materials.size()))
+
+
+func _set_toolbox_targets(targets: Array[Dictionary]) -> void:
+	toolbox_targets = targets.duplicate()
 	toolbox_target_index = 0
 	toolbox_target_progress = 0
 	_refresh_toolbox_ui()
