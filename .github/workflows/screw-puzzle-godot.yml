@@ -10,7 +10,7 @@ on:
       - ".github/workflows/screw-puzzle-godot.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   godot-check:
@@ -30,17 +30,8 @@ jobs:
           python -m pip install --disable-pip-version-check pillow numpy
           python games/bolt-and-board/tools/generate_assets.py
 
-      - name: Store generated assets in project branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add games/bolt-and-board/assets/
-          if ! git diff --cached --quiet; then
-            git commit -m "Add generated Bolt and Board game assets"
-            git push
-          else
-            echo "Generated assets are already current."
-          fi
+      # Assets are generated reproducibly in the runner. They are included in the source ZIP,
+      # but are not pushed back to the branch, avoiding concurrent CI push races.
 
       - name: Download Godot 4.7.2 Stable
         shell: bash
