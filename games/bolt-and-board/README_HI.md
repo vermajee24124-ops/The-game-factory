@@ -9,6 +9,7 @@
 - Android touch और desktop mouse के लिए screen-space screw picking, ताकि board पर सीधा tap करने से screw चुने।
 - अलग रंग के screw heads और तीन matching colour toolboxes।
 - Five-slot spare tray: screw निकालकर tray में रखें, फिर matching colour box दबाकर sort करें।
+- हर beam पर आमतौर पर 2 से 4 screws हैं, ताकि board साफ़ पढ़ा जा सके।
 - Full-screen UI root अब gameplay touch को block नहीं करता; covered screws फिर भी select नहीं हो सकते।
 - ऊपरी बोर्ड के collider से नीचे छिपे screw पर tap रोकना।
 - Screw removal और board-clear animations।
