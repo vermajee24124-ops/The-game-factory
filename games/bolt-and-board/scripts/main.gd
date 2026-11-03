@@ -4,8 +4,8 @@ const PuzzleRules = preload("res://scripts/puzzle_rules.gd")
 const MAX_LEVEL := 30
 const SCREW_LAYER := 1
 const BOARD_LAYER := 2
-const TRAY_CAPACITY := 7
-const MATCH_COUNT := 3
+const TRAY_CAPACITY := 5
+const TOOLBOX_BATCH_SIZE := 3
 
 var camera: Camera3D
 var game_root: Node3D
@@ -61,6 +61,13 @@ var screw_color_materials: Array = []
 var tray_colors: Array[int] = []
 var tray_slot_labels: Array[Label] = []
 var tray_status_label: Label
+var toolbox_title_label: Label
+var toolbox_target_label: Label
+var toolbox_next_label: Label
+var toolbox_slot_labels: Array[Label] = []
+var toolbox_targets: Array[Dictionary] = []
+var toolbox_target_index: int = 0
+var toolbox_target_progress: int = 0
 var fail_overlay: ColorRect
 var metal_material: StandardMaterial3D
 var dark_metal_material: StandardMaterial3D
@@ -429,6 +436,47 @@ func _create_ui() -> void:
 	_style_button(pause_button, false)
 	top_row.add_child(pause_button)
 
+	var toolbox_panel := PanelContainer.new()
+	toolbox_panel.add_theme_stylebox_override("panel", _make_panel_style())
+	toolbox_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	toolbox_panel.offset_left = 18.0
+	toolbox_panel.offset_top = 112.0
+	toolbox_panel.offset_right = -18.0
+	toolbox_panel.offset_bottom = 232.0
+	ui_root.add_child(toolbox_panel)
+	var toolbox_box := VBoxContainer.new()
+	toolbox_box.add_theme_constant_override("separation", 4)
+	toolbox_panel.add_child(toolbox_box)
+	toolbox_title_label = Label.new()
+	toolbox_title_label.text = "ACTIVE TOOLBOX"
+	toolbox_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	toolbox_title_label.add_theme_font_size_override("font_size", 14)
+	toolbox_title_label.add_theme_color_override("font_color", Color("#E6BD79"))
+	toolbox_box.add_child(toolbox_title_label)
+	toolbox_target_label = Label.new()
+	toolbox_target_label.text = "CORAL  0/3"
+	toolbox_target_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	toolbox_target_label.add_theme_font_size_override("font_size", 20)
+	toolbox_box.add_child(toolbox_target_label)
+	var toolbox_slots_row := HBoxContainer.new()
+	toolbox_slots_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	toolbox_slots_row.add_theme_constant_override("separation", 12)
+	toolbox_box.add_child(toolbox_slots_row)
+	toolbox_slot_labels.clear()
+	for slot_index in range(TOOLBOX_BATCH_SIZE):
+		var target_slot := Label.new()
+		target_slot.text = "○"
+		target_slot.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		target_slot.add_theme_font_size_override("font_size", 24)
+		toolbox_slots_row.add_child(target_slot)
+		toolbox_slot_labels.append(target_slot)
+	toolbox_next_label = Label.new()
+	toolbox_next_label.text = "UP NEXT"
+	toolbox_next_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	toolbox_next_label.add_theme_font_size_override("font_size", 13)
+	toolbox_next_label.add_theme_color_override("font_color", Color("#AAB9C9"))
+	toolbox_box.add_child(toolbox_next_label)
+
 	var bottom_panel := PanelContainer.new()
 	bottom_panel.add_theme_stylebox_override("panel", _make_panel_style())
 	bottom_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
@@ -460,7 +508,7 @@ func _create_ui() -> void:
 	bottom_box.add_child(progress_bar)
 
 	tray_status_label = Label.new()
-	tray_status_label.text = "SCREW TRAY  |  MATCH 3 COLORS"
+	tray_status_label.text = "TEMP STORAGE  |  KEEP FIVE SLOTS FROM FILLING"
 	tray_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tray_status_label.add_theme_font_size_override("font_size", 15)
 	tray_status_label.add_theme_color_override("font_color", Color("#E6BD79"))
@@ -635,33 +683,116 @@ func _refresh_tray_ui() -> void:
 			slot_label.text = "·"
 			slot_label.add_theme_color_override("font_color", Color("#718397"))
 	if tray_status_label != null:
-		tray_status_label.text = "SCREW TRAY  %d/%d  |  MATCH 3 COLORS" % [tray_colors.size(), TRAY_CAPACITY]
+		tray_status_label.text = "TEMP STORAGE  %d/%d" % [tray_colors.size(), TRAY_CAPACITY]
+
+
+func _color_name(color_id: int) -> String:
+	var names: Array[String] = ["CORAL", "CYAN", "GOLD", "VIOLET"]
+	return names[posmod(color_id, names.size())]
+
+
+func _get_active_toolbox_color() -> int:
+	if toolbox_target_index >= toolbox_targets.size():
+		return -1
+	return int(toolbox_targets[toolbox_target_index].get("color", 0))
+
+
+func _refresh_toolbox_ui() -> void:
+	var active_color: int = _get_active_toolbox_color()
+	var active_goal: int = 0
+	if active_color >= 0:
+		active_goal = int(toolbox_targets[toolbox_target_index].get("goal", 0))
+		toolbox_title_label.text = "ACTIVE COLOR TOOLBOX"
+		toolbox_target_label.text = "%s  %d / %d" % [_color_name(active_color), toolbox_target_progress, active_goal]
+		var target_color: Color = screw_color_materials[active_color].albedo_color
+		toolbox_target_label.add_theme_color_override("font_color", target_color)
+		for index in range(toolbox_slot_labels.size()):
+			var marker: Label = toolbox_slot_labels[index]
+			marker.visible = index < active_goal
+			marker.text = "●" if index < toolbox_target_progress else "○"
+			marker.add_theme_color_override("font_color", target_color)
+	else:
+		toolbox_title_label.text = "ALL TOOLBOXES COMPLETE"
+		toolbox_target_label.text = "SORTING COMPLETE"
+		toolbox_target_label.add_theme_color_override("font_color", Color("#8CE0A6"))
+		for marker in toolbox_slot_labels:
+			marker.visible = false
+	if toolbox_target_index + 1 < toolbox_targets.size():
+		var upcoming: Dictionary = toolbox_targets[toolbox_target_index + 1]
+		toolbox_next_label.text = "UP NEXT  %s  %d" % [_color_name(int(upcoming["color"])), int(upcoming["goal"])]
+	elif active_color >= 0:
+		toolbox_next_label.text = "LAST TOOLBOX"
+	else:
+		toolbox_next_label.text = "EVERY SCREW SORTED"
+
+
+func _build_toolbox_targets() -> void:
+	var color_counts: Array[int] = [0, 0, 0, 0]
+	var exposed_counts: Array[int] = [0, 0, 0, 0]
+	for screw_id in screws.keys():
+		var screw: Dictionary = screws[screw_id]
+		var color_id: int = int(screw.get("color_id", 0))
+		color_counts[color_id] += 1
+		if _is_screw_accessible(screw):
+			exposed_counts[color_id] += 1
+	var first_color: int = 0
+	var most_exposed: int = -1
+	for color_id in range(exposed_counts.size()):
+		if exposed_counts[color_id] > most_exposed:
+			most_exposed = exposed_counts[color_id]
+			first_color = color_id
+	toolbox_targets = PuzzleRules.build_toolbox_targets(color_counts, first_color, screw_color_materials.size())
+	toolbox_target_index = 0
+	toolbox_target_progress = 0
+	_refresh_toolbox_ui()
+
+
+func _advance_toolbox_if_filled() -> void:
+	if toolbox_target_index >= toolbox_targets.size():
+		return
+	var goal: int = int(toolbox_targets[toolbox_target_index].get("goal", 0))
+	if toolbox_target_progress < goal:
+		return
+	_play_sfx("match_clear")
+	toolbox_target_index += 1
+	toolbox_target_progress = 0
+	_refresh_toolbox_ui()
+
+
+func _consume_buffer_for_active_toolbox() -> void:
+	var safety: int = 0
+	while toolbox_target_index < toolbox_targets.size() and safety < 64:
+		var target_color: int = _get_active_toolbox_color()
+		var matching_index: int = tray_colors.find(target_color)
+		if matching_index < 0:
+			break
+		tray_colors.remove_at(matching_index)
+		toolbox_target_progress += 1
+		_advance_toolbox_if_filled()
+		safety += 1
+	_refresh_tray_ui()
+	_refresh_toolbox_ui()
 
 
 func _add_screw_to_tray(color_id: int) -> bool:
+	if toolbox_target_index >= toolbox_targets.size():
+		return true
+	if color_id == _get_active_toolbox_color():
+		toolbox_target_progress += 1
+		_advance_toolbox_if_filled()
+		_consume_buffer_for_active_toolbox()
+		status_label.text = "Correct color! The active toolbox is filling."
+		return true
 	tray_colors.append(color_id)
-	var matched := false
-	while true:
-		var matching_indices: Array[int] = []
-		for index in range(tray_colors.size()):
-			if tray_colors[index] == color_id:
-				matching_indices.append(index)
-				if matching_indices.size() == MATCH_COUNT:
-					break
-		if matching_indices.size() < MATCH_COUNT:
-			break
-		for index in range(matching_indices.size() - 1, -1, -1):
-			tray_colors.remove_at(matching_indices[index])
-		matched = true
-		_play_sfx("match_clear")
 	_refresh_tray_ui()
 	if tray_colors.size() >= TRAY_CAPACITY:
 		game_started = false
 		is_paused = false
 		fail_overlay.visible = true
+		_play_sfx("tray_full")
+		status_label.text = "Temporary storage is full. Plan a different screw order."
 		return false
-	if matched:
-		status_label.text = "COLOR MATCH! Three screws cleared from the tray."
+	status_label.text = "%s screw stored. Find a %s screw for the active toolbox." % [_color_name(color_id), _color_name(_get_active_toolbox_color())]
 	return true
 
 
@@ -730,7 +861,7 @@ func _create_tutorial_overlay() -> void:
 	heading.add_theme_font_size_override("font_size", 32)
 	box.add_child(heading)
 	var instructions := Label.new()
-	instructions.text = "1. Tap a bright, exposed screw.\n\n2. Remove every screw holding the top wooden board.\n\n3. The cleared board falls away and reveals the screws underneath.\n\n4. Clear every board before the timer runs out."
+	instructions.text = "1. Tap a bright, exposed screw.\n\n2. Fill the active toolbox with screws of its color.\n\n3. Other colors wait in the five-slot temporary tray. If all five fill, retry the level.\n\n4. Clear all plates and fill every toolbox to win. Drag to orbit and pinch to zoom."
 	instructions.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	instructions.add_theme_font_size_override("font_size", 19)
 	box.add_child(instructions)
@@ -1009,8 +1140,12 @@ func _load_level(number: int) -> void:
 	finish_overlay.visible = false
 	current_hint_id = ""
 	tray_colors.clear()
+	toolbox_targets.clear()
+	toolbox_target_index = 0
+	toolbox_target_progress = 0
 	fail_overlay.visible = false
 	_refresh_tray_ui()
+	_refresh_toolbox_ui()
 
 	var layer_count: int = PuzzleRules.get_layer_count(number)
 	# Keep the full stack visible, but let players rotate and zoom to inspect the puzzle.
@@ -1039,8 +1174,9 @@ func _load_level(number: int) -> void:
 				number + piece_index
 			)
 
+	_build_toolbox_targets()
 	_update_hud()
-	status_label.text = "Tap the bright exposed screws. Remove every screw from a board to clear it."
+	status_label.text = "Fill the active color toolbox. Store other colors carefully in the five-slot tray."
 	_refresh_screw_visuals()
 
 
@@ -1555,6 +1691,8 @@ func _check_level_complete() -> void:
 	for board in boards:
 		if not bool(board["removed"]):
 			return
+	if toolbox_target_index < toolbox_targets.size() or not tray_colors.is_empty():
+		return
 	game_started = false
 	is_paused = false
 	highest_unlocked_level = maxi(highest_unlocked_level, mini(level_index + 1, MAX_LEVEL))
@@ -1597,3 +1735,4 @@ func _update_hud() -> void:
 	if progress_bar != null:
 		progress_bar.value = 100.0 if total_screws <= 0 else (float(removed_screws) / float(total_screws)) * 100.0
 	_refresh_tray_ui()
+	_refresh_toolbox_ui()
