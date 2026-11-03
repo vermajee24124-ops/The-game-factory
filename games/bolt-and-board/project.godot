@@ -21,8 +21,8 @@ renderer/rendering_method="mobile"
 renderer/rendering_method.mobile="mobile"
 textures/vram_compression/import_etc2_astc=true
 textures/default_filters/use_nearest_mipmap_filter=true
-anti_aliasing/quality/msaa_3d=2
-anti_aliasing/quality/use_debanding=true
+rendering/anti_aliasing/quality/msaa_3d=2
+rendering/anti_aliasing/quality/use_debanding=true
 environment/defaults/default_clear_color=Color(0.0352941, 0.0509804, 0.0745098, 1)
 
 [input_devices]
