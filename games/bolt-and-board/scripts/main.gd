@@ -948,7 +948,7 @@ func _on_play_pressed() -> void:
 
 
 func _on_restart_pressed() -> void:
-	if game_started or is_paused:
+	if game_started or is_paused or fail_overlay.visible:
 		pause_overlay.visible = false
 		fail_overlay.visible = false
 		is_paused = false
