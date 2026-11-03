@@ -31,9 +31,9 @@ var spare_slot_limit: int = 5
 var spare_slot_labels: Array[Label] = []
 var tray_label: Label
 var sorted_screws: int = 0
-var hammer_uses: int = 1
+var quick_pick_uses: int = 1
 var extra_slot_used: bool = false
-var hammer_button: Button
+var quick_pick_button: Button
 var extra_slot_button: Button
 var tutorial_seen: bool = false
 var splash_overlay: ColorRect
@@ -104,7 +104,7 @@ func _create_materials() -> void:
 		if wood_normal != null:
 			wood.normal_enabled = true
 			wood.normal_texture = wood_normal
-			wood.normal_scale = 0.24
+			wood.normal_scale = 0.34
 		if wood_roughness != null:
 			wood.roughness_texture = wood_roughness
 			wood.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
@@ -152,7 +152,7 @@ func _create_materials() -> void:
 	hole_material.roughness = 1.0
 
 	floor_material = StandardMaterial3D.new()
-	floor_material.albedo_color = Color("#F0D9B4")
+	floor_material.albedo_color = Color("#B9AA91")
 	floor_material.roughness = 0.92
 	var floor_texture := load("res://assets/textures/maple_table.png") as Texture2D
 	var floor_normal := load("res://assets/textures/wood_oak_normal.png") as Texture2D
@@ -162,7 +162,7 @@ func _create_materials() -> void:
 	if floor_normal != null:
 		floor_material.normal_enabled = true
 		floor_material.normal_texture = floor_normal
-		floor_material.normal_scale = 0.10
+		floor_material.normal_scale = 0.17
 
 
 func _create_audio() -> void:
@@ -267,8 +267,8 @@ func _create_world() -> void:
 	environment.background_mode = Environment.BG_COLOR
 	environment.background_color = Color("#4D2E1D")
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("#FFE0B0")
-	environment.ambient_light_energy = 1.02
+	environment.ambient_light_color = Color("#EFE7D8")
+	environment.ambient_light_energy = 0.86
 	environment.adjustment_enabled = true
 	environment.adjustment_brightness = 0.96
 	environment.adjustment_contrast = 1.06
@@ -278,20 +278,21 @@ func _create_world() -> void:
 
 	var sunlight := DirectionalLight3D.new()
 	sunlight.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
-	sunlight.light_energy = 1.16
+	sunlight.light_energy = 1.10
+	sunlight.light_color = Color("#FFF5E6")
 	sunlight.shadow_enabled = true
-	sunlight.shadow_bias = 0.095
-	sunlight.shadow_normal_bias = 0.65
-	sunlight.shadow_blur = 1.8
-	sunlight.shadow_opacity = 0.52
+	sunlight.shadow_bias = 0.10
+	sunlight.shadow_normal_bias = 0.28
+	sunlight.shadow_blur = 1.35
+	sunlight.shadow_opacity = 0.58
 	sunlight.directional_shadow_mode = 0
 	sunlight.directional_shadow_max_distance = 12.0
 	add_child(sunlight)
 
 	var fill_light := DirectionalLight3D.new()
 	fill_light.rotation_degrees = Vector3(-28.0, 145.0, 0.0)
-	fill_light.light_color = Color("#FFE3B9")
-	fill_light.light_energy = 0.62
+	fill_light.light_color = Color("#FFF8EE")
+	fill_light.light_energy = 0.46
 	fill_light.shadow_enabled = false
 	add_child(fill_light)
 
@@ -487,10 +488,10 @@ func _create_ui() -> void:
 	tool_row.add_child(hint_button)
 
 	hammer_button = Button.new()
-	hammer_button.text = "HAMMER x1"
+	hammer_button.text = "QUICK PICK x1"
 	hammer_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hammer_button.custom_minimum_size = Vector2(0.0, 46.0)
-	hammer_button.pressed.connect(_on_hammer_pressed)
+	hammer_button.pressed.connect(_on_quick_pick_pressed)
 	_style_button(hammer_button, false)
 	tool_row.add_child(hammer_button)
 
@@ -1125,8 +1126,8 @@ func _build_beveled_plank_mesh(width: float, depth: float, height: float, bevel:
 		var uv_center := Vector2(0.5, 0.5)
 		var uv_p0 := Vector2(p0.x / width + 0.5, p0.y / height + 0.5)
 		var uv_p1 := Vector2(p1.x / width + 0.5, p1.y / height + 0.5)
-		_add_plank_triangle(surface, front_center, front_b, front_a, Vector3.BACK, uv_center, uv_p1, uv_p0)
-		_add_plank_triangle(surface, back_center, back_a, back_b, Vector3.FORWARD, uv_center, uv_p0, uv_p1)
+		_add_plank_triangle(surface, front_center, front_b, front_a, Vector3.FORWARD, uv_center, uv_p1, uv_p0)
+		_add_plank_triangle(surface, back_center, back_a, back_b, Vector3.BACK, uv_center, uv_p0, uv_p1)
 
 	surface.generate_tangents()
 	return surface.commit()
@@ -1333,7 +1334,7 @@ func _on_toolbox_pressed(color_id: int) -> void:
 
 func _on_hammer_pressed() -> void:
 	if hammer_uses <= 0:
-		status_label.text = "No hammer charge left in this level."
+		status_label.text = "No quick-pick charge left in this level."
 		return
 	if spare_screw_ids.size() >= spare_slot_limit:
 		status_label.text = "Spare tray is full. Sort a colour box first."
@@ -1345,10 +1346,10 @@ func _on_hammer_pressed() -> void:
 			_try_remove_screw(str(screw_id))
 			if removed_screws > before_count:
 				hammer_uses -= 1
-				status_label.text = "Hammer collected one exposed screw."
+				status_label.text = "Quick pick collected one exposed screw."
 				_update_sorting_ui()
 			return
-	status_label.text = "No exposed screw for the hammer."
+	status_label.text = "No exposed screw for the quick pick."
 
 
 func _on_extra_slot_pressed() -> void:
