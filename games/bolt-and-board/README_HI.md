@@ -53,3 +53,15 @@ Screenshot `artifacts/godot_preview.png` में बनेगा।
 
 ## License
 इस folder के original game files MIT-licensed हैं। `LICENSE` और `THIRD_PARTY_NOTICES.md` पढ़ें। Godot engine और भविष्य में जोड़े जाने वाले third-party components अपने license notices के अधीन रहेंगे।
+
+
+## Premium gameplay branch
+
+The `premium-screw-puzzle` branch is the active visual/gameplay redesign:
+- PBR wood and brushed-steel textures with normal and roughness maps.
+- Four colored screw families and a seven-slot tray; match three equal colors to clear them.
+- A full tray without a match opens a retry state.
+- Improved board edge detailing, metallic platform trim, filmic tone mapping, glow, MSAA and mobile lighting.
+- Helical screw-thread geometry, refined screw extraction and plate-fall animations.
+- Drag-to-orbit and pinch-to-zoom camera controls.
+- Android and Godot validation workflows generate assets locally and do not push generated files back to the branch.
