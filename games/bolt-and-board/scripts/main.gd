@@ -200,6 +200,10 @@ func _update_sound_button_labels() -> void:
 
 
 func start_preview() -> void:
+	if splash_tween != null and splash_tween.is_valid():
+		splash_tween.kill()
+	splash_overlay.visible = false
+	tutorial_overlay.visible = false
 	menu_overlay.visible = false
 	finish_overlay.visible = false
 	level_select_overlay.visible = false
