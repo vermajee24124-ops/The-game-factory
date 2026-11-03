@@ -487,13 +487,13 @@ func _create_ui() -> void:
 	_style_button(hint_button, true)
 	tool_row.add_child(hint_button)
 
-	hammer_button = Button.new()
-	hammer_button.text = "QUICK PICK x1"
-	hammer_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hammer_button.custom_minimum_size = Vector2(0.0, 46.0)
-	hammer_button.pressed.connect(_on_quick_pick_pressed)
-	_style_button(hammer_button, false)
-	tool_row.add_child(hammer_button)
+	quick_pick_button = Button.new()
+	quick_pick_button.text = "QUICK PICK x1"
+	quick_pick_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	quick_pick_button.custom_minimum_size = Vector2(0.0, 46.0)
+	quick_pick_button.pressed.connect(_on_quick_pick_pressed)
+	_style_button(quick_pick_button, false)
+	tool_row.add_child(quick_pick_button)
 
 	extra_slot_button = Button.new()
 	extra_slot_button.text = "+1 SLOT"
@@ -954,7 +954,7 @@ func _load_level(number: int) -> void:
 	toolbox_filled = [0, 0, 0]
 	spare_screw_ids.clear()
 	spare_slot_limit = 5
-	hammer_uses = 1
+	quick_pick_uses = 1
 	extra_slot_used = false
 	finish_overlay.visible = false
 	current_hint_id = ""
@@ -1299,9 +1299,9 @@ func _update_sorting_ui() -> void:
 			slot_label.add_theme_color_override("font_color", Color("#F6DCA8"))
 	if tray_label != null:
 		tray_label.text = "SPARE TRAY  %d / %d" % [spare_screw_ids.size(), spare_slot_limit]
-	if hammer_button != null:
-		hammer_button.text = "HAMMER x%d" % hammer_uses
-		hammer_button.disabled = hammer_uses <= 0
+	if quick_pick_button != null:
+		quick_pick_button.text = "QUICK PICK x%d" % quick_pick_uses
+		quick_pick_button.disabled = quick_pick_uses <= 0
 	if extra_slot_button != null:
 		extra_slot_button.text = "SLOT ✓" if extra_slot_used else "+1 SLOT"
 		extra_slot_button.disabled = extra_slot_used
@@ -1328,12 +1328,53 @@ func _on_toolbox_pressed(color_id: int) -> void:
 	status_label.text = "%s box filled with %d screw(s)!" % [screw_color_names[color_id], moved_count]
 	_play_sfx("board_clear")
 	_update_sorting_ui()
+	_animate_toolbox_fill(color_id)
 	_update_hud()
 	_check_level_complete()
 
 
-func _on_hammer_pressed() -> void:
-	if hammer_uses <= 0:
+func _animate_toolbox_fill(color_id: int) -> void:
+	if color_id < 0 or color_id >= toolbox_buttons.size():
+		return
+	var button: Button = toolbox_buttons[color_id]
+	var tween := create_tween()
+	tween.tween_property(button, "scale", Vector2(1.045, 1.045), 0.10).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(button, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+
+func _animate_screw_to_tray(screw: Dictionary, slot_index: int) -> void:
+	if ui_root == null or camera == null or slot_index < 0 or slot_index >= spare_slot_labels.size():
+		return
+	var world_position: Vector3 = screw["position"] + Vector3(0.0, 0.16, 0.0)
+	if camera.is_position_behind(world_position):
+		return
+	var start_position: Vector2 = camera.unproject_position(world_position)
+	var target_label: Label = spare_slot_labels[slot_index]
+	var target_position: Vector2 = target_label.get_global_rect().get_center()
+	var color_id: int = int(screw["color_id"])
+	var flyer := Panel.new()
+	flyer.name = "ScrewTrayFlyer"
+	flyer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flyer.z_index = 40
+	flyer.size = Vector2(28.0, 28.0)
+	flyer.pivot_offset = flyer.size * 0.5
+	flyer.position = start_position - flyer.size * 0.5
+	var flyer_style := StyleBoxFlat.new()
+	flyer_style.bg_color = screw_color_values[color_id]
+	flyer_style.border_color = Color("#FFF0C8")
+	flyer_style.set_border_width_all(2)
+	flyer_style.set_corner_radius_all(14)
+	flyer.add_theme_stylebox_override("panel", flyer_style)
+	ui_root.add_child(flyer)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(flyer, "position", target_position - flyer.size * 0.5, 0.34).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(flyer, "scale", Vector2(0.62, 0.62), 0.34).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tween.chain().tween_callback(Callable(flyer, "queue_free"))
+
+
+func _on_quick_pick_pressed() -> void:
+	if quick_pick_uses <= 0:
 		status_label.text = "No quick-pick charge left in this level."
 		return
 	if spare_screw_ids.size() >= spare_slot_limit:
@@ -1345,7 +1386,7 @@ func _on_hammer_pressed() -> void:
 			var before_count: int = removed_screws
 			_try_remove_screw(str(screw_id))
 			if removed_screws > before_count:
-				hammer_uses -= 1
+				quick_pick_uses -= 1
 				status_label.text = "Quick pick collected one exposed screw."
 				_update_sorting_ui()
 			return
@@ -1459,10 +1500,12 @@ func _try_remove_screw(screw_id: String) -> void:
 	screw["removed"] = true
 	removed_screws += 1
 	spare_screw_ids.append(screw_id)
+	var tray_slot_index: int = spare_screw_ids.size() - 1
 	if current_hint_id == screw_id:
 		current_hint_id = ""
 	_play_sfx("screw_remove")
 	_update_sorting_ui()
+	_animate_screw_to_tray(screw, tray_slot_index)
 	var screw_node: Node3D = screw["node"]
 	var tween := create_tween()
 	tween.set_parallel(true)
