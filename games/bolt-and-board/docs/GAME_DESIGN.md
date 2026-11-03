@@ -38,3 +38,16 @@ The current 30 levels combine procedural plate layouts and screw patterns. They 
 - Android performance and touch testing on physical devices.
 - Release AAB and secure release signing; never store a release key in the public repository.
 - Monetization, ads consent/privacy and Play policy checks only after core gameplay QA.
+
+
+## Premium redesign branch
+
+The `premium-screw-puzzle` branch adds:
+- PBR wood and brushed-steel materials with generated normal/roughness maps.
+- Four screw colors, a seven-slot sorting tray, triple-color matches and a retry state when the tray fills.
+- More detailed screw threads, washer lips, raised wood tops, edge trim and metallic stage detailing.
+- Filmic tone mapping, restrained glow, MSAA and a mobile-first lighting rig.
+- Touch drag camera orbit and pinch zoom.
+- Stronger screw extraction and board-fall animation timing.
+
+Renderer choice remains the Godot Mobile renderer to balance visual quality with Android device support. The game still requires real-device performance and touch QA before it can be called production-ready.
