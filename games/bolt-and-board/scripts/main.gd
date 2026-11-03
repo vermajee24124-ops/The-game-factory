@@ -135,7 +135,7 @@ func _create_materials() -> void:
 	gold_material.roughness = 0.22
 
 	screw_color_materials.clear()
-	for color_value in [Color("#E45A43"), Color("#39A9C8"), Color("#E6B84F")]:
+	for color_value in [Color("#E45A43"), Color("#39A9C8"), Color("#E6B84F"), Color("#9A73D6")]:
 		var colored_steel := StandardMaterial3D.new()
 		colored_steel.albedo_color = color_value
 		colored_steel.metallic = 0.72
@@ -172,25 +172,31 @@ func _play_sfx(sound_name: String) -> void:
 
 func _make_panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#223346")
-	style.border_color = Color("#52677A")
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(18)
-	style.content_margin_left = 16.0
-	style.content_margin_right = 16.0
-	style.content_margin_top = 12.0
-	style.content_margin_bottom = 12.0
+	style.bg_color = Color("#101D2B")
+	style.border_color = Color("#B98A4F")
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(22)
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.38)
+	style.shadow_size = 14
+	style.shadow_offset = Vector2(0.0, 6.0)
+	style.content_margin_left = 20.0
+	style.content_margin_right = 20.0
+	style.content_margin_top = 16.0
+	style.content_margin_bottom = 16.0
 	return style
 
 
 func _style_button(button: Button, primary: bool = false) -> void:
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color("#D99B4A") if primary else Color("#344A5E")
-	normal.border_color = Color("#F0C47A") if primary else Color("#647B8E")
-	normal.set_border_width_all(1)
-	normal.set_corner_radius_all(13)
-	normal.content_margin_left = 14.0
-	normal.content_margin_right = 14.0
+	normal.bg_color = Color("#D59A4C") if primary else Color("#263D52")
+	normal.border_color = Color("#F4D39B") if primary else Color("#627F98")
+	normal.set_border_width_all(2)
+	normal.set_corner_radius_all(16)
+	normal.shadow_color = Color(0.0, 0.0, 0.0, 0.25)
+	normal.shadow_size = 5
+	normal.shadow_offset = Vector2(0.0, 3.0)
+	normal.content_margin_left = 18.0
+	normal.content_margin_right = 18.0
 	var hover := normal.duplicate() as StyleBoxFlat
 	hover.bg_color = Color("#E9AD5C") if primary else Color("#405B72")
 	var pressed := normal.duplicate() as StyleBoxFlat
@@ -871,6 +877,7 @@ func _show_menu() -> void:
 	splash_overlay.visible = false
 	tutorial_overlay.visible = false
 	menu_overlay.visible = true
+	fail_overlay.visible = false
 	finish_overlay.visible = false
 	level_select_overlay.visible = false
 	pause_overlay.visible = false
@@ -889,6 +896,7 @@ func _show_level_select() -> void:
 		level_button.disabled = not PuzzleRules.is_level_unlocked(level_number, highest_unlocked_level)
 		level_button.text = "LEVEL %02d\n%s" % [level_number, "UNLOCKED" if not level_button.disabled else "LOCKED"]
 	menu_overlay.visible = false
+	fail_overlay.visible = false
 	finish_overlay.visible = false
 	pause_overlay.visible = false
 	level_select_overlay.visible = true
@@ -1069,7 +1077,7 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 	board_body.collision_mask = 0
 	var board_collision := CollisionShape3D.new()
 	var board_shape := BoxShape3D.new()
-	board_shape.size = Vector3(width, 0.30, depth)
+	board_shape.size = Vector3(width, 0.48, depth)
 	board_collision.shape = board_shape
 	board_body.add_child(board_collision)
 	board_node.add_child(board_body)
@@ -1156,7 +1164,7 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 		hole_mesh.height = 0.018
 		hole.mesh = hole_mesh
 		hole.material_override = hole_material
-		hole.position = Vector3(world_position.x - owning_center.x, 0.153, world_position.z - owning_center.y)
+		hole.position = Vector3(world_position.x - owning_center.x, 0.245, world_position.z - owning_center.y)
 		(owning_board["node"] as Node3D).add_child(hole)
 
 	var shaft := MeshInstance3D.new()
@@ -1185,7 +1193,7 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 	washer_mesh.radial_segments = 32
 	washer.mesh = washer_mesh
 	washer.material_override = dark_metal_material
-	washer.position = Vector3(0.0, 0.015, 0.0)
+	washer.position = Vector3(0.0, 0.075, 0.0)
 	screw_root.add_child(washer)
 
 	var washer_lip := MeshInstance3D.new()
@@ -1196,7 +1204,7 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 	lip_mesh.radial_segments = 32
 	washer_lip.mesh = lip_mesh
 	washer_lip.material_override = metal_material
-	washer_lip.position = Vector3(0.0, 0.038, 0.0)
+	washer_lip.position = Vector3(0.0, 0.098, 0.0)
 	screw_root.add_child(washer_lip)
 
 	var head := MeshInstance3D.new()
@@ -1206,7 +1214,7 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 	head_mesh.height = 0.105
 	head_mesh.radial_segments = 32
 	head.mesh = head_mesh
-	head.material_override = metal_material
+	head.material_override = screw_color_materials[posmod(next_screw_id * 3 + board_id, screw_color_materials.size())]
 	head.position = Vector3(0.0, 0.09, 0.0)
 	screw_root.add_child(head)
 
@@ -1240,7 +1248,7 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 		"head": head,
 		"board_id": board_id,
 		"position": world_position,
-		"color_id": posmod(next_screw_id * 5 + board_id, screw_color_materials.size()),
+		"color_id": posmod(next_screw_id * 3 + board_id, screw_color_materials.size()),
 		"removed": false
 	}
 	total_screws += 1
@@ -1395,8 +1403,9 @@ func _try_remove_screw(screw_id: String) -> void:
 	var screw_node: Node3D = screw["node"]
 	var tween := create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(screw_node, "position", screw_node.position + Vector3(0.0, 1.1, 0.0), 0.30).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(screw_node, "rotation:y", screw_node.rotation.y + TAU * 1.25, 0.30)
+	tween.tween_property(screw_node, "position", screw_node.position + Vector3(0.0, 1.35, 0.0), 0.42).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(screw_node, "rotation:y", screw_node.rotation.y + TAU * 3.0, 0.42)
+	tween.tween_property(screw_node, "scale", Vector3(0.82, 0.82, 0.82), 0.42)
 	tween.chain().tween_callback(Callable(screw_node, "queue_free"))
 
 	status_label.text = "Nice! Screw removed. Find the other exposed screws."
@@ -1424,8 +1433,8 @@ func _check_board_cleared(board_id: int) -> void:
 	_play_sfx("board_clear")
 	var fall_tween := create_tween()
 	fall_tween.set_parallel(true)
-	fall_tween.tween_property(board_node, "position:y", board_node.position.y - 2.8, 0.75).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	fall_tween.tween_property(board_node, "rotation", Vector3(0.55, 0.0, 0.28), 0.75)
+	fall_tween.tween_property(board_node, "position:y", board_node.position.y - 3.2, 0.82).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	fall_tween.tween_property(board_node, "rotation", Vector3(0.72, randf_range(-0.22, 0.22), 0.46), 0.82).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	fall_tween.chain().tween_callback(Callable(board_node, "queue_free"))
 	status_label.text = "Board cleared! Hidden screws are now exposed."
 
