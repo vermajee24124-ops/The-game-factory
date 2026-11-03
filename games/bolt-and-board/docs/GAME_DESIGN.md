@@ -10,14 +10,14 @@ The loading screen does not claim to download online content. Ads, online rankin
 ## Core loop
 1. Inspect stacked wooden boards.
 2. Tap screws that are not occluded by a board above them. Touch input uses screen-space picking with an accessibility radius, then keeps the board-occlusion rule.
-3. Remove every screw from the currently accessible board.
-4. The cleared board animates down and away, revealing the next board.
-5. Clear all boards to finish the level.
+3. Remove every screw holding an exposed wooden plate.
+4. That plate animates away independently; other plates in the same layer remain.
+5. Clear the upper layer to expose lower plates, then clear every plate to finish.
 
 ## Current prototype
-- Two to five stacked board layers.
-- Six deterministic screw layouts selected by level and board layer.
-- Board placement and board size vary deterministically with the level number.
+- Two to five stacked layers, each built from two to four separate wooden plates.
+- Four deterministic plate-layout families: paired horizontal planks, three vertical planks, four corner plates and three horizontal strips.
+- Six deterministic screw layouts; board placement and size vary with the level number.
 - Board occlusion collision included in the tap ray query, with exposed-screw screen-space touch picking as a reliable mobile fallback.
 - Full-screen UI layout passes empty-area touch input through to the 3D board.
 - Original branded startup/loading screen and first-run tutorial.
@@ -27,7 +27,7 @@ The loading screen does not claim to download online content. Ads, online rankin
 - Completion summary with elapsed time, hint count and a simple three-star score.
 
 ## Important distinction
-The current 30 levels are procedural variations of the same core board stack. They are not yet 30 handcrafted, professionally balanced commercial levels.
+The current 30 levels combine procedural plate layouts and screw patterns. They are not yet 30 handcrafted, solver-validated commercial levels.
 
 ## Production roadmap
 - More board silhouettes, angles and genuinely different interlocking layouts.
