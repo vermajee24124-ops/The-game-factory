@@ -119,6 +119,13 @@ func _run_tests() -> void:
 		return
 	if not _expect(game.get("spare_slot_limit") == 5, "Spare tray must start with five slots"):
 		return
+	var wood_materials: Array = game.get("wood_materials")
+	if not _expect(wood_materials.size() >= 5, "Wood material palette must be created"):
+		return
+	if not _expect((wood_materials[0] as StandardMaterial3D).normal_enabled, "Wood normal maps must be enabled"):
+		return
+	if not _expect((game.get("metal_material") as StandardMaterial3D).normal_enabled, "Brushed steel normal map must be enabled"):
+		return
 	var angled_cover := {
 		"id": 9, "center": Vector2.ZERO, "width": 4.0, "depth": 1.0,
 		"y": 0.46, "rotation_y": PI * 0.25, "removed": false
