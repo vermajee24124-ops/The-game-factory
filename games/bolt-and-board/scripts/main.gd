@@ -165,8 +165,17 @@ func _create_materials() -> void:
 	for color_value in [Color("#E45A43"), Color("#39A9C8"), Color("#E6B84F"), Color("#9A73D6")]:
 		var colored_steel := StandardMaterial3D.new()
 		colored_steel.albedo_color = color_value
-		colored_steel.metallic = 0.72
-		colored_steel.roughness = 0.24
+		colored_steel.metallic = 0.90
+		colored_steel.roughness = 0.19
+		colored_steel.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		if steel_texture != null:
+			colored_steel.albedo_texture = steel_texture
+		if steel_normal != null:
+			colored_steel.normal_enabled = true
+			colored_steel.normal_texture = steel_normal
+			colored_steel.normal_scale = 0.26
+		if steel_roughness != null:
+			colored_steel.roughness_texture = steel_roughness
 		screw_color_materials.append(colored_steel)
 
 	hole_material = StandardMaterial3D.new()
@@ -174,8 +183,10 @@ func _create_materials() -> void:
 	hole_material.roughness = 1.0
 
 	floor_material = StandardMaterial3D.new()
-	floor_material.albedo_color = Color("#FFFFFF")
-	floor_material.roughness = 0.95
+	floor_material.albedo_color = Color("#BDA17F")
+	floor_material.roughness = 0.84
+	floor_material.uv1_scale = Vector3(3.2, 3.2, 1.0)
+	floor_material.uv1_triplanar = true
 	var floor_texture := load("res://assets/textures/dark_surface.png") as Texture2D
 	if floor_texture != null:
 		floor_material.albedo_texture = floor_texture
@@ -359,7 +370,7 @@ func _create_world() -> void:
 	environment.background_mode = Environment.BG_SKY
 	environment.sky = sky
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	environment.ambient_light_energy = 0.78
+	environment.ambient_light_energy = 0.70
 	environment.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	environment.tonemap_exposure = 1.06
 	environment.tonemap_white = 1.12
@@ -380,7 +391,7 @@ func _create_world() -> void:
 	var sunlight := DirectionalLight3D.new()
 	sunlight.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
 	sunlight.light_color = Color("#FFE0B8")
-	sunlight.light_energy = 1.72
+	sunlight.light_energy = 1.48
 	sunlight.shadow_enabled = true
 	sunlight.shadow_blur = 2.8
 	sunlight.directional_shadow_max_distance = 24.0
@@ -399,8 +410,8 @@ func _create_world() -> void:
 	var rim_light := OmniLight3D.new()
 	rim_light.position = Vector3(3.8, 3.2, -4.0)
 	rim_light.light_color = Color("#F0B56C")
-	rim_light.light_energy = 0.62
-	rim_light.omni_range = 10.0
+	rim_light.light_energy = 0.42
+	rim_light.omni_range = 9.0
 	rim_light.shadow_enabled = false
 	add_child(rim_light)
 
@@ -1229,8 +1240,8 @@ func _load_level(number: int) -> void:
 	var zoom_step: float = float(layer_count - 2)
 	camera_focus = Vector3(0.0, 0.30 + zoom_step * 0.06, 0.0)
 	camera_yaw = 0.0
-	camera_pitch = 0.62
-	camera_distance = 14.0 + zoom_step * 1.0
+	camera_pitch = 0.80
+	camera_distance = 12.2 + zoom_step * 0.90
 	_update_camera_pose()
 	for layer in range(layer_count):
 		var width: float = 3.55 + float(layer) * 0.72 + float(number % 3) * 0.10
@@ -1297,9 +1308,9 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 	var box := BoxMesh.new()
 	box.size = Vector3(width, 0.34, depth)
 	board_mesh.mesh = box
-	var board_base_material := StandardMaterial3D.new()
-	board_base_material.albedo_color = Color("#4A2B1D")
-	board_base_material.roughness = 0.72
+	var board_base_material := wood_materials[(layer + number + 1) % wood_materials.size()].duplicate() as StandardMaterial3D
+	board_base_material.albedo_color = board_base_material.albedo_color.darkened(0.34)
+	board_base_material.roughness = 0.78
 	board_mesh.material_override = board_base_material
 	board_node.add_child(board_mesh)
 
