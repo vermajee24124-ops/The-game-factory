@@ -113,7 +113,7 @@ func _run_tests() -> void:
 	if not _expect(six_screw_pattern.size() == 3, "Pattern variation should add one centre screw"):
 		return
 	var piece_specs: Array = game.call("_build_piece_specs", 4.0, 4.5, 1, 0)
-	if not _expect(piece_specs.size() == 4, "Interlocked campaign layouts must contain several beams"):
+	if not _expect(piece_specs.size() == 3, "X campaign layout must contain three interlocked beams"):
 		return
 	if not _expect(game.get("toolbox_buttons").size() == 3, "Three colour sorting boxes must be available"):
 		return
