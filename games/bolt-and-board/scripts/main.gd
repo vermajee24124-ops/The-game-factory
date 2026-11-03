@@ -107,6 +107,7 @@ func _create_materials() -> void:
 		if wood_roughness != null:
 			wood.roughness_texture = wood_roughness
 		wood.uv1_scale = Vector3(1.8, 1.8, 1.0)
+		wood.uv1_triplanar = true
 		wood_materials.append(wood)
 
 	metal_material = StandardMaterial3D.new()
@@ -266,26 +267,45 @@ func start_preview() -> void:
 func _create_world() -> void:
 	var world_environment := WorldEnvironment.new()
 	var environment := Environment.new()
-	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color("#172333")
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("#B6C7D8")
-	environment.ambient_light_energy = 0.72
+	var sky := Sky.new()
+	var sky_material := ProceduralSkyMaterial.new()
+	sky_material.sky_top_color = Color("#132A45")
+	sky_material.sky_horizon_color = Color("#D6A878")
+	sky_material.ground_bottom_color = Color("#0C1724")
+	sky_material.ground_horizon_color = Color("#5C4B40")
+	sky_material.sun_angle_max = 18.0
+	sky_material.use_debanding = true
+	sky.sky_material = sky_material
+	environment.background_mode = Environment.BG_SKY
+	environment.sky = sky
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	environment.ambient_light_energy = 0.78
+	environment.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+	environment.tonemap_exposure = 1.06
+	environment.tonemap_white = 1.12
 	environment.glow_enabled = true
 	environment.glow_intensity = 0.22
 	environment.glow_strength = 0.55
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	environment.adjustment_enabled = true
-	environment.adjustment_contrast = 1.06
-	environment.adjustment_saturation = 1.08
+	environment.adjustment_brightness = 1.02
+	environment.adjustment_contrast = 1.12
+	environment.adjustment_saturation = 1.12
+	environment.fog_enabled = true
+	environment.fog_light_color = Color("#A9B9C9")
+	environment.fog_density = 0.004
 	world_environment.environment = environment
 	add_child(world_environment)
 
 	var sunlight := DirectionalLight3D.new()
-	sunlight.rotation_degrees = Vector3(-52.0, -28.0, 0.0)
-	sunlight.light_energy = 1.55
+	sunlight.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
+	sunlight.light_color = Color("#FFE0B8")
+	sunlight.light_energy = 1.72
 	sunlight.shadow_enabled = true
-	sunlight.shadow_blur = 2.2
+	sunlight.shadow_blur = 2.8
+	sunlight.directional_shadow_max_distance = 24.0
+	sunlight.shadow_bias = 0.035
+	sunlight.shadow_normal_bias = 1.4
 	add_child(sunlight)
 
 	var fill_light := OmniLight3D.new()
@@ -1229,11 +1249,21 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 	screw_root.add_child(head)
 
 	var slot_mat := StandardMaterial3D.new()
-	slot_mat.albedo_color = Color("#39434D")
-	slot_mat.metallic = 0.65
-	slot_mat.roughness = 0.5
-	_add_box(screw_root, Vector3(0.15, 0.012, 0.027), slot_mat, Vector3(0.0, 0.147, 0.0))
-	_add_box(screw_root, Vector3(0.027, 0.012, 0.15), slot_mat, Vector3(0.0, 0.148, 0.0))
+	slot_mat.albedo_color = Color("#26313C")
+	slot_mat.metallic = 0.82
+	slot_mat.roughness = 0.28
+	_add_box(screw_root, Vector3(0.145, 0.014, 0.022), slot_mat, Vector3(0.0, 0.147, 0.0))
+	_add_box(screw_root, Vector3(0.022, 0.014, 0.145), slot_mat, Vector3(0.0, 0.148, 0.0))
+	var head_rim := MeshInstance3D.new()
+	var rim_mesh := TorusMesh.new()
+	rim_mesh.inner_radius = 0.137
+	rim_mesh.outer_radius = 0.151
+	rim_mesh.rings = 24
+	rim_mesh.ring_segments = 8
+	head_rim.mesh = rim_mesh
+	head_rim.material_override = metal_material
+	head_rim.position.y = 0.143
+	screw_root.add_child(head_rim)
 
 	var area := Area3D.new()
 	area.name = "TapArea"
@@ -1461,6 +1491,7 @@ func _try_remove_screw(screw_id: String) -> void:
 	tween.tween_property(screw_node, "position", screw_node.position + Vector3(0.0, 1.35, 0.0), 0.42).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(screw_node, "rotation:y", screw_node.rotation.y + TAU * 3.0, 0.42)
 	tween.tween_property(screw_node, "scale", Vector3(0.82, 0.82, 0.82), 0.42)
+	_spawn_screw_pop(screw["position"], int(screw.get("color_id", 0)))
 	tween.chain().tween_callback(Callable(screw_node, "queue_free"))
 
 	status_label.text = "Nice! Screw removed. Find the other exposed screws."
@@ -1468,6 +1499,31 @@ func _try_remove_screw(screw_id: String) -> void:
 	_check_board_cleared(int(screw["board_id"]))
 	_refresh_screw_visuals()
 	_check_level_complete()
+
+
+func _spawn_screw_pop(world_position: Vector3, color_id: int) -> void:
+	var ring := MeshInstance3D.new()
+	var ring_mesh := TorusMesh.new()
+	ring_mesh.inner_radius = 0.055
+	ring_mesh.outer_radius = 0.075
+	ring_mesh.rings = 20
+	ring_mesh.ring_segments = 8
+	ring.mesh = ring_mesh
+	var ring_material := StandardMaterial3D.new()
+	ring_material.albedo_color = screw_color_materials[posmod(color_id, screw_color_materials.size())].albedo_color
+	ring_material.emission_enabled = true
+	ring_material.emission = ring_material.albedo_color
+	ring_material.emission_energy_multiplier = 1.5
+	ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring.material_override = ring_material
+	ring.position = world_position + Vector3(0.0, 0.12, 0.0)
+	ring.scale = Vector3.ONE * 0.15
+	game_root.add_child(ring)
+	var pop_tween := create_tween()
+	pop_tween.set_parallel(true)
+	pop_tween.tween_property(ring, "scale", Vector3.ONE * 1.55, 0.32).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	pop_tween.tween_property(ring_material, "albedo_color:a", 0.0, 0.32)
+	pop_tween.chain().tween_callback(Callable(ring, "queue_free"))
 
 
 func _check_board_cleared(board_id: int) -> void:
