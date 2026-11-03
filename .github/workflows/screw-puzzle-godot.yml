@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: bolt-and-board-validation-${{ github.ref }}
+  group: bolt-and-board-validation-premium-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
