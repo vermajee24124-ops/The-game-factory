@@ -905,13 +905,14 @@ func _build_piece_specs(width: float, depth: float, level: int, layer: int) -> A
 	return specs
 
 
-func _create_board(width: float, depth: float, y: float, center_x: float, center_z: float, layer: int, number: int) -> void:
+func _create_board(width: float, depth: float, y: float, center_x: float, center_z: float, layer: int, number: int, angle: float = 0.0) -> void:
 	var board_id: int = next_board_id
 	next_board_id += 1
 
 	var board_node := Node3D.new()
 	board_node.name = "WoodBoard_%02d" % board_id
 	board_node.position = Vector3(center_x, y, center_z)
+	board_node.rotation.y = angle
 	game_root.add_child(board_node)
 
 	var board_mesh := MeshInstance3D.new()
@@ -920,6 +921,15 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 	board_mesh.mesh = box
 	board_mesh.material_override = wood_materials[(layer + number) % wood_materials.size()]
 	board_node.add_child(board_mesh)
+
+	# Raised inset top and warm edge band create a finished toy-wood look.
+	var top_face := MeshInstance3D.new()
+	var top_box := BoxMesh.new()
+	top_box.size = Vector3(maxf(0.1, width - 0.12), 0.035, maxf(0.1, depth - 0.12))
+	top_face.mesh = top_box
+	top_face.material_override = wood_materials[(layer + number + 1) % wood_materials.size()]
+	top_face.position.y = 0.162
+	board_node.add_child(top_face)
 
 	# A real collider prevents taps passing through a visible upper board.
 	var board_body := StaticBody3D.new()
@@ -934,12 +944,12 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 	board_node.add_child(board_body)
 
 	var edge_mat := StandardMaterial3D.new()
-	edge_mat.albedo_color = Color("#5A3826")
-	edge_mat.roughness = 0.9
-	_add_box(board_node, Vector3(width, 0.055, 0.055), edge_mat, Vector3(0.0, 0.155, depth * 0.5 - 0.03))
-	_add_box(board_node, Vector3(width, 0.055, 0.055), edge_mat, Vector3(0.0, 0.155, -depth * 0.5 + 0.03))
-	_add_box(board_node, Vector3(0.055, 0.055, depth), edge_mat, Vector3(width * 0.5 - 0.03, 0.155, 0.0))
-	_add_box(board_node, Vector3(0.055, 0.055, depth), edge_mat, Vector3(-width * 0.5 + 0.03, 0.155, 0.0))
+	edge_mat.albedo_color = Color("#704224")
+	edge_mat.roughness = 0.84
+	_add_box(board_node, Vector3(width - 0.10, 0.045, 0.045), edge_mat, Vector3(0.0, 0.186, depth * 0.5 - 0.03))
+	_add_box(board_node, Vector3(width - 0.10, 0.045, 0.045), edge_mat, Vector3(0.0, 0.186, -depth * 0.5 + 0.03))
+	_add_box(board_node, Vector3(0.045, 0.045, depth - 0.10), edge_mat, Vector3(width * 0.5 - 0.03, 0.186, 0.0))
+	_add_box(board_node, Vector3(0.045, 0.045, depth - 0.10), edge_mat, Vector3(-width * 0.5 + 0.03, 0.186, 0.0))
 
 	var board_data: Dictionary = {
 		"id": board_id,
@@ -949,6 +959,7 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 		"depth": depth,
 		"y": y,
 		"layer": layer,
+		"rotation_y": angle,
 		"removed": false,
 		"body": board_body,
 		"screws": []
@@ -957,7 +968,7 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 
 	var local_points := _build_screw_points(width, depth, number, layer)
 	for point in local_points:
-		var world_position := Vector3(center_x + point.x, y + 0.17, center_z + point.y)
+		var world_position: Vector3 = board_node.to_global(Vector3(point.x, 0.17, point.y))
 		_create_screw(board_id, world_position)
 
 
@@ -1007,7 +1018,7 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 	var board_index_for_hole: int = _find_board_index(board_id)
 	if board_index_for_hole >= 0:
 		var owning_board: Dictionary = boards[board_index_for_hole]
-		var owning_center: Vector2 = owning_board["center"]
+		var owning_node: Node3D = owning_board["node"]
 		var hole := MeshInstance3D.new()
 		var hole_mesh := CylinderMesh.new()
 		hole_mesh.top_radius = 0.145
@@ -1015,8 +1026,8 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 		hole_mesh.height = 0.018
 		hole.mesh = hole_mesh
 		hole.material_override = hole_material
-		hole.position = Vector3(world_position.x - owning_center.x, 0.153, world_position.z - owning_center.y)
-		(owning_board["node"] as Node3D).add_child(hole)
+		hole.position = owning_node.to_local(world_position) + Vector3(0.0, -0.004, 0.0)
+		owning_node.add_child(hole)
 
 	var shaft := MeshInstance3D.new()
 	var shaft_mesh := CylinderMesh.new()
@@ -1051,12 +1062,13 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 
 	var head := MeshInstance3D.new()
 	var head_mesh := CylinderMesh.new()
-	head_mesh.top_radius = 0.135
-	head_mesh.bottom_radius = 0.135
+	head_mesh.top_radius = 0.155
+	head_mesh.bottom_radius = 0.155
 	head_mesh.height = 0.105
-	head_mesh.radial_segments = 12
+	head_mesh.radial_segments = 24
 	head.mesh = head_mesh
-	head.material_override = metal_material
+	var screw_color_id: int = posmod(board_id + level_index, screw_color_values.size())
+	head.material_override = screw_color_materials[screw_color_id]
 	head.position = Vector3(0.0, 0.09, 0.0)
 	screw_root.add_child(head)
 
@@ -1090,8 +1102,10 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 		"head": head,
 		"board_id": board_id,
 		"position": world_position,
+		"color_id": screw_color_id,
 		"removed": false
 	}
+	color_totals[screw_color_id] += 1
 	total_screws += 1
 
 
@@ -1115,7 +1129,7 @@ func _refresh_screw_visuals() -> void:
 		if str(screw_id) == current_hint_id:
 			head.material_override = gold_material
 		elif _is_screw_accessible(screw):
-			head.material_override = metal_material
+			head.material_override = screw_color_materials[int(screw["color_id"])]
 		else:
 			head.material_override = blocked_material
 
