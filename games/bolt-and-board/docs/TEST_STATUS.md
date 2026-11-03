@@ -3,7 +3,7 @@
 ## Latest Godot validation
 <https://github.com/vermajee24124-ops/The-game-factory/actions/runs/41560470638>
 
-<badge>PASS</badge> Godot 4.7.2 Stable imported the project, parsed the scripts, ran the expanded gameplay regression tests and rendered the screenshot under Xvfb/Mesa software OpenGL.
+**PASS** Godot 4.7.2 Stable imported the project, parsed the scripts, ran the expanded gameplay regression tests and rendered the screenshot under Xvfb/Mesa software OpenGL.
 
 The passing regression suite covers:
 - Screw occlusion and exposed-screw access.
