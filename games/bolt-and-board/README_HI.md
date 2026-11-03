@@ -4,8 +4,8 @@
 
 ## प्रोजेक्ट में क्या है
 - Godot 4.7.2 Stable target, GDScript और Mobile Renderer।
-- हर layer में 2 से 4 अलग wooden plates, metallic screws, washers और thread details के साथ procedural 3D puzzle।
-- Original generated wood, brushed-steel और dark-surface textures।
+- हर layer में H, X, cross-frame और zig-zag जैसे interlocked wooden beams, metallic screws, washers और thread details।
+- Original wood-grain और brushed-metal PBR normal maps, roughness map और हल्की maple-table texture।
 - Android touch और desktop mouse के लिए screen-space screw picking, ताकि board पर सीधा tap करने से screw चुने।
 - अलग रंग के screw heads और तीन matching colour toolboxes।
 - Five-slot spare tray: screw निकालकर tray में रखें, फिर matching colour box दबाकर sort करें।
@@ -14,8 +14,8 @@
 - ऊपरी बोर्ड के collider से नीचे छिपे screw पर tap रोकना।
 - Screw removal और board-clear animations।
 - Generated sound effects।
-- 30 procedural level variations, 2 से 5 layers और हर layer में 2 से 3 अलग-अलग रंगों वाली plates।
-- हर level में running timer और संतुलित screw count।
+- 30 procedural level variations, 2 से 5 layers और हर level में अलग beam arrangements।
+- हर beam पर संतुलित screw count, running timer और mobile-friendly soft shadow setup।
 - Branded splash/loading screen, first-run tutorial, level select, restart, Hint, progress HUD, level-complete screen और local save।
 - Headless gameplay tests और Xvfb screenshot capture।
 
