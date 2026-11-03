@@ -20,6 +20,11 @@ var current_hint_id: String = ""
 var sfx_player: AudioStreamPlayer
 var progress_bar: ProgressBar
 var is_muted: bool = false
+var tutorial_seen: bool = false
+var splash_overlay: ColorRect
+var tutorial_overlay: ColorRect
+var splash_progress: ProgressBar
+var splash_tween: Tween
 
 var ui_root: Control
 var level_label: Label
@@ -58,7 +63,7 @@ func _ready() -> void:
 	_create_camera()
 	_create_game_root()
 	_create_ui()
-	_show_menu()
+	_show_splash()
 
 
 func _process(delta: float) -> void:
@@ -167,12 +172,14 @@ func _load_progress() -> void:
 	if config.load("user://wood_metal_progress.cfg") == OK:
 		highest_unlocked_level = clampi(int(config.get_value("progress", "highest_level", 1)), 1, MAX_LEVEL)
 		is_muted = bool(config.get_value("settings", "muted", false))
+		tutorial_seen = bool(config.get_value("settings", "tutorial_seen", false))
 
 
 func _save_progress() -> void:
 	var config := ConfigFile.new()
 	config.set_value("progress", "highest_level", highest_unlocked_level)
 	config.set_value("settings", "muted", is_muted)
+	config.set_value("settings", "tutorial_seen", tutorial_seen)
 	config.save("user://wood_metal_progress.cfg")
 
 
@@ -260,6 +267,8 @@ func _create_ui() -> void:
 	add_child(canvas)
 	ui_root = Control.new()
 	ui_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# The full-screen root is only a layout container. It must not swallow taps intended for the 3D puzzle.
+	ui_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas.add_child(ui_root)
 
 	var top_panel := PanelContainer.new()
@@ -346,7 +355,7 @@ func _create_ui() -> void:
 	menu_overlay.add_child(menu_center)
 	var menu_panel := PanelContainer.new()
 	menu_panel.add_theme_stylebox_override("panel", _make_panel_style())
-	menu_panel.custom_minimum_size = Vector2(560.0, 470.0)
+	menu_panel.custom_minimum_size = Vector2(560.0, 520.0)
 	menu_center.add_child(menu_panel)
 	var menu_box := VBoxContainer.new()
 	menu_box.add_theme_constant_override("separation", 18)
@@ -375,6 +384,13 @@ func _create_ui() -> void:
 	level_select_button.pressed.connect(_show_level_select)
 	_style_button(level_select_button, false)
 	menu_box.add_child(level_select_button)
+
+	var tutorial_button := Button.new()
+	tutorial_button.text = "HOW TO PLAY"
+	tutorial_button.custom_minimum_size = Vector2(0.0, 50.0)
+	tutorial_button.pressed.connect(_show_tutorial)
+	_style_button(tutorial_button, false)
+	menu_box.add_child(tutorial_button)
 
 	menu_sound_button = Button.new()
 	menu_sound_button.custom_minimum_size = Vector2(0.0, 48.0)
@@ -415,7 +431,133 @@ func _create_ui() -> void:
 
 	_create_level_select_overlay()
 	_create_pause_overlay()
+	_create_tutorial_overlay()
+	_create_splash_overlay()
 	_update_sound_button_labels()
+
+
+
+func _create_splash_overlay() -> void:
+	splash_overlay = ColorRect.new()
+	splash_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	splash_overlay.color = Color("#160F0B")
+	ui_root.add_child(splash_overlay)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	splash_overlay.add_child(center)
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", _make_panel_style())
+	panel.custom_minimum_size = Vector2(540.0, 390.0)
+	center.add_child(panel)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 18)
+	panel.add_child(box)
+	var studio := Label.new()
+	studio.text = "WOODWORKS STUDIO"
+	studio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	studio.add_theme_font_size_override("font_size", 20)
+	studio.add_theme_color_override("font_color", Color("#E6B76E"))
+	box.add_child(studio)
+	var title := Label.new()
+	title.text = "BOLT & BOARD"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 42)
+	box.add_child(title)
+	var subtitle := Label.new()
+	subtitle.text = "3D SCREW PUZZLE"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_font_size_override("font_size", 18)
+	box.add_child(subtitle)
+	splash_progress = ProgressBar.new()
+	splash_progress.min_value = 0.0
+	splash_progress.max_value = 100.0
+	splash_progress.value = 0.0
+	splash_progress.show_percentage = false
+	splash_progress.custom_minimum_size = Vector2(0.0, 18.0)
+	box.add_child(splash_progress)
+	var loading := Label.new()
+	loading.text = "Preparing local game assets..."
+	loading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	loading.add_theme_font_size_override("font_size", 15)
+	box.add_child(loading)
+
+
+func _create_tutorial_overlay() -> void:
+	tutorial_overlay = _make_overlay()
+	tutorial_overlay.visible = false
+	ui_root.add_child(tutorial_overlay)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tutorial_overlay.add_child(center)
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", _make_panel_style())
+	panel.custom_minimum_size = Vector2(560.0, 520.0)
+	center.add_child(panel)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 18)
+	panel.add_child(box)
+	var heading := Label.new()
+	heading.text = "HOW TO PLAY"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 32)
+	box.add_child(heading)
+	var instructions := Label.new()
+	instructions.text = "1. Tap a bright, exposed screw.\n\n2. Remove every screw holding the top wooden board.\n\n3. The cleared board falls away and reveals the screws underneath.\n\n4. Clear every board before the timer runs out."
+	instructions.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	instructions.add_theme_font_size_override("font_size", 19)
+	box.add_child(instructions)
+	var continue_button := Button.new()
+	continue_button.text = "LET'S PLAY"
+	continue_button.custom_minimum_size = Vector2(0.0, 60.0)
+	continue_button.pressed.connect(_close_tutorial)
+	_style_button(continue_button, true)
+	box.add_child(continue_button)
+
+
+func _show_splash() -> void:
+	menu_overlay.visible = false
+	finish_overlay.visible = false
+	level_select_overlay.visible = false
+	pause_overlay.visible = false
+	tutorial_overlay.visible = false
+	splash_overlay.visible = true
+	game_started = false
+	is_paused = false
+	if splash_tween != null and splash_tween.is_valid():
+		splash_tween.kill()
+	splash_progress.value = 0.0
+	splash_tween = create_tween()
+	splash_tween.tween_property(splash_progress, "value", 100.0, 1.15)
+	splash_tween.tween_interval(0.18)
+	splash_tween.tween_callback(_finish_splash)
+
+
+func _finish_splash() -> void:
+	if game_started or not splash_overlay.visible:
+		return
+	splash_overlay.visible = false
+	if tutorial_seen:
+		_show_menu()
+	else:
+		_show_tutorial()
+
+
+func _show_tutorial() -> void:
+	menu_overlay.visible = false
+	finish_overlay.visible = false
+	level_select_overlay.visible = false
+	pause_overlay.visible = false
+	splash_overlay.visible = false
+	tutorial_overlay.visible = true
+	game_started = false
+	is_paused = false
+
+
+func _close_tutorial() -> void:
+	tutorial_seen = true
+	_save_progress()
+	tutorial_overlay.visible = false
+	_show_menu()
 
 
 func _create_level_select_overlay() -> void:
@@ -527,7 +669,12 @@ func _make_overlay() -> ColorRect:
 	return overlay
 
 
+
 func _show_menu() -> void:
+	if splash_tween != null and splash_tween.is_valid():
+		splash_tween.kill()
+	splash_overlay.visible = false
+	tutorial_overlay.visible = false
 	menu_overlay.visible = true
 	finish_overlay.visible = false
 	level_select_overlay.visible = false
@@ -537,7 +684,10 @@ func _show_menu() -> void:
 	status_label.text = "Remove exposed screws, clear the top board, then work downward."
 
 
+
 func _show_level_select() -> void:
+	splash_overlay.visible = false
+	tutorial_overlay.visible = false
 	for level in range(level_buttons.size()):
 		var level_button: Button = level_buttons[level]
 		var level_number: int = level + 1
@@ -557,7 +707,12 @@ func _on_level_selected(selected_level: int) -> void:
 	_start_level(selected_level)
 
 
+
 func _start_level(selected_level: int) -> void:
+	if splash_tween != null and splash_tween.is_valid():
+		splash_tween.kill()
+	splash_overlay.visible = false
+	tutorial_overlay.visible = false
 	level_index = clampi(selected_level, 1, MAX_LEVEL)
 	menu_overlay.visible = false
 	finish_overlay.visible = false
@@ -878,7 +1033,35 @@ func _unhandled_input(event: InputEvent) -> void:
 		_handle_tap(event.position)
 
 
+
+func _find_screw_near_screen_position(screen_position: Vector2) -> String:
+	if camera == null:
+		return ""
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var hit_radius: float = clampf(viewport_size.x * 0.075, 42.0, 68.0)
+	var best_distance_squared: float = hit_radius * hit_radius
+	var best_screw_id: String = ""
+	for screw_id in screws.keys():
+		var screw: Dictionary = screws[screw_id]
+		if bool(screw.get("removed", false)) or not _is_screw_accessible(screw):
+			continue
+		var target_position: Vector3 = screw["position"] + Vector3(0.0, 0.12, 0.0)
+		if camera.is_position_behind(target_position):
+			continue
+		var target_screen: Vector2 = camera.unproject_position(target_position)
+		var distance_squared: float = target_screen.distance_squared_to(screen_position)
+		if distance_squared <= best_distance_squared:
+			best_distance_squared = distance_squared
+			best_screw_id = str(screw_id)
+	return best_screw_id
+
+
 func _handle_tap(screen_position: Vector2) -> void:
+	# Screen-space picking is reliable for touchscreens and remains constrained to exposed screws.
+	var screen_pick_id: String = _find_screw_near_screen_position(screen_position)
+	if not screen_pick_id.is_empty():
+		_try_remove_screw(screen_pick_id)
+		return
 	var ray_origin: Vector3 = camera.project_ray_origin(screen_position)
 	var ray_end: Vector3 = ray_origin + camera.project_ray_normal(screen_position) * 100.0
 	var query := PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
