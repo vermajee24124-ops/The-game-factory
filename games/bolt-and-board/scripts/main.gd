@@ -48,6 +48,13 @@ var hint_button: Button
 var is_paused: bool = false
 var hints_used: int = 0
 var level_elapsed: float = 0.0
+var camera_focus := Vector3(0.0, 0.3, 0.0)
+var camera_yaw: float = 0.0
+var camera_pitch: float = 0.62
+var camera_distance: float = 14.0
+var camera_dragging: bool = false
+var camera_drag_moved: bool = false
+var camera_drag_start := Vector2.ZERO
 
 var wood_materials: Array = []
 var screw_color_materials: Array = []
@@ -986,10 +993,13 @@ func _load_level(number: int) -> void:
 	_refresh_tray_ui()
 
 	var layer_count: int = PuzzleRules.get_layer_count(number)
-	# Keep the full stack comfortably visible on small portrait screens.
+	# Keep the full stack visible, but let players rotate and zoom to inspect the puzzle.
 	var zoom_step: float = float(layer_count - 2)
-	camera.position = Vector3(0.0, 8.4 + zoom_step * 0.65, 11.6 + zoom_step * 0.85)
-	camera.look_at(Vector3(0.0, 0.30 + zoom_step * 0.06, 0.0), Vector3.UP)
+	camera_focus = Vector3(0.0, 0.30 + zoom_step * 0.06, 0.0)
+	camera_yaw = 0.0
+	camera_pitch = 0.62
+	camera_distance = 14.0 + zoom_step * 1.0
+	_update_camera_pose()
 	for layer in range(layer_count):
 		var width: float = 3.55 + float(layer) * 0.72 + float(number % 3) * 0.10
 		var depth: float = 2.45 + float(layer) * 0.52 + float(number % 2) * 0.12
@@ -1326,16 +1336,61 @@ func _unhandled_input(event: InputEvent) -> void:
 				_on_pause_pressed()
 			elif level_select_overlay.visible:
 				_show_menu()
-				elif finish_overlay.visible or fail_overlay.visible:
+			elif finish_overlay.visible or fail_overlay.visible:
 				_show_level_select()
 			return
-	if not game_started or is_paused or finish_overlay.visible:
+	if not game_started or is_paused or finish_overlay.visible or fail_overlay.visible:
 		return
-	if event is InputEventScreenTouch and event.pressed:
-		_handle_tap(event.position)
-	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_handle_tap(event.position)
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			camera_dragging = true
+			camera_drag_moved = false
+			camera_drag_start = event.position
+		else:
+			if camera_dragging and not camera_drag_moved:
+				_handle_tap(camera_drag_start)
+			camera_dragging = false
+	elif event is InputEventScreenDrag and camera_dragging:
+		if event.relative.length() > 3.0:
+			camera_drag_moved = true
+			_rotate_camera_by_drag(event.relative)
+	elif event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				camera_dragging = true
+				camera_drag_moved = false
+				camera_drag_start = event.position
+			else:
+				if camera_dragging and not camera_drag_moved:
+					_handle_tap(camera_drag_start)
+				camera_dragging = false
+		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			camera_distance = clampf(camera_distance - 0.8, 8.5, 25.0)
+			_update_camera_pose()
+		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			camera_distance = clampf(camera_distance + 0.8, 8.5, 25.0)
+			_update_camera_pose()
+	elif event is InputEventMouseMotion and camera_dragging:
+		if event.relative.length() > 3.0:
+			camera_drag_moved = true
+			_rotate_camera_by_drag(event.relative)
+	elif event is InputEventMagnifyGesture:
+		camera_distance = clampf(camera_distance / event.factor, 8.5, 25.0)
+		_update_camera_pose()
 
+
+func _rotate_camera_by_drag(relative: Vector2) -> void:
+	camera_yaw -= relative.x * 0.008
+	camera_pitch = clampf(camera_pitch + relative.y * 0.006, 0.28, 1.18)
+	_update_camera_pose()
+
+
+func _update_camera_pose() -> void:
+	if camera == null:
+		return
+	var horizontal: float = cos(camera_pitch) * camera_distance
+	camera.position = camera_focus + Vector3(sin(camera_yaw) * horizontal, sin(camera_pitch) * camera_distance, cos(camera_yaw) * horizontal)
+	camera.look_at(camera_focus, Vector3.UP)
 
 
 func _find_screw_near_screen_position(screen_position: Vector2) -> String:
