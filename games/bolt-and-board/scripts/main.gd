@@ -78,21 +78,39 @@ func _create_materials() -> void:
 	for color_value in [Color("#B77A43"), Color("#367FA2"), Color("#7B4934"), Color("#D6B985"), Color("#3D8A5C")]:
 		var wood := StandardMaterial3D.new()
 		wood.albedo_color = color_value
-		wood.roughness = 0.88
+		wood.roughness = 0.82
 		wood.metallic = 0.0
+		wood.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		var wood_texture := load("res://assets/textures/wood_oak.png") as Texture2D
+		var wood_normal := load("res://assets/textures/wood_oak_normal.png") as Texture2D
+		var wood_roughness := load("res://assets/textures/wood_oak_roughness.png") as Texture2D
 		if wood_texture != null:
 			wood.albedo_texture = wood_texture
-			wood.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		if wood_normal != null:
+			wood.normal_enabled = true
+			wood.normal_texture = wood_normal
+			wood.normal_scale = 0.38
+		if wood_roughness != null:
+			wood.roughness_texture = wood_roughness
+		wood.uv1_scale = Vector3(1.8, 1.8, 1.0)
 		wood_materials.append(wood)
 
 	metal_material = StandardMaterial3D.new()
 	metal_material.albedo_color = Color("#C9D4DD")
 	metal_material.metallic = 0.82
-	metal_material.roughness = 0.24
+	metal_material.roughness = 0.28
+	metal_material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	var steel_texture := load("res://assets/textures/brushed_steel.png") as Texture2D
+	var steel_normal := load("res://assets/textures/brushed_steel_normal.png") as Texture2D
+	var steel_roughness := load("res://assets/textures/brushed_steel_roughness.png") as Texture2D
 	if steel_texture != null:
 		metal_material.albedo_texture = steel_texture
+	if steel_normal != null:
+		metal_material.normal_enabled = true
+		metal_material.normal_texture = steel_normal
+		metal_material.normal_scale = 0.22
+	if steel_roughness != null:
+		metal_material.roughness_texture = steel_roughness
 
 	dark_metal_material = StandardMaterial3D.new()
 	dark_metal_material.albedo_color = Color("#596675")
@@ -224,15 +242,39 @@ func _create_world() -> void:
 	environment.background_color = Color("#172333")
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	environment.ambient_light_color = Color("#B6C7D8")
-	environment.ambient_light_energy = 0.65
+	environment.ambient_light_energy = 0.72
+	environment.glow_enabled = true
+	environment.glow_intensity = 0.22
+	environment.glow_strength = 0.55
+	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	environment.adjustment_enabled = true
+	environment.adjustment_contrast = 1.06
+	environment.adjustment_saturation = 1.08
 	world_environment.environment = environment
 	add_child(world_environment)
 
 	var sunlight := DirectionalLight3D.new()
 	sunlight.rotation_degrees = Vector3(-52.0, -28.0, 0.0)
-	sunlight.light_energy = 1.35
+	sunlight.light_energy = 1.55
 	sunlight.shadow_enabled = true
+	sunlight.shadow_blur = 2.2
 	add_child(sunlight)
+
+	var fill_light := OmniLight3D.new()
+	fill_light.position = Vector3(-4.0, 5.0, 2.5)
+	fill_light.light_color = Color("#6BA8D6")
+	fill_light.light_energy = 0.42
+	fill_light.omni_range = 13.0
+	fill_light.shadow_enabled = false
+	add_child(fill_light)
+
+	var rim_light := OmniLight3D.new()
+	rim_light.position = Vector3(3.8, 3.2, -4.0)
+	rim_light.light_color = Color("#F0B56C")
+	rim_light.light_energy = 0.62
+	rim_light.omni_range = 10.0
+	rim_light.shadow_enabled = false
+	add_child(rim_light)
 
 	var floor_mesh := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
@@ -247,11 +289,24 @@ func _create_world() -> void:
 	platform_box.size = Vector3(8.4, 0.32, 7.0)
 	platform.mesh = platform_box
 	var platform_mat := StandardMaterial3D.new()
-	platform_mat.albedo_color = Color("#314253")
-	platform_mat.roughness = 0.72
+	platform_mat.albedo_color = Color("#25394A")
+	platform_mat.metallic = 0.34
+	platform_mat.roughness = 0.38
 	platform.material_override = platform_mat
 	platform.position = Vector3(0.0, -0.91, 0.0)
 	add_child(platform)
+
+	var platform_trim := MeshInstance3D.new()
+	var trim_box := BoxMesh.new()
+	trim_box.size = Vector3(8.52, 0.07, 7.12)
+	platform_trim.mesh = trim_box
+	var trim_material := StandardMaterial3D.new()
+	trim_material.albedo_color = Color("#C28A4C")
+	trim_material.metallic = 0.72
+	trim_material.roughness = 0.28
+	platform_trim.material_override = trim_material
+	platform_trim.position = Vector3(0.0, -0.78, 0.0)
+	add_child(platform_trim)
 
 
 func _create_camera() -> void:
@@ -851,10 +906,31 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 
 	var board_mesh := MeshInstance3D.new()
 	var box := BoxMesh.new()
-	box.size = Vector3(width, 0.30, depth)
+	box.size = Vector3(width, 0.34, depth)
 	board_mesh.mesh = box
-	board_mesh.material_override = wood_materials[(layer + number) % wood_materials.size()]
+	var board_base_material := StandardMaterial3D.new()
+	board_base_material.albedo_color = Color("#4A2B1D")
+	board_base_material.roughness = 0.72
+	board_mesh.material_override = board_base_material
 	board_node.add_child(board_mesh)
+
+	# Raised top plank, thin edge band and corner caps give each plate a finished furniture-like silhouette.
+	var top_mesh := MeshInstance3D.new()
+	var top_box := BoxMesh.new()
+	top_box.size = Vector3(width - 0.055, 0.085, depth - 0.055)
+	top_mesh.mesh = top_box
+	top_mesh.material_override = wood_materials[(layer + number) % wood_materials.size()]
+	top_mesh.position.y = 0.205
+	board_node.add_child(top_mesh)
+
+	var edge_material := StandardMaterial3D.new()
+	edge_material.albedo_color = Color("#D2A16A")
+	edge_material.metallic = 0.12
+	edge_material.roughness = 0.52
+	_add_box(board_node, Vector3(width - 0.10, 0.025, 0.035), edge_material, Vector3(0.0, 0.15, depth * 0.5 - 0.025))
+	_add_box(board_node, Vector3(width - 0.10, 0.025, 0.035), edge_material, Vector3(0.0, 0.15, -depth * 0.5 + 0.025))
+	_add_box(board_node, Vector3(0.035, 0.025, depth - 0.10), edge_material, Vector3(width * 0.5 - 0.025, 0.15, 0.0))
+	_add_box(board_node, Vector3(0.035, 0.025, depth - 0.10), edge_material, Vector3(-width * 0.5 + 0.025, 0.15, 0.0))
 
 	# A real collider prevents taps passing through a visible upper board.
 	var board_body := StaticBody3D.new()
@@ -955,41 +1031,50 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 
 	var shaft := MeshInstance3D.new()
 	var shaft_mesh := CylinderMesh.new()
-	shaft_mesh.top_radius = 0.055
-	shaft_mesh.bottom_radius = 0.055
-	shaft_mesh.height = 0.30
+	shaft_mesh.top_radius = 0.052
+	shaft_mesh.bottom_radius = 0.052
+	shaft_mesh.height = 0.31
+	shaft_mesh.radial_segments = 24
 	shaft.mesh = shaft_mesh
 	shaft.material_override = dark_metal_material
 	shaft.position = Vector3(0.0, -0.08, 0.0)
 	screw_root.add_child(shaft)
-	for thread_index in range(4):
-		var thread_ring := MeshInstance3D.new()
-		var thread_mesh := CylinderMesh.new()
-		thread_mesh.top_radius = 0.067
-		thread_mesh.bottom_radius = 0.067
-		thread_mesh.height = 0.018
-		thread_mesh.radial_segments = 16
-		thread_ring.mesh = thread_mesh
-		thread_ring.material_override = metal_material
-		thread_ring.position = Vector3(0.0, -0.205 + float(thread_index) * 0.065, 0.0)
-		screw_root.add_child(thread_ring)
+
+	var thread := MeshInstance3D.new()
+	thread.name = "HelicalThread"
+	thread.mesh = _build_thread_mesh(0.055, 0.25, 0.058, 0.012)
+	thread.material_override = metal_material
+	thread.position.y = -0.075
+	screw_root.add_child(thread)
 
 	var washer := MeshInstance3D.new()
 	var washer_mesh := CylinderMesh.new()
-	washer_mesh.top_radius = 0.19
-	washer_mesh.bottom_radius = 0.19
-	washer_mesh.height = 0.045
+	washer_mesh.top_radius = 0.185
+	washer_mesh.bottom_radius = 0.185
+	washer_mesh.height = 0.035
+	washer_mesh.radial_segments = 32
 	washer.mesh = washer_mesh
 	washer.material_override = dark_metal_material
 	washer.position = Vector3(0.0, 0.015, 0.0)
 	screw_root.add_child(washer)
 
+	var washer_lip := MeshInstance3D.new()
+	var lip_mesh := CylinderMesh.new()
+	lip_mesh.top_radius = 0.17
+	lip_mesh.bottom_radius = 0.17
+	lip_mesh.height = 0.012
+	lip_mesh.radial_segments = 32
+	washer_lip.mesh = lip_mesh
+	washer_lip.material_override = metal_material
+	washer_lip.position = Vector3(0.0, 0.038, 0.0)
+	screw_root.add_child(washer_lip)
+
 	var head := MeshInstance3D.new()
 	var head_mesh := CylinderMesh.new()
-	head_mesh.top_radius = 0.135
-	head_mesh.bottom_radius = 0.135
+	head_mesh.top_radius = 0.118
+	head_mesh.bottom_radius = 0.145
 	head_mesh.height = 0.105
-	head_mesh.radial_segments = 12
+	head_mesh.radial_segments = 32
 	head.mesh = head_mesh
 	head.material_override = metal_material
 	head.position = Vector3(0.0, 0.09, 0.0)
@@ -1028,6 +1113,43 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 		"removed": false
 	}
 	total_screws += 1
+
+
+
+func _build_thread_mesh(radius: float, length: float, pitch: float, tube_radius: float) -> ArrayMesh:
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var turns: float = length / pitch
+	var steps: int = maxi(24, int(turns * 32.0))
+	var sides: int = 6
+	for step in range(steps):
+		var t0: float = float(step) / float(steps)
+		var t1: float = float(step + 1) / float(steps)
+		var a0: float = t0 * turns * TAU
+		var a1: float = t1 * turns * TAU
+		var c0 := Vector3(radius * cos(a0), -length * 0.5 + t0 * length, radius * sin(a0))
+		var c1 := Vector3(radius * cos(a1), -length * 0.5 + t1 * length, radius * sin(a1))
+		var tangent0 := Vector3(-radius * sin(a0), pitch / TAU, radius * cos(a0)).normalized()
+		var tangent1 := Vector3(-radius * sin(a1), pitch / TAU, radius * cos(a1)).normalized()
+		var radial0 := Vector3(cos(a0), 0.0, sin(a0))
+		var radial1 := Vector3(cos(a1), 0.0, sin(a1))
+		var bitangent0 := tangent0.cross(radial0).normalized()
+		var bitangent1 := tangent1.cross(radial1).normalized()
+		for side in range(sides):
+			var q0: float = float(side) / float(sides) * TAU
+			var q1: float = float(side + 1) / float(sides) * TAU
+			var p00 := c0 + (radial0 * cos(q0) + bitangent0 * sin(q0)) * tube_radius
+			var p01 := c0 + (radial0 * cos(q1) + bitangent0 * sin(q1)) * tube_radius
+			var p10 := c1 + (radial1 * cos(q0) + bitangent1 * sin(q0)) * tube_radius
+			var p11 := c1 + (radial1 * cos(q1) + bitangent1 * sin(q1)) * tube_radius
+			surface.add_vertex(p00)
+			surface.add_vertex(p10)
+			surface.add_vertex(p11)
+			surface.add_vertex(p00)
+			surface.add_vertex(p11)
+			surface.add_vertex(p01)
+	surface.generate_normals()
+	return surface.commit()
 
 
 func _find_board_index(board_id: int) -> int:
