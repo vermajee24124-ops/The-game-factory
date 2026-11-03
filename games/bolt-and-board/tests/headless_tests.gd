@@ -32,6 +32,10 @@ func _run_tests() -> void:
 
 	var scene: PackedScene = load("res://Main.tscn") as PackedScene
 	assert(scene != null, "Main scene must load")
+	assert(FileAccess.file_exists("res://assets/textures/wood_oak_normal.png"), "Wood normal map must be generated")
+	assert(FileAccess.file_exists("res://assets/textures/wood_oak_roughness.png"), "Wood roughness map must be generated")
+	assert(FileAccess.file_exists("res://assets/textures/brushed_steel_normal.png"), "Steel normal map must be generated")
+	assert(FileAccess.file_exists("res://assets/audio/match_clear.wav"), "Match-clear sound must be generated")
 	var game := scene.instantiate()
 	root.add_child(game)
 	await process_frame
