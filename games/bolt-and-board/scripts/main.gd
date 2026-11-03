@@ -96,9 +96,18 @@ func _create_materials() -> void:
 		wood.roughness = 0.88
 		wood.metallic = 0.0
 		var wood_texture := load("res://assets/textures/wood_oak.png") as Texture2D
+		var wood_normal := load("res://assets/textures/wood_oak_normal.png") as Texture2D
+		var wood_roughness := load("res://assets/textures/wood_oak_roughness.png") as Texture2D
 		if wood_texture != null:
 			wood.albedo_texture = wood_texture
-			wood.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+			wood.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+		if wood_normal != null:
+			wood.normal_enabled = true
+			wood.normal_texture = wood_normal
+			wood.normal_scale = 0.24
+		if wood_roughness != null:
+			wood.roughness_texture = wood_roughness
+			wood.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
 		wood_materials.append(wood)
 
 	for screw_color in screw_color_values:
@@ -114,8 +123,14 @@ func _create_materials() -> void:
 	metal_material.metallic = 0.82
 	metal_material.roughness = 0.24
 	var steel_texture := load("res://assets/textures/brushed_steel.png") as Texture2D
+	var steel_normal := load("res://assets/textures/brushed_steel_normal.png") as Texture2D
 	if steel_texture != null:
 		metal_material.albedo_texture = steel_texture
+		metal_material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	if steel_normal != null:
+		metal_material.normal_enabled = true
+		metal_material.normal_texture = steel_normal
+		metal_material.normal_scale = 0.18
 
 	dark_metal_material = StandardMaterial3D.new()
 	dark_metal_material.albedo_color = Color("#596675")
@@ -137,11 +152,17 @@ func _create_materials() -> void:
 	hole_material.roughness = 1.0
 
 	floor_material = StandardMaterial3D.new()
-	floor_material.albedo_color = Color("#75634F")
-	floor_material.roughness = 0.94
-	var floor_texture := load("res://assets/textures/wood_oak.png") as Texture2D
+	floor_material.albedo_color = Color("#F0D9B4")
+	floor_material.roughness = 0.92
+	var floor_texture := load("res://assets/textures/maple_table.png") as Texture2D
+	var floor_normal := load("res://assets/textures/wood_oak_normal.png") as Texture2D
 	if floor_texture != null:
 		floor_material.albedo_texture = floor_texture
+		floor_material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	if floor_normal != null:
+		floor_material.normal_enabled = true
+		floor_material.normal_texture = floor_normal
+		floor_material.normal_scale = 0.10
 
 
 func _create_audio() -> void:
@@ -257,16 +278,20 @@ func _create_world() -> void:
 
 	var sunlight := DirectionalLight3D.new()
 	sunlight.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
-	sunlight.light_energy = 1.28
+	sunlight.light_energy = 1.16
 	sunlight.shadow_enabled = true
-	sunlight.shadow_bias = 0.08
-	sunlight.directional_shadow_max_distance = 14.0
+	sunlight.shadow_bias = 0.095
+	sunlight.shadow_normal_bias = 0.65
+	sunlight.shadow_blur = 1.8
+	sunlight.shadow_opacity = 0.52
+	sunlight.directional_shadow_mode = 0
+	sunlight.directional_shadow_max_distance = 12.0
 	add_child(sunlight)
 
 	var fill_light := DirectionalLight3D.new()
 	fill_light.rotation_degrees = Vector3(-28.0, 145.0, 0.0)
 	fill_light.light_color = Color("#FFE3B9")
-	fill_light.light_energy = 0.48
+	fill_light.light_energy = 0.62
 	fill_light.shadow_enabled = false
 	add_child(fill_light)
 
@@ -293,7 +318,7 @@ func _create_world() -> void:
 	var platform_top_mesh := BoxMesh.new()
 	platform_top_mesh.size = Vector3(4.28, 0.045, 5.38)
 	platform_top.mesh = platform_top_mesh
-	platform_top.material_override = wood_materials[0]
+	platform_top.material_override = floor_material
 	platform_top.position = Vector3(0.0, 0.055, 0.0)
 	add_child(platform_top)
 
