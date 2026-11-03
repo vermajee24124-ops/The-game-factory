@@ -281,7 +281,7 @@ func _create_world() -> void:
 	platform_mat.albedo_color = Color("#714326")
 	platform_mat.roughness = 0.72
 	platform.material_override = platform_mat
-	platform.position = Vector3(0.0, -0.90, 0.0)
+	platform.position = Vector3(0.0, -0.18, 0.0)
 	add_child(platform)
 
 	var platform_top := MeshInstance3D.new()
@@ -289,7 +289,7 @@ func _create_world() -> void:
 	platform_top_mesh.size = Vector3(4.28, 0.045, 5.38)
 	platform_top.mesh = platform_top_mesh
 	platform_top.material_override = wood_materials[0]
-	platform_top.position = Vector3(0.0, -0.665, 0.0)
+	platform_top.position = Vector3(0.0, 0.055, 0.0)
 	add_child(platform_top)
 
 
@@ -972,7 +972,7 @@ func _build_piece_specs(width: float, depth: float, level: int, layer: int) -> A
 		1:
 			# Crossing diagonals with two short locking braces.
 			specs.append({"x": 0.0, "z": 0.0, "width": depth * 0.92, "depth": 0.62, "angle": PI * 0.25})
-			specs.append({"x": 0.0, "z": 0.0, "width": depth * 0.92, "depth": 0.62, "angle": -PI * 0.25})
+			specs.append({"x": 0.0, "z": 0.0, "width": width * 0.84, "depth": 0.62, "angle": -PI * 0.25})
 			for z_offset in [-1.15, 1.15]:
 				specs.append({"x": 0.0, "z": z_offset, "width": width * 0.62, "depth": 0.48, "angle": 0.0})
 		2:
@@ -1113,7 +1113,7 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 		hole_mesh.height = 0.018
 		hole.mesh = hole_mesh
 		hole.material_override = hole_material
-		hole.position = owning_node.to_local(world_position) + Vector3(0.0, -0.004, 0.0)
+		hole.position = owning_node.to_local(world_position) + Vector3(0.0, 0.015, 0.0)
 		owning_node.add_child(hole)
 
 	var shaft := MeshInstance3D.new()
