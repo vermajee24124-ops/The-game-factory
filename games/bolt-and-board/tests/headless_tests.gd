@@ -118,7 +118,9 @@ func _run_tests() -> void:
 			screw_state["removed"] = true
 			game.set("removed_screws", int(game.get("removed_screws")) + 1)
 		game.call("_check_board_cleared", int(board_data["id"]))
-		assert(bool(board_data["removed"]), "Every board piece should clear after its own screws are removed")
+		assert(bool(board_data["clearing"]), "A cleared plate should enter its fall animation")
+		game.call("_finish_board_clear", int(board_data["id"]))
+		assert(bool(board_data["removed"]), "A plate should unlock lower screws after its fall animation finishes")
 	assert(int(game.get("removed_screws")) == int(game.get("total_screws")), "Every screw should be removable in layer order")
 	game.set("toolbox_target_index", (game.get("toolbox_targets") as Array).size())
 	game.set("tray_colors", [])
@@ -128,5 +130,5 @@ func _run_tests() -> void:
 	game.call("_on_next_pressed")
 	assert(int(game.get("level_index")) == 2, "Next should load the following level")
 	assert(int(game.get("highest_unlocked_level")) == 2, "Completing a level should unlock the next one")
-	print("PASS: PBR assets, multi-piece layers, touch picking, color toolbox sorting, five-slot storage, startup flow and campaign progression")
+	print("PASS: PBR assets, multi-piece layers, animated plate blocking, touch picking, color toolbox sorting, five-slot storage and campaign progression")
 	quit(0)
