@@ -234,13 +234,13 @@ func _create_screw_mesh_cache() -> void:
 	screw_hit_shape.radius = 0.34
 
 	screw_slot_horizontal_mesh = BoxMesh.new()
-	screw_slot_horizontal_mesh.size = Vector3(0.145, 0.010, 0.020)
+	screw_slot_horizontal_mesh.size = Vector3(0.145, 0.008, 0.026)
 	screw_slot_vertical_mesh = BoxMesh.new()
-	screw_slot_vertical_mesh.size = Vector3(0.020, 0.010, 0.145)
+	screw_slot_vertical_mesh.size = Vector3(0.026, 0.008, 0.145)
 	screw_slot_material = StandardMaterial3D.new()
-	screw_slot_material.albedo_color = Color("#26313C")
-	screw_slot_material.metallic = 0.82
-	screw_slot_material.roughness = 0.28
+	screw_slot_material.albedo_color = Color("#111923")
+	screw_slot_material.metallic = 0.30
+	screw_slot_material.roughness = 0.58
 
 
 func _add_shared_mesh(parent: Node3D, mesh: Mesh, material: Material, local_position: Vector3) -> MeshInstance3D:
@@ -1467,8 +1467,8 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 	screw_root.add_child(head)
 
 	# Place the cross-slot just below the screw crown so it reads as a recessed drive, not raised paint.
-	_add_shared_mesh(screw_root, screw_slot_horizontal_mesh, screw_slot_material, Vector3(0.0, 0.1365, 0.0))
-	_add_shared_mesh(screw_root, screw_slot_vertical_mesh, screw_slot_material, Vector3(0.0, 0.1365, 0.0))
+	_add_shared_mesh(screw_root, screw_slot_horizontal_mesh, screw_slot_material, Vector3(0.0, 0.1430, 0.0))
+	_add_shared_mesh(screw_root, screw_slot_vertical_mesh, screw_slot_material, Vector3(0.0, 0.1430, 0.0))
 	var head_rim := MeshInstance3D.new()
 	head_rim.mesh = screw_rim_mesh
 	head_rim.material_override = metal_material
