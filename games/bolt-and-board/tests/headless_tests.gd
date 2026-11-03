@@ -43,6 +43,23 @@ func _run_tests() -> void:
 	assert(screws.size() >= 8, "Playable level should contain screws")
 	assert(game.get("level_select_overlay") != null, "Level selection screen must be created")
 	assert(game.get("pause_overlay") != null, "Pause screen must be created")
+	assert(game.get("splash_overlay") != null, "Branded startup/loading screen must be created")
+	assert(game.get("tutorial_overlay") != null, "First-run tutorial must be created")
+	var ui_root: Control = game.get("ui_root")
+	assert(ui_root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Full-screen UI root must pass gameplay touches through")
+	var touch_test_id := ""
+	for screw_id in screws.keys():
+		if game.call("_is_screw_accessible", screws[screw_id]):
+			touch_test_id = str(screw_id)
+			break
+	assert(not touch_test_id.is_empty(), "A starting-level screw must be accessible")
+	var touch_screw: Dictionary = screws[touch_test_id]
+	var touch_point: Vector2 = (game.get("camera") as Camera3D).unproject_position(touch_screw["position"] + Vector3(0.0, 0.12, 0.0))
+	game.call("_handle_tap", touch_point)
+	assert(bool(screws[touch_test_id]["removed"]), "A simulated screen tap on an exposed screw must remove it")
+	game.call("_load_level", 1)
+	boards = game.get("boards")
+	screws = game.get("screws")
 	game.call("_on_pause_pressed")
 	assert(bool(game.get("is_paused")), "Pause should stop gameplay input")
 	game.call("_resume_game")
@@ -72,5 +89,5 @@ func _run_tests() -> void:
 	game.call("_on_next_pressed")
 	assert(int(game.get("level_index")) == 2, "Next should load the following level")
 	assert(int(game.get("highest_unlocked_level")) == 2, "Completing a level should unlock the next one")
-	print("PASS: puzzle rules, level locks, pattern variation, menus, pause/resume, level completion and progression")
+	print("PASS: puzzle rules, touch picking, startup flow, level locks, menus, pause/resume, level completion and progression")
 	quit(0)
