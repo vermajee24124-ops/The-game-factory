@@ -4,6 +4,8 @@ const PuzzleRules = preload("res://scripts/puzzle_rules.gd")
 const MAX_LEVEL := 30
 const SCREW_LAYER := 1
 const BOARD_LAYER := 2
+const TRAY_CAPACITY := 7
+const MATCH_COUNT := 3
 
 var camera: Camera3D
 var game_root: Node3D
@@ -48,6 +50,11 @@ var hints_used: int = 0
 var level_elapsed: float = 0.0
 
 var wood_materials: Array = []
+var screw_color_materials: Array = []
+var tray_colors: Array[int] = []
+var tray_slot_labels: Array[Label] = []
+var tray_status_label: Label
+var fail_overlay: ColorRect
 var metal_material: StandardMaterial3D
 var dark_metal_material: StandardMaterial3D
 var blocked_material: StandardMaterial3D
@@ -126,6 +133,14 @@ func _create_materials() -> void:
 	gold_material.albedo_color = Color("#FFD36A")
 	gold_material.metallic = 0.78
 	gold_material.roughness = 0.22
+
+	screw_color_materials.clear()
+	for color_value in [Color("#E45A43"), Color("#39A9C8"), Color("#E6B84F")]:
+		var colored_steel := StandardMaterial3D.new()
+		colored_steel.albedo_color = color_value
+		colored_steel.metallic = 0.72
+		colored_steel.roughness = 0.24
+		screw_color_materials.append(colored_steel)
 
 	hole_material = StandardMaterial3D.new()
 	hole_material.albedo_color = Color("#24170F")
@@ -385,7 +400,7 @@ func _create_ui() -> void:
 	bottom_panel.add_theme_stylebox_override("panel", _make_panel_style())
 	bottom_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	bottom_panel.offset_left = 18.0
-	bottom_panel.offset_top = -176.0
+	bottom_panel.offset_top = -252.0
 	bottom_panel.offset_right = -18.0
 	bottom_panel.offset_bottom = -18.0
 	ui_root.add_child(bottom_panel)
@@ -408,8 +423,38 @@ func _create_ui() -> void:
 	progress_bar.max_value = 100.0
 	progress_bar.value = 0.0
 	progress_bar.show_percentage = false
-	progress_bar.custom_minimum_size = Vector2(0.0, 14.0)
+	progress_bar.custom_minimum_size = Vector2(0.0, 12.0)
 	bottom_box.add_child(progress_bar)
+
+	tray_status_label = Label.new()
+	tray_status_label.text = "SCREW TRAY  |  MATCH 3 COLORS"
+	tray_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tray_status_label.add_theme_font_size_override("font_size", 15)
+	tray_status_label.add_theme_color_override("font_color", Color("#E6BD79"))
+	bottom_box.add_child(tray_status_label)
+
+	var tray_row := HBoxContainer.new()
+	tray_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	tray_row.add_theme_constant_override("separation", 9)
+	bottom_box.add_child(tray_row)
+	tray_slot_labels.clear()
+	for slot_index in range(TRAY_CAPACITY):
+		var slot := PanelContainer.new()
+		slot.custom_minimum_size = Vector2(48.0, 48.0)
+		var slot_style := StyleBoxFlat.new()
+		slot_style.bg_color = Color("#182838")
+		slot_style.border_color = Color("#718397")
+		slot_style.set_border_width_all(2)
+		slot_style.set_corner_radius_all(12)
+		slot.add_theme_stylebox_override("panel", slot_style)
+		tray_row.add_child(slot)
+		var slot_label := Label.new()
+		slot_label.text = "·"
+		slot_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		slot_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		slot_label.add_theme_font_size_override("font_size", 28)
+		slot.add_child(slot_label)
+		tray_slot_labels.append(slot_label)
 
 	hint_button = Button.new()
 	hint_button.text = "HINT: SHOW AN EXPOSED SCREW"
@@ -503,8 +548,88 @@ func _create_ui() -> void:
 	_create_pause_overlay()
 	_create_tutorial_overlay()
 	_create_splash_overlay()
+	_create_fail_overlay()
 	_update_sound_button_labels()
 
+
+
+func _create_fail_overlay() -> void:
+	fail_overlay = _make_overlay()
+	fail_overlay.visible = false
+	ui_root.add_child(fail_overlay)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fail_overlay.add_child(center)
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", _make_panel_style())
+	panel.custom_minimum_size = Vector2(520.0, 330.0)
+	center.add_child(panel)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 18)
+	panel.add_child(box)
+	var heading := Label.new()
+	heading.text = "TRAY IS FULL!"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 32)
+	box.add_child(heading)
+	var message := Label.new()
+	message.text = "Plan your moves and match three screws of the same color."
+	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(message)
+	var retry := Button.new()
+	retry.text = "TRY AGAIN"
+	retry.custom_minimum_size = Vector2(0.0, 60.0)
+	retry.pressed.connect(_on_restart_pressed)
+	_style_button(retry, true)
+	box.add_child(retry)
+	var levels := Button.new()
+	levels.text = "LEVEL SELECT"
+	levels.custom_minimum_size = Vector2(0.0, 52.0)
+	levels.pressed.connect(_show_level_select)
+	_style_button(levels, false)
+	box.add_child(levels)
+
+
+func _refresh_tray_ui() -> void:
+	for index in range(tray_slot_labels.size()):
+		var slot_label: Label = tray_slot_labels[index]
+		if index < tray_colors.size():
+			var color_id: int = tray_colors[index]
+			slot_label.text = "●"
+			slot_label.add_theme_color_override("font_color", screw_color_materials[color_id].albedo_color)
+		else:
+			slot_label.text = "·"
+			slot_label.add_theme_color_override("font_color", Color("#718397"))
+	if tray_status_label != null:
+		tray_status_label.text = "SCREW TRAY  %d/%d  |  MATCH 3 COLORS" % [tray_colors.size(), TRAY_CAPACITY]
+
+
+func _add_screw_to_tray(color_id: int) -> bool:
+	tray_colors.append(color_id)
+	var matched := false
+	while true:
+		var matching_indices: Array[int] = []
+		for index in range(tray_colors.size()):
+			if tray_colors[index] == color_id:
+				matching_indices.append(index)
+				if matching_indices.size() == MATCH_COUNT:
+					break
+		if matching_indices.size() < MATCH_COUNT:
+			break
+		for index in range(matching_indices.size() - 1, -1, -1):
+			tray_colors.remove_at(matching_indices[index])
+		matched = true
+		_play_sfx("match_clear")
+	_refresh_tray_ui()
+	if tray_colors.size() >= TRAY_CAPACITY:
+		game_started = false
+		is_paused = false
+		fail_overlay.visible = true
+		return false
+	if matched:
+		status_label.text = "COLOR MATCH! Three screws cleared from the tray."
+	return true
 
 
 func _create_splash_overlay() -> void:
@@ -788,6 +913,7 @@ func _start_level(selected_level: int) -> void:
 	finish_overlay.visible = false
 	level_select_overlay.visible = false
 	pause_overlay.visible = false
+	fail_overlay.visible = false
 	is_paused = false
 	game_started = true
 	_load_level(level_index)
@@ -816,6 +942,7 @@ func _on_play_pressed() -> void:
 func _on_restart_pressed() -> void:
 	if game_started or is_paused:
 		pause_overlay.visible = false
+		fail_overlay.visible = false
 		is_paused = false
 		game_started = true
 		_load_level(level_index)
@@ -846,6 +973,9 @@ func _load_level(number: int) -> void:
 	next_screw_id = 0
 	finish_overlay.visible = false
 	current_hint_id = ""
+	tray_colors.clear()
+	fail_overlay.visible = false
+	_refresh_tray_ui()
 
 	var layer_count: int = PuzzleRules.get_layer_count(number)
 	# Keep the full stack comfortably visible on small portrait screens.
@@ -1110,9 +1240,11 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 		"head": head,
 		"board_id": board_id,
 		"position": world_position,
+		"color_id": posmod(next_screw_id * 5 + board_id, screw_color_materials.size()),
 		"removed": false
 	}
 	total_screws += 1
+	_refresh_tray_ui()
 
 
 
@@ -1172,7 +1304,7 @@ func _refresh_screw_visuals() -> void:
 		if str(screw_id) == current_hint_id:
 			head.material_override = gold_material
 		elif _is_screw_accessible(screw):
-			head.material_override = metal_material
+			head.material_override = screw_color_materials[int(screw.get("color_id", 0))]
 		else:
 			head.material_override = blocked_material
 
@@ -1186,7 +1318,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_on_pause_pressed()
 			elif level_select_overlay.visible:
 				_show_menu()
-			elif finish_overlay.visible:
+				elif finish_overlay.visible or fail_overlay.visible:
 				_show_level_select()
 			return
 	if not game_started or is_paused or finish_overlay.visible:
@@ -1251,6 +1383,8 @@ func _try_remove_screw(screw_id: String) -> void:
 		return
 	if not _is_screw_accessible(screw):
 		status_label.text = "This screw is covered. Clear the upper board first."
+		return
+	if not _add_screw_to_tray(int(screw.get("color_id", 0))):
 		return
 
 	screw["removed"] = true
@@ -1341,3 +1475,4 @@ func _update_hud() -> void:
 		timer_label.text = "TIME %s" % _format_time(level_elapsed)
 	if progress_bar != null:
 		progress_bar.value = 100.0 if total_screws <= 0 else (float(removed_screws) / float(total_screws)) * 100.0
+	_refresh_tray_ui()
