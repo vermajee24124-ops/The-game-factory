@@ -17,9 +17,9 @@ noise = rng.normal(0, 2.8, (SIZE, SIZE))
 grain = np.sin(x * 0.105 + np.sin(y * 0.025) * 2.4) * 7
 layer = np.sin(x * 0.035 + y * 0.012) * 4 + np.sin(x * 0.42 + np.sin(y * 0.11)) * 1.8
 base = np.zeros((SIZE, SIZE, 3), dtype=np.float32)
-for c, value in enumerate((157, 101, 58)):
+for c, value in enumerate((218, 211, 196)):
     base[:, :, c] = value
-for c, scale in enumerate((1.0, 0.83, 0.62)):
+for c, scale in enumerate((1.0, 0.96, 0.88)):
     base[:, :, c] += grain * scale + layer * scale + noise * scale
 for cx, cy, rx, ry in ((125, 140, 22, 10), (385, 350, 31, 13), (270, 65, 17, 8)):
     d = np.sqrt(((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2)
@@ -53,10 +53,10 @@ wood_roughness = np.clip(0.76 + (np.sin(x * 0.12 + y * 0.008) * 0.035) + rng.nor
 Image.fromarray(np.uint8(wood_roughness * 255), "L").save(TEXTURES / "wood_oak_roughness.png", optimize=True)
 
 # A lighter maple surface keeps the puzzle visually separated from its table.
-table_grain = np.sin(x * 0.06 + np.sin(y * 0.012) * 2.0) * 5.0 + np.sin(x * 0.018 + y * 0.01) * 2.5
-table_noise = rng.normal(0, 1.7, (SIZE, SIZE))
+table_grain = np.sin(x * 0.06 + np.sin(y * 0.012) * 2.0) * 3.2 + np.sin(x * 0.018 + y * 0.01) * 1.8
+table_noise = rng.normal(0, 1.3, (SIZE, SIZE))
 table_base = np.zeros((SIZE, SIZE, 3), dtype=np.float32)
-for channel, value in enumerate((207, 178, 139)):
+for channel, value in enumerate((188, 183, 174)):
     table_base[:, :, channel] = value + table_grain + table_noise
 Image.fromarray(np.uint8(np.clip(table_base, 0, 255)), "RGB").save(TEXTURES / "maple_table.png", optimize=True)
 
