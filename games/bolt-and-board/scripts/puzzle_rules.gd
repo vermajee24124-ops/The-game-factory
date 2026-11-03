@@ -34,3 +34,19 @@ static func is_level_unlocked(level: int, highest_unlocked: int) -> bool:
 
 static func get_pattern_index(level: int, layer: int) -> int:
 	return posmod(level + layer * 2, 6)
+
+# Build deterministic color-toolbox batches. Each target box accepts up to three
+# screws of one color; the final batch for a color may contain one or two.
+static func build_toolbox_targets(color_counts: Array, first_color: int, color_total: int = 4) -> Array[Dictionary]:
+	var targets: Array[Dictionary] = []
+	if color_total <= 0:
+		return targets
+	for offset in range(color_total):
+		var color_id: int = posmod(first_color + offset, color_total)
+		var remaining: int = int(color_counts[color_id]) if color_id < color_counts.size() else 0
+		while remaining > 0:
+			var goal: int = mini(3, remaining)
+			targets.append({"color": color_id, "goal": goal})
+			remaining -= goal
+	return targets
+
