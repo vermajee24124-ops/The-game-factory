@@ -788,11 +788,41 @@ func _load_level(number: int) -> void:
 		var y: float = 0.22 + float(layer_count - 1 - layer) * 0.46
 		var center_x: float = sin(float(number * 3 + layer) * 0.47) * 0.24
 		var center_z: float = cos(float(number * 2 + layer) * 0.39) * 0.20
-		_create_board(width, depth, y, center_x, center_z, layer, number)
+		var piece_specs: Array = _build_piece_specs(width, depth, number, layer)
+		for piece_index in range(piece_specs.size()):
+			var piece: Dictionary = piece_specs[piece_index]
+			_create_board(
+				float(piece["width"]),
+				float(piece["depth"]),
+				y,
+				center_x + float(piece["x"]),
+				center_z + float(piece["z"]),
+				layer,
+				number + piece_index
+			)
 
 	_update_hud()
 	status_label.text = "Tap the bright exposed screws. Remove every screw from a board to clear it."
 	_refresh_screw_visuals()
+
+
+func _build_piece_specs(width: float, depth: float, level: int, layer: int) -> Array:
+	var specs: Array = []
+	match posmod(level * 2 + layer * 3, 4):
+		0:
+			for z_sign in [-1.0, 1.0]:
+				specs.append({"x": 0.0, "z": z_sign * depth * 0.26, "width": width * 0.94, "depth": depth * 0.42})
+		1:
+			for x_offset in [-0.32, 0.0, 0.32]:
+				specs.append({"x": x_offset * width, "z": 0.0, "width": width * 0.28, "depth": depth * 0.92})
+		2:
+			for x_sign in [-1.0, 1.0]:
+				for z_sign in [-1.0, 1.0]:
+					specs.append({"x": x_sign * width * 0.25, "z": z_sign * depth * 0.26, "width": width * 0.44, "depth": depth * 0.42})
+		3:
+			for z_offset in [-0.33, 0.0, 0.33]:
+				specs.append({"x": 0.0, "z": z_offset * depth, "width": width * 0.94, "depth": depth * 0.27})
+	return specs
 
 
 func _create_board(width: float, depth: float, y: float, center_x: float, center_z: float, layer: int, number: int) -> void:
@@ -838,6 +868,7 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 		"width": width,
 		"depth": depth,
 		"y": y,
+		"layer": layer,
 		"removed": false,
 		"body": board_body,
 		"screws": []
