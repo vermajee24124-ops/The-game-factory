@@ -120,7 +120,7 @@ func _run_tests() -> void:
 		return
 	if not _expect(bool(game.call("_add_screw_to_tray", 0)), "A matching screw should fill the active toolbox"):
 		return
-	if not _expect(int(game.get("toolbox_target_index")) == 2, "A filled toolbox should advance and consume a buffered matching screw"):
+	if not _expect(int(game.get("toolbox_target_index")) == 2, "Expected toolbox index 2 after buffer transfer; index=" + str(game.get("toolbox_target_index")) + " progress=" + str(game.get("toolbox_target_progress")) + " tray=" + str(game.get("tray_colors")) + " active_color=" + str(game.call("_get_active_toolbox_color"))):
 		return
 	if not _expect((game.get("tray_colors") as Array).is_empty(), "Buffered screws should auto-transfer when their toolbox becomes active"):
 		return
