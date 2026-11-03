@@ -15,13 +15,15 @@ The loading screen does not claim to download online content. Ads, online rankin
 5. Clear every beam and sort every screw to complete the level.
 
 ## Current prototype
-- Two to five stacked layers, each built from two to four separate wooden plates.
-- Four deterministic plate-layout families: paired horizontal planks, three vertical planks, a three-piece side-and-center layout and three horizontal strips.
-- Six deterministic screw layouts capped at six screws per plate; board placement and size vary with the level number.
+- Two to five stacked layers using four interlocked beam families: H, X, cross-frame and zig-zag.
+- Angled beams are rotated in 3D; screw positions and occlusion checks use each beam's local orientation.
+- Three screw-head colours, three matching sorting boxes, a five-slot spare tray and simple in-game boosters.
+- Each beam carries a small, readable screw pattern to avoid crowded mobile layouts.
 - Elapsed-time HUD for active gameplay.
 - Board occlusion collision included in the tap ray query, with exposed-screw screen-space touch picking as a reliable mobile fallback.
 - Full-screen UI layout passes empty-area touch input through to the 3D board.
 - Original branded startup/loading screen and first-run tutorial.
+- PBR-style wood and brushed-metal normal maps, wood roughness detail, maple tabletop and softened mobile shadows.
 - Individual screw objects with metallic heads, shafts, washers and thread rings.
 - Level Select with sequential unlocks and local progress save.
 - Pause, resume, restart, return to menu and persistent sound setting.
