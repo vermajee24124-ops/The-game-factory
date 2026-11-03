@@ -28,11 +28,30 @@ for cx, cy, rx, ry in ((125, 140, 22, 10), (385, 350, 31, 13), (270, 65, 17, 8))
         base[:, :, c] += knot * scale
 Image.fromarray(np.uint8(np.clip(base, 0, 255)), "RGB").save(TEXTURES / "wood_oak.png", optimize=True)
 
+# Fine surface maps make the wood respond to light instead of looking like a flat colored box.
+wood_height = (base[:, :, 0] * 0.55 + base[:, :, 1] * 0.30 + base[:, :, 2] * 0.15)
+wood_height += grain * 1.8 + layer * 1.2
+gy, gx = np.gradient(wood_height.astype(np.float32))
+normal = np.stack((-gx * 2.2, -gy * 2.2, np.ones_like(gx) * 42.0), axis=-1)
+normal /= np.maximum(np.linalg.norm(normal, axis=-1, keepdims=True), 1e-6)
+normal_rgb = np.uint8(np.clip((normal * 0.5 + 0.5) * 255, 0, 255))
+Image.fromarray(normal_rgb, "RGB").save(TEXTURES / "wood_oak_normal.png", optimize=True)
+wood_roughness = np.uint8(np.clip(218 + np.sin(x * 0.07 + y * 0.018) * 8 + noise * 1.3, 175, 245))
+Image.fromarray(wood_roughness, "L").save(TEXTURES / "wood_oak_roughness.png", optimize=True)
+
 steel_noise = rng.normal(0, 2.0, (SIZE, SIZE)) + np.sin(y * 0.9) * 1.7
 steel = np.zeros((SIZE, SIZE, 3), dtype=np.float32)
 for c, value in enumerate((181, 195, 207)):
     steel[:, :, c] = value + steel_noise
 Image.fromarray(np.uint8(np.clip(steel, 0, 255)), "RGB").save(TEXTURES / "brushed_steel.png", optimize=True)
+
+steel_height = (np.sin(y * 0.9) * 1.7 + rng.normal(0, 2.0, (SIZE, SIZE))).astype(np.float32)
+sgy, sgx = np.gradient(steel_height)
+steel_normal = np.stack((-sgx * 4.0, -sgy * 4.0, np.ones_like(sgx) * 48.0), axis=-1)
+steel_normal /= np.maximum(np.linalg.norm(steel_normal, axis=-1, keepdims=True), 1e-6)
+steel_normal_rgb = np.uint8(np.clip((steel_normal * 0.5 + 0.5) * 255, 0, 255))
+Image.fromarray(steel_normal_rgb, "RGB").save(TEXTURES / "brushed_steel_normal.png", optimize=True)
+Image.fromarray(np.uint8(np.clip(72 + np.abs(np.sin(y * 0.9)) * 20 + rng.normal(0, 3, (SIZE, SIZE)), 45, 125)), "L").save(TEXTURES / "brushed_steel_roughness.png", optimize=True)
 
 surface_noise = rng.normal(0, 2.4, (SIZE, SIZE)) + np.sin(x * 0.25) * 0.5
 surface = np.zeros((SIZE, SIZE, 3), dtype=np.float32)
@@ -109,4 +128,4 @@ tone("ui_click", [620, 880], 0.085, 15, 0.16)
 tone("screw_remove", [260, 390, 520], 0.24, 7, 0.20, 0.035)
 tone("board_clear", [110, 165, 220], 0.45, 4, 0.28, 0.025)
 tone("level_complete", [523, 659, 784, 1046], 0.72, 1.8, 0.18)
-print("Generated 3 original textures, 3 Android launcher icons and 4 original SFX files.")
+print("Generated original wood/steel PBR texture sets, 3 Android launcher icons and 4 original SFX files.")
