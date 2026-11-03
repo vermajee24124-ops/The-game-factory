@@ -137,7 +137,7 @@ func _create_materials() -> void:
 	hole_material.roughness = 1.0
 
 	floor_material = StandardMaterial3D.new()
-	floor_material.albedo_color = Color("#98613A")
+	floor_material.albedo_color = Color("#75634F")
 	floor_material.roughness = 0.94
 	var floor_texture := load("res://assets/textures/wood_oak.png") as Texture2D
 	if floor_texture != null:
@@ -247,21 +247,26 @@ func _create_world() -> void:
 	environment.background_color = Color("#4D2E1D")
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	environment.ambient_light_color = Color("#FFE0B0")
-	environment.ambient_light_energy = 0.92
+	environment.ambient_light_energy = 1.02
+	environment.adjustment_enabled = true
+	environment.adjustment_brightness = 0.96
+	environment.adjustment_contrast = 1.06
+	environment.adjustment_saturation = 0.90
 	world_environment.environment = environment
 	add_child(world_environment)
 
 	var sunlight := DirectionalLight3D.new()
 	sunlight.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
-	sunlight.light_energy = 1.55
+	sunlight.light_energy = 1.28
 	sunlight.shadow_enabled = true
-	sunlight.directional_shadow_max_distance = 22.0
+	sunlight.shadow_bias = 0.08
+	sunlight.directional_shadow_max_distance = 14.0
 	add_child(sunlight)
 
 	var fill_light := DirectionalLight3D.new()
 	fill_light.rotation_degrees = Vector3(-28.0, 145.0, 0.0)
 	fill_light.light_color = Color("#FFE3B9")
-	fill_light.light_energy = 0.38
+	fill_light.light_energy = 0.48
 	fill_light.shadow_enabled = false
 	add_child(fill_light)
 
@@ -278,7 +283,7 @@ func _create_world() -> void:
 	platform_box.size = Vector3(4.45, 0.42, 5.55)
 	platform.mesh = platform_box
 	var platform_mat := StandardMaterial3D.new()
-	platform_mat.albedo_color = Color("#714326")
+	platform_mat.albedo_color = Color("#60412D")
 	platform_mat.roughness = 0.72
 	platform.material_override = platform_mat
 	platform.position = Vector3(0.0, -0.18, 0.0)
@@ -1060,25 +1065,19 @@ func _create_board(width: float, depth: float, y: float, center_x: float, center
 
 
 func _build_screw_points(width: float, depth: float, level: int, layer: int) -> Array[Vector2]:
-	var sx: float = width * 0.42
-	var sz: float = depth * 0.40
-	var points: Array[Vector2] = [
-		Vector2(-sx, -sz), Vector2(sx, -sz),
-		Vector2(-sx, sz), Vector2(sx, sz)
-	]
-	var pattern: int = posmod(level + layer * 2, 6)
+	var sx: float = width * 0.40
+	var sz: float = depth * 0.34
+	# Two end fasteners form the base pattern; occasional centre/side fasteners add variety.
+	var points: Array[Vector2] = [Vector2(-sx, 0.0), Vector2(sx, 0.0)]
+	var pattern: int = posmod(level + layer * 2, 4)
 	match pattern:
 		1:
-			points.append(Vector2(0.0, -sz))
-			points.append(Vector2(0.0, sz))
-		2:
-			points.append(Vector2(-sx, 0.0))
-			points.append(Vector2(sx, 0.0))
-		3, 5:
-			points.append(Vector2(0.0, -sz))
-			points.append(Vector2(0.0, sz))
-		4:
 			points.append(Vector2.ZERO)
+		2:
+			points.append(Vector2(0.0, -sz))
+			points.append(Vector2(0.0, sz))
+		3:
+			points.append(Vector2(0.0, -sz))
 	return points
 
 
@@ -1139,8 +1138,8 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 
 	var washer := MeshInstance3D.new()
 	var washer_mesh := CylinderMesh.new()
-	washer_mesh.top_radius = 0.19
-	washer_mesh.bottom_radius = 0.19
+	washer_mesh.top_radius = 0.155
+	washer_mesh.bottom_radius = 0.155
 	washer_mesh.height = 0.045
 	washer.mesh = washer_mesh
 	washer.material_override = dark_metal_material
@@ -1149,9 +1148,9 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 
 	var head := MeshInstance3D.new()
 	var head_mesh := CylinderMesh.new()
-	head_mesh.top_radius = 0.155
-	head_mesh.bottom_radius = 0.155
-	head_mesh.height = 0.105
+	head_mesh.top_radius = 0.12
+	head_mesh.bottom_radius = 0.12
+	head_mesh.height = 0.085
 	head_mesh.radial_segments = 24
 	head.mesh = head_mesh
 	var screw_color_id: int = posmod(board_id + level_index, screw_color_values.size())
@@ -1163,8 +1162,8 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 	slot_mat.albedo_color = Color("#39434D")
 	slot_mat.metallic = 0.65
 	slot_mat.roughness = 0.5
-	_add_box(screw_root, Vector3(0.15, 0.012, 0.027), slot_mat, Vector3(0.0, 0.147, 0.0))
-	_add_box(screw_root, Vector3(0.027, 0.012, 0.15), slot_mat, Vector3(0.0, 0.148, 0.0))
+	_add_box(screw_root, Vector3(0.12, 0.012, 0.022), slot_mat, Vector3(0.0, 0.132, 0.0))
+	_add_box(screw_root, Vector3(0.022, 0.012, 0.12), slot_mat, Vector3(0.0, 0.133, 0.0))
 
 	var area := Area3D.new()
 	area.name = "TapArea"
@@ -1173,7 +1172,7 @@ func _create_screw(board_id: int, world_position: Vector3) -> void:
 	area.set_meta("screw_id", screw_id)
 	var collision := CollisionShape3D.new()
 	var sphere := SphereShape3D.new()
-	sphere.radius = 0.34
+	sphere.radius = 0.28
 	collision.shape = sphere
 	collision.position = Vector3(0.0, 0.04, 0.0)
 	area.add_child(collision)
