@@ -969,31 +969,26 @@ func _build_piece_specs(width: float, depth: float, level: int, layer: int) -> A
 	var specs: Array = []
 	match posmod(level + layer, 4):
 		0:
-			# Interlocked H: two long rails with three cross braces.
+			# H-shaped interlock: two uprights and one crossbar.
 			for x_offset in [-0.92, 0.92]:
 				specs.append({"x": x_offset, "z": 0.0, "width": depth * 0.78, "depth": 0.58, "angle": PI * 0.5})
-			for z_offset in [-1.23, 0.0, 1.23]:
-				specs.append({"x": 0.0, "z": z_offset, "width": width * 0.82, "depth": 0.54, "angle": 0.0})
+			specs.append({"x": 0.0, "z": 0.0, "width": width * 0.82, "depth": 0.54, "angle": 0.0})
 		1:
-			# Crossing diagonals with two short locking braces.
-			specs.append({"x": 0.0, "z": 0.0, "width": depth * 0.92, "depth": 0.62, "angle": PI * 0.25})
+			# X-shaped crossing rails with one locking crossbar.
+			specs.append({"x": 0.0, "z": 0.0, "width": width * 0.84, "depth": 0.62, "angle": PI * 0.25})
 			specs.append({"x": 0.0, "z": 0.0, "width": width * 0.84, "depth": 0.62, "angle": -PI * 0.25})
-			for z_offset in [-1.15, 1.15]:
-				specs.append({"x": 0.0, "z": z_offset, "width": width * 0.62, "depth": 0.48, "angle": 0.0})
+			specs.append({"x": 0.0, "z": 0.0, "width": width * 0.72, "depth": 0.48, "angle": 0.0})
 		2:
-			# Crossed frame with a central diagonal lock.
+			# A compact four-piece cross-frame.
 			for z_offset in [-0.95, 0.95]:
 				specs.append({"x": 0.0, "z": z_offset, "width": width * 0.95, "depth": 0.58, "angle": 0.0})
 			for x_offset in [-0.82, 0.82]:
 				specs.append({"x": x_offset, "z": 0.0, "width": depth * 0.78, "depth": 0.54, "angle": PI * 0.5})
-			specs.append({"x": 0.0, "z": 0.0, "width": depth * 0.80, "depth": 0.42, "angle": PI * 0.20})
 		3:
-			# Zig-zag rails and a short horizontal bridge.
-			specs.append({"x": -0.60, "z": -0.72, "width": depth * 0.72, "depth": 0.56, "angle": PI * 0.30})
-			specs.append({"x": 0.60, "z": 0.72, "width": depth * 0.72, "depth": 0.56, "angle": PI * 0.30})
-			specs.append({"x": 0.60, "z": -0.72, "width": depth * 0.72, "depth": 0.56, "angle": -PI * 0.30})
-			specs.append({"x": -0.60, "z": 0.72, "width": depth * 0.72, "depth": 0.56, "angle": -PI * 0.30})
-			specs.append({"x": 0.0, "z": 0.0, "width": width * 0.72, "depth": 0.48, "angle": 0.0})
+			# Three-part zig-zag with a central bridge.
+			specs.append({"x": -0.56, "z": -0.62, "width": depth * 0.70, "depth": 0.56, "angle": PI * 0.30})
+			specs.append({"x": 0.56, "z": 0.62, "width": depth * 0.70, "depth": 0.56, "angle": PI * 0.30})
+			specs.append({"x": 0.0, "z": 0.0, "width": width * 0.76, "depth": 0.50, "angle": 0.0})
 	return specs
 
 
