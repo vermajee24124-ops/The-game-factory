@@ -54,9 +54,18 @@ Image.fromarray(steel_normal_rgb, "RGB").save(TEXTURES / "brushed_steel_normal.p
 Image.fromarray(np.uint8(np.clip(72 + np.abs(np.sin(y * 0.9)) * 20 + rng.normal(0, 3, (SIZE, SIZE)), 45, 125)), "L").save(TEXTURES / "brushed_steel_roughness.png", optimize=True)
 
 surface_noise = rng.normal(0, 2.4, (SIZE, SIZE)) + np.sin(x * 0.25) * 0.5
+deck_grain = np.sin(x * 0.045 + np.sin(y * 0.018) * 1.6) * 4.2
+deck_waves = np.sin(x * 0.018 + y * 0.012) * 2.4 + np.sin(x * 0.31 + np.sin(y * 0.07)) * 1.1
+plank_phase = np.mod(y, 128)
+plank_seams = -9.0 * np.exp(-np.square(plank_phase / 2.4)) - 5.0 * np.exp(-np.square((plank_phase - 127.0) / 2.4))
+deck_knot = np.zeros((SIZE, SIZE), dtype=np.float32)
+for cx, cy, rx, ry in ((92, 78, 20, 10), (350, 260, 28, 13), (215, 430, 17, 8)):
+    distance = np.sqrt(((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2)
+    deck_knot += np.sin(distance * 8.5) * np.exp(-distance * 0.65) * 3.6
 surface = np.zeros((SIZE, SIZE, 3), dtype=np.float32)
-for c, value in enumerate((70, 50, 34)):
-    surface[:, :, c] = value + surface_noise + grain * (0.62 if c == 0 else 0.34)
+for c, value in enumerate((58, 38, 25)):
+    grain_scale = (1.0, 0.78, 0.55)[c]
+    surface[:, :, c] = value + surface_noise + deck_grain * grain_scale + deck_waves * grain_scale + plank_seams + deck_knot * grain_scale
 Image.fromarray(np.uint8(np.clip(surface, 0, 255)), "RGB").save(TEXTURES / "dark_surface.png", optimize=True)
 
 def make_icon(size: int, transparent: bool = False) -> Image.Image:
