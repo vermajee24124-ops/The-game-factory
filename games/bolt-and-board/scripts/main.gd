@@ -1207,6 +1207,93 @@ func _is_screw_accessible(screw: Dictionary) -> bool:
 	return PuzzleRules.is_screw_accessible(screw["position"], int(screw["board_id"]), boards)
 
 
+func _initialize_toolboxes() -> void:
+	toolbox_filled = [0, 0, 0]
+	_update_sorting_ui()
+
+
+func _update_sorting_ui() -> void:
+	for color_id in range(toolbox_buttons.size()):
+		var button: Button = toolbox_buttons[color_id]
+		var required: int = color_totals[color_id]
+		var filled: int = toolbox_filled[color_id]
+		button.text = "%s\n%d / %d" % [screw_color_names[color_id], filled, required]
+		button.disabled = required <= 0 or filled >= required
+	for slot_index in range(spare_slot_labels.size()):
+		var slot_label: Label = spare_slot_labels[slot_index]
+		slot_label.visible = slot_index < spare_slot_limit
+		if slot_index < spare_screw_ids.size():
+			var stored_screw: Dictionary = screws[spare_screw_ids[slot_index]]
+			slot_label.text = "●"
+			slot_label.add_theme_color_override("font_color", screw_color_values[int(stored_screw["color_id"])])
+		else:
+			slot_label.text = "○"
+			slot_label.add_theme_color_override("font_color", Color("#F6DCA8"))
+	if tray_label != null:
+		tray_label.text = "SPARE TRAY  %d / %d" % [spare_screw_ids.size(), spare_slot_limit]
+	if hammer_button != null:
+		hammer_button.text = "HAMMER x%d" % hammer_uses
+		hammer_button.disabled = hammer_uses <= 0
+	if extra_slot_button != null:
+		extra_slot_button.text = "SLOT ✓" if extra_slot_used else "+1 SLOT"
+		extra_slot_button.disabled = extra_slot_used
+
+
+func _on_toolbox_pressed(color_id: int) -> void:
+	if color_id < 0 or color_id >= screw_color_values.size():
+		return
+	var moved_count: int = 0
+	var remaining: Array[String] = []
+	for screw_id in spare_screw_ids:
+		var stored_screw: Dictionary = screws[screw_id]
+		if int(stored_screw["color_id"]) == color_id:
+			moved_count += 1
+		else:
+			remaining.append(screw_id)
+	if moved_count <= 0:
+		status_label.text = "No %s screws in the spare tray." % screw_color_names[color_id].to_lower()
+		_play_sfx("ui_click")
+		return
+	spare_screw_ids = remaining
+	toolbox_filled[color_id] += moved_count
+	sorted_screws += moved_count
+	status_label.text = "%s box filled with %d screw(s)!" % [screw_color_names[color_id], moved_count]
+	_play_sfx("board_clear")
+	_update_sorting_ui()
+	_update_hud()
+	_check_level_complete()
+
+
+func _on_hammer_pressed() -> void:
+	if hammer_uses <= 0:
+		status_label.text = "No hammer charge left in this level."
+		return
+	if spare_screw_ids.size() >= spare_slot_limit:
+		status_label.text = "Spare tray is full. Sort a colour box first."
+		return
+	for screw_id in screws.keys():
+		var screw: Dictionary = screws[screw_id]
+		if not bool(screw["removed"]) and _is_screw_accessible(screw):
+			var before_count: int = removed_screws
+			_try_remove_screw(str(screw_id))
+			if removed_screws > before_count:
+				hammer_uses -= 1
+				status_label.text = "Hammer collected one exposed screw."
+				_update_sorting_ui()
+			return
+	status_label.text = "No exposed screw for the hammer."
+
+
+func _on_extra_slot_pressed() -> void:
+	if extra_slot_used:
+		return
+	extra_slot_used = true
+	spare_slot_limit = 6
+	status_label.text = "Extra spare slot unlocked for this level."
+	_play_sfx("ui_click")
+	_update_sorting_ui()
+
+
 func _refresh_screw_visuals() -> void:
 	for screw_id in screws.keys():
 		var screw: Dictionary = screws[screw_id]
@@ -1294,22 +1381,29 @@ func _try_remove_screw(screw_id: String) -> void:
 	if bool(screw["removed"]):
 		return
 	if not _is_screw_accessible(screw):
-		status_label.text = "This screw is covered. Clear the upper board first."
+		status_label.text = "This screw is covered by another wooden beam."
+		return
+	if spare_screw_ids.size() >= spare_slot_limit:
+		status_label.text = "SPARE TRAY FULL! Tap a matching colour box to sort screws."
+		_play_sfx("ui_click")
 		return
 
 	screw["removed"] = true
 	removed_screws += 1
+	spare_screw_ids.append(screw_id)
 	if current_hint_id == screw_id:
 		current_hint_id = ""
 	_play_sfx("screw_remove")
+	_update_sorting_ui()
 	var screw_node: Node3D = screw["node"]
 	var tween := create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(screw_node, "position", screw_node.position + Vector3(0.0, 1.1, 0.0), 0.30).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(screw_node, "rotation:y", screw_node.rotation.y + TAU * 1.25, 0.30)
+	tween.tween_property(screw_node, "position", screw_node.position + Vector3(0.0, 0.85, 0.0), 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(screw_node, "rotation:y", screw_node.rotation.y + TAU * 1.5, 0.32)
+	tween.tween_property(screw_node, "scale", Vector3(0.22, 0.22, 0.22), 0.32)
 	tween.chain().tween_callback(Callable(screw_node, "queue_free"))
 
-	status_label.text = "Nice! Screw removed. Find the other exposed screws."
+	status_label.text = "Screw collected! Tap its matching colour box to sort it."
 	_update_hud()
 	_check_board_cleared(int(screw["board_id"]))
 	_refresh_screw_visuals()
@@ -1344,6 +1438,8 @@ func _check_level_complete() -> void:
 	for board in boards:
 		if not bool(board["removed"]):
 			return
+	if sorted_screws < total_screws or not spare_screw_ids.is_empty():
+		return
 	game_started = false
 	is_paused = false
 	highest_unlocked_level = maxi(highest_unlocked_level, mini(level_index + 1, MAX_LEVEL))
@@ -1352,7 +1448,7 @@ func _check_level_complete() -> void:
 	var stars: int = 3 if hints_used == 0 else (2 if hints_used <= 2 else 1)
 	var star_text := "★".repeat(stars) + "☆".repeat(3 - stars)
 	finish_title.text = "LEVEL %d COMPLETE!" % level_index
-	finish_summary.text = "%s\nHints used: %d   Time: %s" % [star_text, hints_used, _format_time(level_elapsed)]
+	finish_summary.text = "%s\nSorted: %d/%d   Hints: %d\nTime: %s" % [star_text, sorted_screws, total_screws, hints_used, _format_time(level_elapsed)]
 	next_level_button.text = "LEVEL SELECT" if level_index >= MAX_LEVEL else "NEXT LEVEL"
 	finish_overlay.visible = true
 	status_label.text = "Great work!"
@@ -1380,8 +1476,8 @@ func _format_time(seconds: float) -> String:
 
 func _update_hud() -> void:
 	level_label.text = "LEVEL %d" % level_index
-	progress_label.text = "SCREWS %d/%d" % [removed_screws, total_screws]
+	progress_label.text = "SORTED %d/%d" % [sorted_screws, total_screws]
 	if timer_label != null:
 		timer_label.text = "TIME %s" % _format_time(level_elapsed)
 	if progress_bar != null:
-		progress_bar.value = 100.0 if total_screws <= 0 else (float(removed_screws) / float(total_screws)) * 100.0
+		progress_bar.value = 100.0 if total_screws <= 0 else (float(sorted_screws) / float(total_screws)) * 100.0
