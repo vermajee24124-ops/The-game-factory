@@ -1,34 +1,27 @@
-# Test status — 2026-11-02
+# Test status — 2026-11-03
 
-## Previously verified prototype checks
-The earlier prototype CI run passed:
-- Godot Engine 4.7.2 Stable imported the project and parsed the original scripts.
-- The original gameplay smoke tests passed for screw occlusion, board removal, level layer bounds, scene load and sequential board clearing.
-- The project rendered under Xvfb with Mesa software OpenGL.
-- The earlier workflow produced a project ZIP and preview artifact.
+## Latest Godot validation
+<https://github.com/vermajee24124-ops/The-game-factory/actions/runs/41560470638>
 
-That pass predates the current Level Select, pause menu, scoring and Android export changes. It is not evidence that the newly added code has passed.
+<badge>PASS</badge> Godot 4.7.2 Stable imported the project, parsed the scripts, ran the expanded gameplay regression tests and rendered the screenshot under Xvfb/Mesa software OpenGL.
 
-## New regression tests added
-The test suite now also checks:
-- Level unlock boundaries and progression.
-- Deterministic screw pattern variation.
-- Level Select and pause overlay creation.
-- Pause and resume state transitions.
-- Level completion result screen and next-level progression.
+The passing regression suite covers:
+- Screw occlusion and exposed-screw access.
+- Board clearing and sequential screw removal.
+- Level layer bounds, unlock rules and pattern variation.
+- Level Select, pause and resume state transitions.
+- Escape/back-key pause and resume navigation.
+- Level completion, next-level progression and save unlock behavior.
 
-A new GitHub Actions validation run must pass before these additions are marked verified.
+The cloud screenshot is a rendering check only. It does not prove Android device performance.
 
-## Android build automation added
-- `export_presets.cfg` contains an ARM64 Android Debug preset.
-- `.github/workflows/screw-puzzle-android.yml` installs JDK 17, Android SDK packages and the exact Godot 4.7.2 export templates.
-- The workflow is designed to upload a debug APK as `bolt-and-board-android-debug`.
+## Android debug build
+A prior ARM64 Android debug APK export succeeded and the APK archive passed ZIP integrity validation. The latest camera/back-navigation code has a new Android export workflow queued/running; use its artifact once it completes rather than treating the older APK as the latest build.
 
-The workflow has no production signing credentials. A debug APK is for local installation and testing only, not a Play Store release.
+The debug APK is for local testing only, not a Play Store release. The package ID is still the placeholder `com.example.boltandboard`.
 
 ## Not yet verified
-- Latest regression-test execution for the new menu and campaign code.
-- Successful Android APK export from the new workflow.
+- Latest ARM64 APK export for commit `07d9d615`.
 - Installation, touch accuracy, frame rate, memory and thermal behavior on a physical Android phone.
 - A release AAB signed with a private release key.
 - 30 individually authored and professionally balanced levels.
@@ -37,4 +30,4 @@ The workflow has no production signing credentials. A debug APK is for local ins
 ## CI environment note
 Xvfb/Mesa software rendering and a dummy audio driver do not represent a real Android device. Passing cloud tests cannot prove phone performance or touch quality.
 
-This project remains a development build, not a final commercial release. Do not label it production-ready until the Android build, real-device QA and release checklist are complete.
+This project remains a development build, not a final commercial release. Do not label it production-ready until Android device QA and the release checklist are complete.
