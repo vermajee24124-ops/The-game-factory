@@ -16,8 +16,9 @@ The loading screen does not claim to download online content. Ads, online rankin
 
 ## Current prototype
 - Two to five stacked layers, each built from two to four separate wooden plates.
-- Four deterministic plate-layout families: paired horizontal planks, three vertical planks, four corner plates and three horizontal strips.
-- Six deterministic screw layouts; board placement and size vary with the level number.
+- Four deterministic plate-layout families: paired horizontal planks, three vertical planks, a three-piece side-and-center layout and three horizontal strips.
+- Six deterministic screw layouts capped at six screws per plate; board placement and size vary with the level number.
+- Elapsed-time HUD for active gameplay.
 - Board occlusion collision included in the tap ray query, with exposed-screw screen-space touch picking as a reliable mobile fallback.
 - Full-screen UI layout passes empty-area touch input through to the 3D board.
 - Original branded startup/loading screen and first-run tutorial.
