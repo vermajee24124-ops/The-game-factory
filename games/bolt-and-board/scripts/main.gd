@@ -1710,18 +1710,34 @@ func _check_board_cleared(board_id: int) -> void:
 	if not PuzzleRules.is_board_cleared(board["screws"], screws):
 		return
 
-	board["removed"] = true
-	var board_body: StaticBody3D = board["body"]
-	board_body.collision_layer = 0
-	board_body.collision_mask = 0
+	if bool(board.get("clearing", false)):
+		return
+	# Keep the plate blocking lower screws until its fall animation has finished.
+	board["clearing"] = true
 	var board_node: Node3D = board["node"]
 	_play_sfx("board_clear")
 	var fall_tween := create_tween()
 	fall_tween.set_parallel(true)
 	fall_tween.tween_property(board_node, "position:y", board_node.position.y - 3.2, 0.82).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	fall_tween.tween_property(board_node, "rotation", Vector3(0.72, randf_range(-0.22, 0.22), 0.46), 0.82).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-	fall_tween.chain().tween_callback(Callable(board_node, "queue_free"))
-	status_label.text = "Board cleared! Hidden screws are now exposed."
+	fall_tween.chain().tween_callback(_finish_board_clear.bind(board_id))
+	status_label.text = "Plate released! Wait for it to clear before reaching the screws below."
+
+
+func _finish_board_clear(board_id: int) -> void:
+	var index: int = _find_board_index(board_id)
+	if index < 0:
+		return
+	var board: Dictionary = boards[index]
+	if bool(board.get("removed", false)):
+		return
+	board["removed"] = true
+	board["clearing"] = false
+	var board_node: Node3D = board["node"]
+	if is_instance_valid(board_node):
+		board_node.queue_free()
+	_refresh_screw_visuals()
+	_check_level_complete()
 
 
 func _check_level_complete() -> void:
