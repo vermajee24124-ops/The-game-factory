@@ -20,6 +20,21 @@ var current_hint_id: String = ""
 var sfx_player: AudioStreamPlayer
 var progress_bar: ProgressBar
 var is_muted: bool = false
+var screw_color_values: Array[Color] = [Color("#F05B48"), Color("#23A9B8"), Color("#F2B844")]
+var screw_color_names: Array[String] = ["CORAL", "OCEAN", "GOLD"]
+var screw_color_materials: Array[StandardMaterial3D] = []
+var color_totals: Array[int] = [0, 0, 0]
+var toolbox_filled: Array[int] = [0, 0, 0]
+var toolbox_buttons: Array[Button] = []
+var spare_screw_ids: Array[String] = []
+var spare_slot_limit: int = 5
+var spare_slot_labels: Array[Label] = []
+var tray_label: Label
+var sorted_screws: int = 0
+var hammer_uses: int = 1
+var extra_slot_used: bool = false
+var hammer_button: Button
+var extra_slot_button: Button
 var tutorial_seen: bool = false
 var splash_overlay: ColorRect
 var tutorial_overlay: ColorRect
@@ -86,6 +101,14 @@ func _create_materials() -> void:
 			wood.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		wood_materials.append(wood)
 
+	for screw_color in screw_color_values:
+		var colored_metal := StandardMaterial3D.new()
+		colored_metal.albedo_color = screw_color
+		colored_metal.metallic = 0.62
+		colored_metal.roughness = 0.23
+		colored_metal.metallic_specular = 0.85
+		screw_color_materials.append(colored_metal)
+
 	metal_material = StandardMaterial3D.new()
 	metal_material.albedo_color = Color("#C9D4DD")
 	metal_material.metallic = 0.82
@@ -114,9 +137,9 @@ func _create_materials() -> void:
 	hole_material.roughness = 1.0
 
 	floor_material = StandardMaterial3D.new()
-	floor_material.albedo_color = Color("#172534")
-	floor_material.roughness = 0.95
-	var floor_texture := load("res://assets/textures/dark_surface.png") as Texture2D
+	floor_material.albedo_color = Color("#98613A")
+	floor_material.roughness = 0.94
+	var floor_texture := load("res://assets/textures/wood_oak.png") as Texture2D
 	if floor_texture != null:
 		floor_material.albedo_texture = floor_texture
 
@@ -139,8 +162,8 @@ func _play_sfx(sound_name: String) -> void:
 
 func _make_panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#223346")
-	style.border_color = Color("#52677A")
+	style.bg_color = Color("#6F4328")
+	style.border_color = Color("#E7B66E")
 	style.set_border_width_all(1)
 	style.set_corner_radius_all(18)
 	style.content_margin_left = 16.0
@@ -152,21 +175,21 @@ func _make_panel_style() -> StyleBoxFlat:
 
 func _style_button(button: Button, primary: bool = false) -> void:
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color("#D99B4A") if primary else Color("#344A5E")
-	normal.border_color = Color("#F0C47A") if primary else Color("#647B8E")
+	normal.bg_color = Color("#F6C66F") if primary else Color("#E8D0A0")
+	normal.border_color = Color("#FFF0C2") if primary else Color("#A66B3C")
 	normal.set_border_width_all(1)
 	normal.set_corner_radius_all(13)
 	normal.content_margin_left = 14.0
 	normal.content_margin_right = 14.0
 	var hover := normal.duplicate() as StyleBoxFlat
-	hover.bg_color = Color("#E9AD5C") if primary else Color("#405B72")
+	hover.bg_color = Color("#FFDA8B") if primary else Color("#F6DDB0")
 	var pressed := normal.duplicate() as StyleBoxFlat
-	pressed.bg_color = Color("#B77A34") if primary else Color("#283D50")
+	pressed.bg_color = Color("#D99A45") if primary else Color("#D2AE78")
 	button.add_theme_stylebox_override("normal", normal)
 	button.add_theme_stylebox_override("hover", hover)
 	button.add_theme_stylebox_override("pressed", pressed)
-	button.add_theme_color_override("font_color", Color("#172333"))
-	button.add_theme_color_override("font_hover_color", Color("#101B25"))
+	button.add_theme_color_override("font_color", Color("#382114"))
+	button.add_theme_color_override("font_hover_color", Color("#24150D"))
 	button.add_theme_font_size_override("font_size", 18)
 
 
@@ -221,18 +244,26 @@ func _create_world() -> void:
 	var world_environment := WorldEnvironment.new()
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color("#172333")
+	environment.background_color = Color("#4D2E1D")
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("#B6C7D8")
-	environment.ambient_light_energy = 0.65
+	environment.ambient_light_color = Color("#FFE0B0")
+	environment.ambient_light_energy = 0.92
 	world_environment.environment = environment
 	add_child(world_environment)
 
 	var sunlight := DirectionalLight3D.new()
-	sunlight.rotation_degrees = Vector3(-52.0, -28.0, 0.0)
-	sunlight.light_energy = 1.35
+	sunlight.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
+	sunlight.light_energy = 1.55
 	sunlight.shadow_enabled = true
+	sunlight.directional_shadow_max_distance = 22.0
 	add_child(sunlight)
+
+	var fill_light := DirectionalLight3D.new()
+	fill_light.rotation_degrees = Vector3(-28.0, 145.0, 0.0)
+	fill_light.light_color = Color("#FFE3B9")
+	fill_light.light_energy = 0.38
+	fill_light.shadow_enabled = false
+	add_child(fill_light)
 
 	var floor_mesh := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
@@ -244,23 +275,34 @@ func _create_world() -> void:
 
 	var platform := MeshInstance3D.new()
 	var platform_box := BoxMesh.new()
-	platform_box.size = Vector3(8.4, 0.32, 7.0)
+	platform_box.size = Vector3(4.45, 0.42, 5.55)
 	platform.mesh = platform_box
 	var platform_mat := StandardMaterial3D.new()
-	platform_mat.albedo_color = Color("#314253")
+	platform_mat.albedo_color = Color("#714326")
 	platform_mat.roughness = 0.72
 	platform.material_override = platform_mat
-	platform.position = Vector3(0.0, -0.91, 0.0)
+	platform.position = Vector3(0.0, -0.90, 0.0)
 	add_child(platform)
+
+	var platform_top := MeshInstance3D.new()
+	var platform_top_mesh := BoxMesh.new()
+	platform_top_mesh.size = Vector3(4.28, 0.045, 5.38)
+	platform_top.mesh = platform_top_mesh
+	platform_top.material_override = wood_materials[0]
+	platform_top.position = Vector3(0.0, -0.665, 0.0)
+	add_child(platform_top)
 
 
 func _create_camera() -> void:
 	camera = Camera3D.new()
-	camera.position = Vector3(0.0, 9.5, 13.0)
-	camera.fov = 43.0
+	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.size = 8.2
+	camera.position = Vector3(0.0, 13.5, 4.4)
 	camera.current = true
+	camera.near = 0.05
+	camera.far = 60.0
 	add_child(camera)
-	camera.look_at(Vector3(0.0, 0.35, 0.0), Vector3.UP)
+	camera.look_at(Vector3(0.0, 0.55, 0.0), Vector3.UP)
 
 
 func _create_game_root() -> void:
