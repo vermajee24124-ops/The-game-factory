@@ -1,68 +1,61 @@
 # Bolt & Board Puzzle — gameplay specification
 
 ## Startup flow
+
 1. Show an original studio splash and local asset-loading screen.
-2. On first launch, explain exposed screws, board clearing and layer reveal in a short tutorial.
-3. Open the menu and level selection before gameplay.
+2. On first launch, explain exposed screws, color toolboxes and the five-slot temporary tray.
+3. Open the main menu and level select before gameplay.
 
-The loading screen does not claim to download online content. Ads, online rankings and purchases are not implemented; they need separate SDK, privacy and consent work.
+The loading screen is local. It does not pretend to download remote content. Ads, online rankings and purchases are not implemented.
 
-## Core loop
-1. Inspect stacked wooden boards.
-2. Tap screws that are not occluded by a board above them. Touch input uses screen-space picking with an accessibility radius, then keeps the board-occlusion rule.
-3. Remove every screw holding an exposed wooden plate.
-4. That plate animates away independently; other plates in the same layer remain.
-5. Clear the upper layer to expose lower plates, then clear every plate to finish.
+## Core puzzle loop
 
-## Visual quality pass
-- Procedural wood grain plus generated normal and roughness maps for wood and brushed steel.
-- Procedural sky, filmic tone mapping, warm/cool lighting, soft directional shadows and restrained glow.
-- 2x mobile 3D MSAA and non-nearest mipmap filtering.
-- Detailed tapered screw head, machined rim and color-coded removal ring feedback.
-- Separate original sounds for color match and a full tray.
+1. Inspect stacked wooden plates and their screws.
+2. Tap an exposed screw. A plate above it blocks access to hidden screws.
+3. If the screw matches the active toolbox color, it fills that toolbox.
+4. A different color is stored in the five-slot temporary tray.
+5. When the next color toolbox becomes active, matching screws already in the temporary tray transfer automatically.
+6. Filling all five temporary slots fails the attempt and opens retry.
+7. Each plate falls only after its own screws are removed. Lower screws remain blocked until the fall animation finishes.
+8. Clear every plate and complete every toolbox to win.
 
-## Current prototype
-- Two to five stacked layers, each built from two to four separate wooden plates.
-- Six deterministic plate-layout families: paired horizontal planks, three vertical planks, side-and-center pieces, three horizontal strips, an L-shaped arrangement and four corner plates.
-- Six deterministic screw layouts capped at six screws per plate; board placement and size vary with the level number.
-- Elapsed-time HUD for active gameplay.
-- Board occlusion collision included in the tap ray query, with exposed-screw screen-space touch picking as a reliable mobile fallback.
-- Full-screen UI layout passes empty-area touch input through to the 3D board.
-- Original branded startup/loading screen and first-run tutorial.
-- Individual screw objects with metallic heads, shafts, washers and thread rings.
-- Level Select with sequential unlocks and local progress save.
-- Pause, resume, restart, return to menu and persistent sound setting.
-- Completion summary with elapsed time, hint count and a simple three-star score.
+## Visual and performance pass
 
-## Important distinction
-The current 30 levels combine procedural plate layouts and screw patterns. They are not yet 30 handcrafted, solver-validated commercial levels.
+- Generated PBR wood and brushed-steel albedo, normal and roughness maps.
+- Walnut-style stage, rounded brass-style plate trim and textured wooden plate sides.
+- Filmic tone mapping, procedural sky, warm key light, cool fill, directional shadows and restrained glow.
+- Mobile 3D MSAA and filtered mipmaps.
+- Shared screw meshes to reduce repeated geometry allocation.
+- Tapered colored steel screw heads, washer lips, helical threads and recessed drive slots.
+- Screw spin/extraction, color pop feedback and plate-fall animation.
+- Camera drag-orbit and pinch-to-zoom for mobile inspection.
 
-## Production roadmap
-- More board silhouettes, angles and genuinely different interlocking layouts.
-- Solver-checked color-toolbox sequences, five-slot temporary storage and later booster types.
-- Authored and solver-validated campaign levels.
-- First-run tutorial, accessibility settings and save migration.
-- Android performance and touch testing on physical devices.
-- Release AAB and secure release signing; never store a release key in the public repository.
-- Monetization, ads consent/privacy and Play policy checks only after core gameplay QA.
+## Current campaign generator
 
+- 2 to 5 stacked layers.
+- 2 to 4 plates per layer, selected from six deterministic layout families.
+- Four screw colors.
+- Six screw patterns with a maximum of six screws per plate.
+- 30 levels use procedural variations; they are not yet 30 hand-designed or solver-validated commercial puzzles.
 
-## Premium redesign branch
+## Sorting rules
 
-The `premium-screw-puzzle` branch adds:
-- PBR wood and brushed-steel materials with generated normal/roughness maps, plus a warm walnut stage and rounded brass-style plate edging.
-- Four screw colors, a five-slot temporary tray, active color toolboxes and a retry state when the tray fills.
-- More detailed screw threads, washer lips, raised wood tops, edge trim and metallic stage detailing.
-- Filmic tone mapping, restrained glow, MSAA and a mobile-first lighting rig.
-- Touch drag camera orbit and pinch zoom.
-- Stronger screw extraction and board-fall animation timing.
-
-Renderer choice remains the Godot Mobile renderer to balance visual quality with Android device support. The game still requires real-device performance and touch QA before it can be called production-ready.
-
-
-## Current sorting loop
 - Each screw has one of four colors.
-- The active toolbox accepts only its target color, in batches of up to three screws.
+- The active toolbox accepts its target color in batches of up to three.
 - Screws of other colors occupy the five temporary slots.
-- When the next toolbox becomes active, matching screws already stored in the tray transfer automatically.
-- Filling all five temporary slots fails the attempt; all color counts are generated from the level's actual screws.
+- When the next toolbox becomes active, matching stored screws transfer automatically.
+- Filling all five temporary slots fails the attempt.
+- Toolbox batch counts are generated from the actual screw colors in the level.
+
+## Current validation
+
+Godot regression tests and ARM64 debug export both passed on 3 November 2026. See docs/TEST_STATUS.md for run IDs, commit and APK hash.
+
+## Remaining production work
+
+- More obstacle types and carefully balanced puzzle layouts.
+- Solver-validated authored levels and difficulty progression.
+- Further booster systems and accessible controls.
+- Physical Android touch/performance QA.
+- Release AAB and secure private signing process.
+- Privacy, consent, monetization and store-policy implementation.

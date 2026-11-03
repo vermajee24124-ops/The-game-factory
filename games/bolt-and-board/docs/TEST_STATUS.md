@@ -1,33 +1,40 @@
-# Test status — 2026-11-03
+# Test status — 3 नवंबर 2026
 
 ## Latest Godot validation
-<https://github.com/vermajee24124-ops/The-game-factory/actions/runs/41560470638>
 
-**PASS** Godot 4.7.2 Stable imported the project, parsed the scripts, ran the expanded gameplay regression tests and rendered the screenshot under Xvfb/Mesa software OpenGL.
+https://github.com/vermajee24124-ops/The-game-factory/actions/runs/41593473319
 
-The passing regression suite covers:
-- Screw occlusion and exposed-screw access.
-- Board clearing and sequential screw removal.
-- Level layer bounds, unlock rules and pattern variation.
-- Level Select, pause and resume state transitions.
-- Escape/back-key pause and resume navigation.
-- Level completion, next-level progression and save unlock behavior.
+**PASS** Godot 4.7.2 Stable project import, script parsing, gameplay regression tests और Xvfb/Mesa screenshot capture सफल हुए।
 
-The cloud screenshot is a rendering check only. It does not prove Android device performance.
+Regression suite में:
+- Covered screw blocking और exposed screw access।
+- Android screen-space touch picking।
+- Color toolbox target generation और batches of up to three।
+- Wrong-color buffer, five temporary slots और next-toolbox auto-transfer।
+- Full-tray retry state।
+- छह plate-layout families और multi-piece layers।
+- Plate fall animation पूरी होने तक lower screw blocking।
+- Pause/resume, Android back key, level completion और progression।
 
-## Android debug build
-A prior ARM64 Android debug APK export succeeded and the APK archive passed ZIP integrity validation. The latest camera/back-navigation code has a new Android export workflow queued/running; use its artifact once it completes rather than treating the older APK as the latest build.
+Screenshot cloud renderer का visual check है। यह वास्तविक Android GPU या device performance का प्रमाण नहीं है।
 
-The debug APK is for local testing only, not a Play Store release. The package ID is still the placeholder `com.example.boltandboard`.
+## Latest Android ARM64 debug build
+
+https://github.com/vermajee24124-ops/The-game-factory/actions/runs/41593473277
+
+**PASS** Godot Android export ने ARM64 debug APK सफलतापूर्वक बनाया और APK ZIP integrity check पास हुई।
+
+- Commit: cd26d028c6caf0b2298edd48cf6827e3d16b7f03
+- APK SHA-256: db7c18544272ff91e59e32b1e93c67645467b8333f437632be9aad70a50a8116
+- Package ID: com.example.boltandboard (placeholder)
+- Build type: debug/test, not a Play Store release.
 
 ## Not yet verified
-- Latest ARM64 APK export for commit `07d9d615`.
-- Installation, touch accuracy, frame rate, memory and thermal behavior on a physical Android phone.
-- A release AAB signed with a private release key.
-- 30 individually authored and professionally balanced levels.
-- Full accessibility, privacy, monetization and store-policy readiness.
 
-## CI environment note
-Xvfb/Mesa software rendering and a dummy audio driver do not represent a real Android device. Passing cloud tests cannot prove phone performance or touch quality.
+- Installation and play on a physical Android phone.
+- Real-device touch accuracy, FPS, memory use, heat and battery behavior.
+- 30 individually authored and solver-validated campaign levels.
+- Release AAB with private release signing.
+- Accessibility, save migration, privacy, ads consent, monetization and store-policy readiness.
 
-This project remains a development build, not a final commercial release. Do not label it production-ready until Android device QA and the release checklist are complete.
+The project remains a development build. Passing cloud CI does not make it production-ready.
