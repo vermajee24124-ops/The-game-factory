@@ -326,7 +326,7 @@ func _create_ui() -> void:
 	top_panel.offset_left = 18.0
 	top_panel.offset_top = 18.0
 	top_panel.offset_right = -18.0
-	top_panel.offset_bottom = 100.0
+	top_panel.offset_bottom = 86.0
 	ui_root.add_child(top_panel)
 
 	var top_row := HBoxContainer.new()
@@ -368,26 +368,49 @@ func _create_ui() -> void:
 	_style_button(pause_button, false)
 	top_row.add_child(pause_button)
 
+	var toolbox_panel := PanelContainer.new()
+	toolbox_panel.add_theme_stylebox_override("panel", _make_panel_style())
+	toolbox_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	toolbox_panel.offset_left = 18.0
+	toolbox_panel.offset_top = 98.0
+	toolbox_panel.offset_right = -18.0
+	toolbox_panel.offset_bottom = 188.0
+	ui_root.add_child(toolbox_panel)
+
+	var toolbox_row := HBoxContainer.new()
+	toolbox_row.add_theme_constant_override("separation", 8)
+	toolbox_panel.add_child(toolbox_row)
+	toolbox_buttons.clear()
+	for color_id in range(screw_color_values.size()):
+		var toolbox_button := Button.new()
+		toolbox_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		toolbox_button.custom_minimum_size = Vector2(0.0, 68.0)
+		toolbox_button.text = "%s\n0/0" % screw_color_names[color_id]
+		toolbox_button.pressed.connect(_on_toolbox_pressed.bind(color_id))
+		_style_toolbox_button(toolbox_button, screw_color_values[color_id])
+		toolbox_buttons.append(toolbox_button)
+		toolbox_row.add_child(toolbox_button)
+
 	var bottom_panel := PanelContainer.new()
 	bottom_panel.add_theme_stylebox_override("panel", _make_panel_style())
 	bottom_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_panel.offset_left = 18.0
-	bottom_panel.offset_top = -176.0
-	bottom_panel.offset_right = -18.0
-	bottom_panel.offset_bottom = -18.0
+	bottom_panel.offset_left = 14.0
+	bottom_panel.offset_top = -250.0
+	bottom_panel.offset_right = -14.0
+	bottom_panel.offset_bottom = -12.0
 	ui_root.add_child(bottom_panel)
 
 	var bottom_box := VBoxContainer.new()
-	bottom_box.add_theme_constant_override("separation", 6)
+	bottom_box.add_theme_constant_override("separation", 4)
 	bottom_panel.add_child(bottom_box)
 
 	status_label = Label.new()
-	status_label.text = "Tap an exposed screw to remove it."
+	status_label.text = "Tap an exposed screw, then sort it by colour."
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status_label.custom_minimum_size = Vector2(0.0, 48.0)
-	status_label.add_theme_font_size_override("font_size", 17)
+	status_label.custom_minimum_size = Vector2(0.0, 32.0)
+	status_label.add_theme_font_size_override("font_size", 15)
 	bottom_box.add_child(status_label)
 
 	progress_bar = ProgressBar.new()
@@ -395,15 +418,59 @@ func _create_ui() -> void:
 	progress_bar.max_value = 100.0
 	progress_bar.value = 0.0
 	progress_bar.show_percentage = false
-	progress_bar.custom_minimum_size = Vector2(0.0, 14.0)
+	progress_bar.custom_minimum_size = Vector2(0.0, 10.0)
 	bottom_box.add_child(progress_bar)
 
+	tray_label = Label.new()
+	tray_label.text = "SPARE TRAY 0/5"
+	tray_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tray_label.add_theme_font_size_override("font_size", 14)
+	bottom_box.add_child(tray_label)
+
+	var tray_row := HBoxContainer.new()
+	tray_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	tray_row.add_theme_constant_override("separation", 8)
+	bottom_box.add_child(tray_row)
+	spare_slot_labels.clear()
+	for slot_index in range(6):
+		var slot_label := Label.new()
+		slot_label.text = "○"
+		slot_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		slot_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		slot_label.custom_minimum_size = Vector2(48.0, 30.0)
+		slot_label.add_theme_font_size_override("font_size", 23)
+		slot_label.add_theme_color_override("font_color", Color("#F6DCA8"))
+		slot_label.visible = slot_index < spare_slot_limit
+		spare_slot_labels.append(slot_label)
+		tray_row.add_child(slot_label)
+
+	var tool_row := HBoxContainer.new()
+	tool_row.add_theme_constant_override("separation", 8)
+	bottom_box.add_child(tool_row)
+
 	hint_button = Button.new()
-	hint_button.text = "HINT: SHOW AN EXPOSED SCREW"
-	hint_button.custom_minimum_size = Vector2(0.0, 52.0)
+	hint_button.text = "HINT"
+	hint_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hint_button.custom_minimum_size = Vector2(0.0, 46.0)
 	hint_button.pressed.connect(_on_hint_pressed)
 	_style_button(hint_button, true)
-	bottom_box.add_child(hint_button)
+	tool_row.add_child(hint_button)
+
+	hammer_button = Button.new()
+	hammer_button.text = "HAMMER x1"
+	hammer_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hammer_button.custom_minimum_size = Vector2(0.0, 46.0)
+	hammer_button.pressed.connect(_on_hammer_pressed)
+	_style_button(hammer_button, false)
+	tool_row.add_child(hammer_button)
+
+	extra_slot_button = Button.new()
+	extra_slot_button.text = "+1 SLOT"
+	extra_slot_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	extra_slot_button.custom_minimum_size = Vector2(0.0, 46.0)
+	extra_slot_button.pressed.connect(_on_extra_slot_pressed)
+	_style_button(extra_slot_button, false)
+	tool_row.add_child(extra_slot_button)
 
 	menu_overlay = _make_overlay()
 	ui_root.add_child(menu_overlay)
@@ -559,7 +626,7 @@ func _create_tutorial_overlay() -> void:
 	heading.add_theme_font_size_override("font_size", 32)
 	box.add_child(heading)
 	var instructions := Label.new()
-	instructions.text = "1. Tap a bright, exposed screw.\n\n2. Remove every screw holding the top wooden board.\n\n3. The cleared board falls away and reveals the screws underneath.\n\n4. Clear every board before the timer runs out."
+	instructions.text = "1. Tap a bright, exposed screw to collect it.\n\n2. Collected screws wait in the five-space spare tray.\n\n3. Tap the matching colour box above the board to sort all screws of that colour.\n\n4. Clear every wooden beam and sort every screw to win."
 	instructions.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	instructions.add_theme_font_size_override("font_size", 19)
 	box.add_child(instructions)
@@ -717,6 +784,26 @@ func _create_pause_overlay() -> void:
 	menu_button.pressed.connect(_show_menu)
 	_style_button(menu_button, false)
 	box.add_child(menu_button)
+
+
+func _style_toolbox_button(button: Button, color_value: Color) -> void:
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = color_value
+	normal.border_color = color_value.lightened(0.28)
+	normal.set_border_width_all(2)
+	normal.set_corner_radius_all(16)
+	normal.content_margin_left = 8.0
+	normal.content_margin_right = 8.0
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = color_value.lightened(0.16)
+	var pressed := normal.duplicate() as StyleBoxFlat
+	pressed.bg_color = color_value.darkened(0.15)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", pressed)
+	button.add_theme_color_override("font_color", Color("#332015"))
+	button.add_theme_color_override("font_hover_color", Color("#24150D"))
+	button.add_theme_font_size_override("font_size", 17)
 
 
 func _make_overlay() -> ColorRect:
