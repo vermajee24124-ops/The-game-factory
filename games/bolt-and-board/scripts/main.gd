@@ -827,58 +827,81 @@ func _load_level(number: int) -> void:
 	screws.clear()
 	total_screws = 0
 	removed_screws = 0
+	sorted_screws = 0
 	hints_used = 0
 	level_elapsed = 0.0
 	next_board_id = 0
 	next_screw_id = 0
+	color_totals = [0, 0, 0]
+	toolbox_filled = [0, 0, 0]
+	spare_screw_ids.clear()
+	spare_slot_limit = 5
+	hammer_uses = 1
+	extra_slot_used = false
 	finish_overlay.visible = false
 	current_hint_id = ""
 
 	var layer_count: int = PuzzleRules.get_layer_count(number)
-	# Keep the full stack comfortably visible on small portrait screens.
-	var zoom_step: float = float(layer_count - 2)
-	camera.position = Vector3(0.0, 8.4 + zoom_step * 0.65, 11.6 + zoom_step * 0.85)
-	camera.look_at(Vector3(0.0, 0.30 + zoom_step * 0.06, 0.0), Vector3.UP)
+	# Orthographic framing keeps the interlocked board large and readable in portrait mode.
+	camera.size = 8.1 + float(layer_count - 2) * 0.22
+	camera.position = Vector3(0.0, 14.0 + float(layer_count - 2) * 0.35, 3.8)
+	camera.look_at(Vector3(0.0, 0.55, 0.0), Vector3.UP)
 	for layer in range(layer_count):
-		var width: float = 3.55 + float(layer) * 0.72 + float(number % 3) * 0.10
-		var depth: float = 2.45 + float(layer) * 0.52 + float(number % 2) * 0.12
-		var y: float = 0.22 + float(layer_count - 1 - layer) * 0.46
-		var center_x: float = sin(float(number * 3 + layer) * 0.47) * 0.24
-		var center_z: float = cos(float(number * 2 + layer) * 0.39) * 0.20
+		var width: float = 3.35 + float(layer) * 0.10
+		var depth: float = 4.45 + float(layer) * 0.10
+		var y: float = 0.20 + float(layer_count - 1 - layer) * 0.43
+		var center_x: float = sin(float(number * 3 + layer) * 0.47) * 0.12
+		var center_z: float = cos(float(number * 2 + layer) * 0.39) * 0.12
 		var piece_specs: Array = _build_piece_specs(width, depth, number, layer)
 		for piece_index in range(piece_specs.size()):
 			var piece: Dictionary = piece_specs[piece_index]
 			_create_board(
 				float(piece["width"]),
 				float(piece["depth"]),
-				y,
+				y + float(piece_index % 3) * 0.055,
 				center_x + float(piece["x"]),
 				center_z + float(piece["z"]),
 				layer,
-				number + piece_index
+				number + piece_index,
+				float(piece.get("angle", 0.0))
 			)
 
+	_initialize_toolboxes()
 	_update_hud()
-	status_label.text = "Tap the bright exposed screws. Remove every screw from a board to clear it."
+	status_label.text = "Tap exposed screws, then sort them into the matching colour boxes."
 	_refresh_screw_visuals()
+	_update_sorting_ui()
 
 
 func _build_piece_specs(width: float, depth: float, level: int, layer: int) -> Array:
 	var specs: Array = []
-	match posmod(level * 2 + layer * 3, 4):
+	match posmod(level + layer, 4):
 		0:
-			for z_sign in [-1.0, 1.0]:
-				specs.append({"x": 0.0, "z": z_sign * depth * 0.26, "width": width * 0.94, "depth": depth * 0.42})
+			# Interlocked H: two long rails with three cross braces.
+			for x_offset in [-0.92, 0.92]:
+				specs.append({"x": x_offset, "z": 0.0, "width": depth * 0.78, "depth": 0.58, "angle": PI * 0.5})
+			for z_offset in [-1.23, 0.0, 1.23]:
+				specs.append({"x": 0.0, "z": z_offset, "width": width * 0.82, "depth": 0.54, "angle": 0.0})
 		1:
-			for x_offset in [-0.32, 0.0, 0.32]:
-				specs.append({"x": x_offset * width, "z": 0.0, "width": width * 0.28, "depth": depth * 0.92})
+			# Crossing diagonals with two short locking braces.
+			specs.append({"x": 0.0, "z": 0.0, "width": depth * 0.92, "depth": 0.62, "angle": PI * 0.25})
+			specs.append({"x": 0.0, "z": 0.0, "width": depth * 0.92, "depth": 0.62, "angle": -PI * 0.25})
+			for z_offset in [-1.15, 1.15]:
+				specs.append({"x": 0.0, "z": z_offset, "width": width * 0.62, "depth": 0.48, "angle": 0.0})
 		2:
-			specs.append({"x": -width * 0.34, "z": 0.0, "width": width * 0.27, "depth": depth * 0.92})
-			specs.append({"x": width * 0.34, "z": 0.0, "width": width * 0.27, "depth": depth * 0.92})
-			specs.append({"x": 0.0, "z": 0.0, "width": width * 0.38, "depth": depth * 0.27})
+			# Crossed frame with a central diagonal lock.
+			for z_offset in [-0.95, 0.95]:
+				specs.append({"x": 0.0, "z": z_offset, "width": width * 0.95, "depth": 0.58, "angle": 0.0})
+			for x_offset in [-0.82, 0.82]:
+				specs.append({"x": x_offset, "z": 0.0, "width": depth * 0.78, "depth": 0.54, "angle": PI * 0.5})
+			specs.append({"x": 0.0, "z": 0.0, "width": depth * 0.80, "depth": 0.42, "angle": PI * 0.20})
 		3:
-			for z_offset in [-0.33, 0.0, 0.33]:
-				specs.append({"x": 0.0, "z": z_offset * depth, "width": width * 0.94, "depth": depth * 0.27})
+			# Zig-zag rails and a short horizontal bridge.
+			specs.append({"x": -0.60, "z": -0.72, "width": depth * 0.72, "depth": 0.56, "angle": PI * 0.30})
+			specs.append({"x": 0.60, "z": 0.72, "width": depth * 0.72, "depth": 0.56, "angle": PI * 0.30})
+			specs.append({"x": 0.60, "z": -0.72, "width": depth * 0.72, "depth": 0.56, "angle": -PI * 0.30})
+			specs.append({"x": -0.60, "z": 0.72, "width": depth * 0.72, "depth": 0.56, "angle": -PI * 0.30})
+			specs.append({"x": 0.0, "z": 0.0, "width": width * 0.72, "depth": 0.48, "angle": 0.0})
 	return specs
 
 
