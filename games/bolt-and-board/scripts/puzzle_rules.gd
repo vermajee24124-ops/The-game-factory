@@ -12,7 +12,12 @@ static func is_screw_accessible(screw_position: Vector3, own_board_id: int, boar
 		var center: Vector2 = board.get("center", Vector2.ZERO)
 		var half_width: float = float(board.get("width", 0.0)) * 0.5 - 0.04
 		var half_depth: float = float(board.get("depth", 0.0)) * 0.5 - 0.04
-		if absf(screw_position.x - center.x) < half_width and absf(screw_position.z - center.y) < half_depth:
+		var angle: float = float(board.get("rotation_y", 0.0))
+		var dx: float = screw_position.x - center.x
+		var dz: float = screw_position.z - center.y
+		var local_x: float = cos(angle) * dx - sin(angle) * dz
+		var local_z: float = sin(angle) * dx + cos(angle) * dz
+		if absf(local_x) < half_width and absf(local_z) < half_depth:
 			return false
 	return true
 
