@@ -29,6 +29,7 @@ var splash_tween: Tween
 var ui_root: Control
 var level_label: Label
 var progress_label: Label
+var timer_label: Label
 var status_label: Label
 var menu_overlay: ColorRect
 var finish_overlay: ColorRect
@@ -69,10 +70,12 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if game_started and not is_paused:
 		level_elapsed += delta
+		if timer_label != null:
+			timer_label.text = "TIME %s" % _format_time(level_elapsed)
 
 
 func _create_materials() -> void:
-	for color_value in [Color("#9B6237"), Color("#B77A43"), Color("#85502F"), Color("#C18A50"), Color("#A66D3E")]:
+	for color_value in [Color("#B77A43"), Color("#367FA2"), Color("#7B4934"), Color("#D6B985"), Color("#3D8A5C")]:
 		var wood := StandardMaterial3D.new()
 		wood.albedo_color = color_value
 		wood.roughness = 0.88
@@ -300,6 +303,14 @@ func _create_ui() -> void:
 	progress_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	progress_label.add_theme_font_size_override("font_size", 18)
 	top_row.add_child(progress_label)
+
+	timer_label = Label.new()
+	timer_label.text = "TIME 00:00"
+	timer_label.custom_minimum_size = Vector2(92.0, 0.0)
+	timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	timer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	timer_label.add_theme_font_size_override("font_size", 16)
+	top_row.add_child(timer_label)
 
 	var restart_button := Button.new()
 	restart_button.text = "RESTART"
@@ -820,9 +831,9 @@ func _build_piece_specs(width: float, depth: float, level: int, layer: int) -> A
 			for x_offset in [-0.32, 0.0, 0.32]:
 				specs.append({"x": x_offset * width, "z": 0.0, "width": width * 0.28, "depth": depth * 0.92})
 		2:
-			for x_sign in [-1.0, 1.0]:
-				for z_sign in [-1.0, 1.0]:
-					specs.append({"x": x_sign * width * 0.25, "z": z_sign * depth * 0.26, "width": width * 0.44, "depth": depth * 0.42})
+			specs.append({"x": -width * 0.34, "z": 0.0, "width": width * 0.27, "depth": depth * 0.92})
+			specs.append({"x": width * 0.34, "z": 0.0, "width": width * 0.27, "depth": depth * 0.92})
+			specs.append({"x": 0.0, "z": 0.0, "width": width * 0.38, "depth": depth * 0.27})
 		3:
 			for z_offset in [-0.33, 0.0, 0.33]:
 				specs.append({"x": 0.0, "z": z_offset * depth, "width": width * 0.94, "depth": depth * 0.27})
@@ -903,10 +914,6 @@ func _build_screw_points(width: float, depth: float, level: int, layer: int) -> 
 		3, 5:
 			points.append(Vector2(0.0, -sz))
 			points.append(Vector2(0.0, sz))
-			points.append(Vector2(-sx, 0.0))
-			points.append(Vector2(sx, 0.0))
-			if pattern == 5:
-				points.append(Vector2.ZERO)
 		4:
 			points.append(Vector2.ZERO)
 	return points
@@ -1208,5 +1215,7 @@ func _format_time(seconds: float) -> String:
 func _update_hud() -> void:
 	level_label.text = "LEVEL %d" % level_index
 	progress_label.text = "SCREWS %d/%d" % [removed_screws, total_screws]
+	if timer_label != null:
+		timer_label.text = "TIME %s" % _format_time(level_elapsed)
 	if progress_bar != null:
 		progress_bar.value = 100.0 if total_screws <= 0 else (float(removed_screws) / float(total_screws)) * 100.0
