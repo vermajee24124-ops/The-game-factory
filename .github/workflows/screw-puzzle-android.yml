@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - screw-puzzle-3d
+      - premium-screw-puzzle
     paths:
       - "games/bolt-and-board/**"
       - ".github/workflows/screw-puzzle-android.yml"
