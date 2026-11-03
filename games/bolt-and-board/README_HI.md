@@ -6,12 +6,13 @@
 - Godot 4.7.2 Stable target, GDScript और Mobile Renderer।
 - Procedural 3D लकड़ी के बोर्ड, metallic screws, washers और thread details।
 - Original generated wood, brushed-steel और dark-surface textures।
-- Android touch और desktop mouse से exposed screw चुनना।
+- Android touch और desktop mouse के लिए screen-space screw picking, ताकि board पर सीधा tap करने से screw चुने।
+- Full-screen UI root अब gameplay touch को block नहीं करता; covered screws फिर भी select नहीं हो सकते।
 - ऊपरी बोर्ड के collider से नीचे छिपे screw पर tap रोकना।
 - Screw removal और board-clear animations।
 - Generated sound effects।
 - 30 procedural level variations, 2 से 5 board layers।
-- Restart, Hint, progress HUD, level-complete screen और local save।
+- Branded splash/loading screen, first-run tutorial, level select, restart, Hint, progress HUD, level-complete screen और local save।
 - Headless gameplay tests और Xvfb screenshot capture।
 
 ## Cloud validation
