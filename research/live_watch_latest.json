@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "retrieved_at": "2026-11-01T11:48:27.735201+00:00",
+  "retrieved_at": "2026-11-08T11:54:22.329674+00:00",
   "purpose": "low-cost live discovery for the Autonomous Godot Game Factory",
   "model_calls": 0,
   "gemini_calls": 0,
@@ -8,7 +8,7 @@
     {
       "source": "Godot stable releases",
       "url": "https://api.github.com/repos/godotengine/godot/releases?per_page=10",
-      "retrieved_at": "2026-11-01T11:48:27.735211+00:00",
+      "retrieved_at": "2026-11-08T11:54:22.329686+00:00",
       "status": "ok",
       "items": [
         {
@@ -46,79 +46,79 @@
     {
       "source": "GitHub Godot AI/MCP repositories",
       "url": "https://api.github.com/search/repositories?q=Godot%20MCP%20AI%20agent&sort=updated&per_page=8",
-      "retrieved_at": "2026-11-01T11:48:28.250437+00:00",
+      "retrieved_at": "2026-11-08T11:54:23.006096+00:00",
       "status": "ok",
       "items": [
         {
-          "name": "nexarioneo/godot-copilot",
-          "description": "AI agent chat dock for the Godot 4 editor: multi-provider (OpenAI-compatible + Anthropic), tool execution, subagents, MCP and an action(target) permission system. Early version, expect bugs.",
-          "url": "https://github.com/nexarioneo/godot-copilot",
-          "updated_at": "2026-11-01T11:18:15Z",
+          "name": "RizgarOzan/playcal",
+          "description": "An edit-settle-verify loop for AI agents working in Unity and Godot, plus flaky-vs-real playtests and bot-vs-human calibration.",
+          "url": "https://github.com/RizgarOzan/playcal",
+          "updated_at": "2026-11-08T10:25:29Z",
           "stars": 0,
-          "license": "MIT"
-        },
-        {
-          "name": "seradotcom/semwright",
-          "description": "Open runtime for AI agents to use real software.",
-          "url": "https://github.com/seradotcom/semwright",
-          "updated_at": "2026-11-01T07:40:35Z",
-          "stars": 7,
           "license": "Apache-2.0"
         },
         {
-          "name": "gua-project/gua",
-          "description": "Playwright-style UI testing for Godot & Unity. One semantic automation layer for tests, CI, and AI coding agents via MCP.",
-          "url": "https://github.com/gua-project/gua",
-          "updated_at": "2026-11-01T03:50:01Z",
-          "stars": 22,
+          "name": "laaielichter/Reverseport",
+          "description": "Reverse engineer anything. Port it anywhere. MCP server, CLI and Claude Code plugin for AI coding agents: read Godot .pck, Unity IL2CPP, .NET and native builds (via your own Ghidra, IDA or Hopper), compare builds, keep proof for every claim, and port games between Godot, Unity, Unreal and three.js with parity checks. Local, MIT.",
+          "url": "https://github.com/laaielichter/Reverseport",
+          "updated_at": "2026-11-08T10:15:05Z",
+          "stars": 18,
           "license": "MIT"
         },
         {
-          "name": "OREBRON/godot-mcp",
-          "description": "MCP server that lets AI agents check scripts, run the game and edit scenes in a Godot 4 project",
-          "url": "https://github.com/OREBRON/godot-mcp",
-          "updated_at": "2026-11-01T01:41:59Z",
+          "name": "genex-games/genex-desktop",
+          "description": "Desktop app for game dev with AI: make games in Unreal Engine, Unity, Godot or the browser. The agent sets up the engine, builds your game and play-tests it by itself.",
+          "url": "https://github.com/genex-games/genex-desktop",
+          "updated_at": "2026-11-08T08:49:51Z",
+          "stars": 810,
+          "license": "MIT"
+        },
+        {
+          "name": "swarvex-ai/swarvex",
+          "description": "The coordination layer for agent-built software – many AI agents build open-source software together, sandboxed and traceable.",
+          "url": "https://github.com/swarvex-ai/swarvex",
+          "updated_at": "2026-11-08T07:21:12Z",
           "stars": 0,
-          "license": null
+          "license": "AGPL-3.0"
         },
         {
           "name": "hybridindie/godot-mcp",
           "description": "Combination of Godot Addon and MCP server for AI driven development — drive a live Godot editor from an AI agent",
           "url": "https://github.com/hybridindie/godot-mcp",
-          "updated_at": "2026-11-01T00:08:00Z",
-          "stars": 47,
+          "updated_at": "2026-11-08T07:44:07Z",
+          "stars": 54,
           "license": "MIT"
         },
         {
-          "name": "bagidea/bagidea-office",
-          "description": "A living AI-agent office on your desktop wallpaper — Claude Code agents that walk, work, delegate, learn & hold meetings. Per-agent swappable models (Claude/GLM/DeepSeek/Qwen/Kimi/OpenAI/Gemini/Groq/Ollama…), workflows, plugins, voice & Telegram/Discord/LINE. Open source.",
-          "url": "https://github.com/bagidea/bagidea-office",
-          "updated_at": "2026-10-31T19:36:50Z",
-          "stars": 260,
+          "name": "fennaraOfficial/fennara-godot-ai",
+          "description": "AI chat and agent tooling for Godot, with both MCP support and in-built native chat window.",
+          "url": "https://github.com/fennaraOfficial/fennara-godot-ai",
+          "updated_at": "2026-11-08T01:47:56Z",
+          "stars": 318,
           "license": "MIT"
         },
         {
-          "name": "Deejmahal831/godot-ai-game-tester",
-          "description": "MCP server that lets AI coding agents (Claude Code, Codex, Cursor) launch, play, screenshot, and inspect a Godot 4 game in a real window.",
-          "url": "https://github.com/Deejmahal831/godot-ai-game-tester",
-          "updated_at": "2026-10-31T17:49:56Z",
+          "name": "laaielichter/Agentdisk",
+          "description": "Disk report and safe, reversible cleanup for AI coding agents: worktrees, checkpoints, node_modules, .godot. CLI + MCP server.",
+          "url": "https://github.com/laaielichter/Agentdisk",
+          "updated_at": "2026-11-07T11:34:30Z",
+          "stars": 1,
+          "license": "MIT"
+        },
+        {
+          "name": "zhuyansen/awesome-3d-skills",
+          "description": "MCP servers and skills that let AI agents work in 3D: Blender, Unity, Godot, Unreal, CAD, Three.js and 3D model generation. By type, each security-graded. English / 中文.",
+          "url": "https://github.com/zhuyansen/awesome-3d-skills",
+          "updated_at": "2026-11-07T10:03:37Z",
           "stars": 0,
-          "license": "MIT"
-        },
-        {
-          "name": "Kysafe/AI-Project-Bridge-for-Godot",
-          "description": "AI assistant and local project tools for Godot: chat with multiple AI providers, inspect and edit project files, search documentation, and connect coding agents via MCP.",
-          "url": "https://github.com/Kysafe/AI-Project-Bridge-for-Godot",
-          "updated_at": "2026-10-31T06:15:54Z",
-          "stars": 0,
-          "license": "MIT"
+          "license": "NOASSERTION"
         }
       ]
     },
     {
       "source": "Hugging Face Godot models",
       "url": "https://huggingface.co/api/models?search=godot&limit=10&sort=lastModified&direction=-1",
-      "retrieved_at": "2026-11-01T11:48:28.769650+00:00",
+      "retrieved_at": "2026-11-08T11:54:23.609791+00:00",
       "status": "ok",
       "items": [
         {
@@ -126,23 +126,23 @@
           "url": "https://huggingface.co/rbrasga/Godoter3.8-27B-GGUF",
           "last_modified": "2026-10-22T17:32:19.000Z",
           "pipeline_tag": "image-text-to-text",
-          "downloads": 347,
-          "likes": 0
+          "downloads": 596,
+          "likes": 2
         },
         {
           "id": "rbrasga/Godoter3.8-27B",
           "url": "https://huggingface.co/rbrasga/Godoter3.8-27B",
           "last_modified": "2026-10-22T17:31:02.000Z",
           "pipeline_tag": "image-text-to-text",
-          "downloads": 168,
-          "likes": 0
+          "downloads": 328,
+          "likes": 1
         },
         {
           "id": "mradermacher/Godoter3.8-27B-i1-GGUF",
           "url": "https://huggingface.co/mradermacher/Godoter3.8-27B-i1-GGUF",
           "last_modified": "2026-10-21T11:59:08.000Z",
           "pipeline_tag": null,
-          "downloads": 1756,
+          "downloads": 1901,
           "likes": 1
         },
         {
@@ -150,7 +150,7 @@
           "url": "https://huggingface.co/mradermacher/Godoter3.8-27B-GGUF",
           "last_modified": "2026-10-21T09:23:39.000Z",
           "pipeline_tag": null,
-          "downloads": 1252,
+          "downloads": 1339,
           "likes": 0
         },
         {
@@ -158,7 +158,7 @@
           "url": "https://huggingface.co/arunsrajan/qwen3.5-2b-godot-thinking-GGUF",
           "last_modified": "2026-10-11T11:14:03.000Z",
           "pipeline_tag": null,
-          "downloads": 413,
+          "downloads": 548,
           "likes": 0
         },
         {
@@ -166,7 +166,7 @@
           "url": "https://huggingface.co/arunsrajan/qwen3.5-2b-godot-thinking",
           "last_modified": "2026-10-11T10:59:30.000Z",
           "pipeline_tag": "image-text-to-text",
-          "downloads": 32,
+          "downloads": 34,
           "likes": 0
         },
         {
@@ -174,7 +174,7 @@
           "url": "https://huggingface.co/arunsrajan/qwen3.5-2b-godot-docs-GGUF",
           "last_modified": "2026-10-11T08:45:38.000Z",
           "pipeline_tag": null,
-          "downloads": 299,
+          "downloads": 420,
           "likes": 0
         },
         {
@@ -182,7 +182,7 @@
           "url": "https://huggingface.co/arunsrajan/qwen3.5-2b-godot-docs",
           "last_modified": "2026-10-11T08:29:54.000Z",
           "pipeline_tag": "image-text-to-text",
-          "downloads": 44,
+          "downloads": 47,
           "likes": 0
         },
         {
@@ -190,7 +190,7 @@
           "url": "https://huggingface.co/mradermacher/Godoter-27B-GGUF",
           "last_modified": "2026-10-07T19:33:35.000Z",
           "pipeline_tag": null,
-          "downloads": 1288,
+          "downloads": 1316,
           "likes": 1
         },
         {
@@ -198,7 +198,7 @@
           "url": "https://huggingface.co/Janstnkel/Godoter-27B",
           "last_modified": "2026-09-07T17:03:35.000Z",
           "pipeline_tag": "text-generation",
-          "downloads": 17,
+          "downloads": 15,
           "likes": 0
         }
       ]

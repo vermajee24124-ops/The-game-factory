@@ -1,6 +1,6 @@
 # Game Factory Live Research Watch
 
-- Retrieved at (UTC): 2026-11-01T11:48:27.735201+00:00
+- Retrieved at (UTC): 2026-11-08T11:54:22.329674+00:00
 - Uses public metadata endpoints only; no LLM/Gemini quota is consumed by this watcher.
 - A result is a candidate for human/agent review, not automatic approval to install or ship it.
 
@@ -20,22 +20,22 @@ Status: **ok**
 Source: https://api.github.com/search/repositories?q=Godot%20MCP%20AI%20agent&sort=updated&per_page=8
 Status: **ok**
 
-- [nexarioneo/godot-copilot](https://github.com/nexarioneo/godot-copilot) | updated: 2026-11-01T11:18:15Z | stars: 0 | license: MIT
-  - AI agent chat dock for the Godot 4 editor: multi-provider (OpenAI-compatible + Anthropic), tool execution, subagents, MCP and an action(target) permission system. Early version, expect bugs.
-- [seradotcom/semwright](https://github.com/seradotcom/semwright) | updated: 2026-11-01T07:40:35Z | stars: 7 | license: Apache-2.0
-  - Open runtime for AI agents to use real software.
-- [gua-project/gua](https://github.com/gua-project/gua) | updated: 2026-11-01T03:50:01Z | stars: 22 | license: MIT
-  - Playwright-style UI testing for Godot & Unity. One semantic automation layer for tests, CI, and AI coding agents via MCP.
-- [OREBRON/godot-mcp](https://github.com/OREBRON/godot-mcp) | updated: 2026-11-01T01:41:59Z | stars: 0 | license: not stated
-  - MCP server that lets AI agents check scripts, run the game and edit scenes in a Godot 4 project
-- [hybridindie/godot-mcp](https://github.com/hybridindie/godot-mcp) | updated: 2026-11-01T00:08:00Z | stars: 47 | license: MIT
+- [RizgarOzan/playcal](https://github.com/RizgarOzan/playcal) | updated: 2026-11-08T10:25:29Z | stars: 0 | license: Apache-2.0
+  - An edit-settle-verify loop for AI agents working in Unity and Godot, plus flaky-vs-real playtests and bot-vs-human calibration.
+- [laaielichter/Reverseport](https://github.com/laaielichter/Reverseport) | updated: 2026-11-08T10:15:05Z | stars: 18 | license: MIT
+  - Reverse engineer anything. Port it anywhere. MCP server, CLI and Claude Code plugin for AI coding agents: read Godot .pck, Unity IL2CPP, .NET and native builds (via your own Ghidra, IDA or Hopper), compare builds, keep proof for every claim, and port games between Godot, Unity, Unreal and three.js with parity checks. Local, MIT.
+- [genex-games/genex-desktop](https://github.com/genex-games/genex-desktop) | updated: 2026-11-08T08:49:51Z | stars: 810 | license: MIT
+  - Desktop app for game dev with AI: make games in Unreal Engine, Unity, Godot or the browser. The agent sets up the engine, builds your game and play-tests it by itself.
+- [swarvex-ai/swarvex](https://github.com/swarvex-ai/swarvex) | updated: 2026-11-08T07:21:12Z | stars: 0 | license: AGPL-3.0
+  - The coordination layer for agent-built software – many AI agents build open-source software together, sandboxed and traceable.
+- [hybridindie/godot-mcp](https://github.com/hybridindie/godot-mcp) | updated: 2026-11-08T07:44:07Z | stars: 54 | license: MIT
   - Combination of Godot Addon and MCP server for AI driven development — drive a live Godot editor from an AI agent
-- [bagidea/bagidea-office](https://github.com/bagidea/bagidea-office) | updated: 2026-10-31T19:36:50Z | stars: 260 | license: MIT
-  - A living AI-agent office on your desktop wallpaper — Claude Code agents that walk, work, delegate, learn & hold meetings. Per-agent swappable models (Claude/GLM/DeepSeek/Qwen/Kimi/OpenAI/Gemini/Groq/Ollama…), workflows, plugins, voice & Telegram/Discord/LINE. Open source.
-- [Deejmahal831/godot-ai-game-tester](https://github.com/Deejmahal831/godot-ai-game-tester) | updated: 2026-10-31T17:49:56Z | stars: 0 | license: MIT
-  - MCP server that lets AI coding agents (Claude Code, Codex, Cursor) launch, play, screenshot, and inspect a Godot 4 game in a real window.
-- [Kysafe/AI-Project-Bridge-for-Godot](https://github.com/Kysafe/AI-Project-Bridge-for-Godot) | updated: 2026-10-31T06:15:54Z | stars: 0 | license: MIT
-  - AI assistant and local project tools for Godot: chat with multiple AI providers, inspect and edit project files, search documentation, and connect coding agents via MCP.
+- [fennaraOfficial/fennara-godot-ai](https://github.com/fennaraOfficial/fennara-godot-ai) | updated: 2026-11-08T01:47:56Z | stars: 318 | license: MIT
+  - AI chat and agent tooling for Godot, with both MCP support and in-built native chat window.
+- [laaielichter/Agentdisk](https://github.com/laaielichter/Agentdisk) | updated: 2026-11-07T11:34:30Z | stars: 1 | license: MIT
+  - Disk report and safe, reversible cleanup for AI coding agents: worktrees, checkpoints, node_modules, .godot. CLI + MCP server.
+- [zhuyansen/awesome-3d-skills](https://github.com/zhuyansen/awesome-3d-skills) | updated: 2026-11-07T10:03:37Z | stars: 0 | license: NOASSERTION
+  - MCP servers and skills that let AI agents work in 3D: Blender, Unity, Godot, Unreal, CAD, Three.js and 3D model generation. By type, each security-graded. English / 中文.
 
 ## Hugging Face Godot models
 
