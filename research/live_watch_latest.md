@@ -1,6 +1,6 @@
 # Game Factory Live Research Watch
 
-- Retrieved at (UTC): 2026-11-08T11:54:22.329674+00:00
+- Retrieved at (UTC): 2026-11-15T12:41:48.523506+00:00
 - Uses public metadata endpoints only; no LLM/Gemini quota is consumed by this watcher.
 - A result is a candidate for human/agent review, not automatic approval to install or ship it.
 
@@ -20,21 +20,21 @@ Status: **ok**
 Source: https://api.github.com/search/repositories?q=Godot%20MCP%20AI%20agent&sort=updated&per_page=8
 Status: **ok**
 
-- [RizgarOzan/playcal](https://github.com/RizgarOzan/playcal) | updated: 2026-11-08T10:25:29Z | stars: 0 | license: Apache-2.0
-  - An edit-settle-verify loop for AI agents working in Unity and Godot, plus flaky-vs-real playtests and bot-vs-human calibration.
-- [laaielichter/Reverseport](https://github.com/laaielichter/Reverseport) | updated: 2026-11-08T10:15:05Z | stars: 18 | license: MIT
-  - Reverse engineer anything. Port it anywhere. MCP server, CLI and Claude Code plugin for AI coding agents: read Godot .pck, Unity IL2CPP, .NET and native builds (via your own Ghidra, IDA or Hopper), compare builds, keep proof for every claim, and port games between Godot, Unity, Unreal and three.js with parity checks. Local, MIT.
-- [genex-games/genex-desktop](https://github.com/genex-games/genex-desktop) | updated: 2026-11-08T08:49:51Z | stars: 810 | license: MIT
+- [kurtstaines/engine-mcp](https://github.com/kurtstaines/engine-mcp) | updated: 2026-11-15T08:45:08Z | stars: 0 | license: MIT
+  - MCP servers that let AI agents drive game tools: Spine 2D rigging and a Godot connector
+- [genex-games/genex-desktop](https://github.com/genex-games/genex-desktop) | updated: 2026-11-15T06:44:40Z | stars: 874 | license: MIT
   - Desktop app for game dev with AI: make games in Unreal Engine, Unity, Godot or the browser. The agent sets up the engine, builds your game and play-tests it by itself.
-- [swarvex-ai/swarvex](https://github.com/swarvex-ai/swarvex) | updated: 2026-11-08T07:21:12Z | stars: 0 | license: AGPL-3.0
-  - The coordination layer for agent-built software – many AI agents build open-source software together, sandboxed and traceable.
-- [hybridindie/godot-mcp](https://github.com/hybridindie/godot-mcp) | updated: 2026-11-08T07:44:07Z | stars: 54 | license: MIT
-  - Combination of Godot Addon and MCP server for AI driven development — drive a live Godot editor from an AI agent
-- [fennaraOfficial/fennara-godot-ai](https://github.com/fennaraOfficial/fennara-godot-ai) | updated: 2026-11-08T01:47:56Z | stars: 318 | license: MIT
-  - AI chat and agent tooling for Godot, with both MCP support and in-built native chat window.
-- [laaielichter/Agentdisk](https://github.com/laaielichter/Agentdisk) | updated: 2026-11-07T11:34:30Z | stars: 1 | license: MIT
+- [laaielichter/Agentdisk](https://github.com/laaielichter/Agentdisk) | updated: 2026-11-14T03:57:28Z | stars: 1 | license: MIT
   - Disk report and safe, reversible cleanup for AI coding agents: worktrees, checkpoints, node_modules, .godot. CLI + MCP server.
-- [zhuyansen/awesome-3d-skills](https://github.com/zhuyansen/awesome-3d-skills) | updated: 2026-11-07T10:03:37Z | stars: 0 | license: NOASSERTION
+- [gua-project/gua](https://github.com/gua-project/gua) | updated: 2026-11-13T00:53:56Z | stars: 23 | license: MIT
+  - Playwright-style UI testing for Godot & Unity. One semantic automation layer for tests, CI, and AI coding agents via MCP.
+- [dcc-mcp/dcc-mcp-godot](https://github.com/dcc-mcp/dcc-mcp-godot) | updated: 2026-11-02T14:51:29Z | stars: 5 | license: MIT
+  - Godot 4 MCP editor adapter for AI agents to author scenes, scripts, UI and 2D games, inspect runtime state and run playtests through typed tools in the DCC-MCP ecosystem.
+- [sonixz/second-brain-gd](https://github.com/sonixz/second-brain-gd) | updated: 2026-11-13T22:06:57Z | stars: 0 | license: MIT
+  - Your second brain, on your computer: an Archivist agent files what you capture, a living graph shows it, and your AI tools read it over MCP. Open source, local-first, bring your own key.
+- [roronoazoroshao/FolderForge](https://github.com/roronoazoroshao/FolderForge) | updated: 2026-11-10T01:43:18Z | stars: 0 | license: Apache-2.0
+  - A governed, local-first MCP development control plane for AI coding agents.
+- [zhuyansen/awesome-3d-skills](https://github.com/zhuyansen/awesome-3d-skills) | updated: 2026-11-12T16:47:24Z | stars: 0 | license: NOASSERTION
   - MCP servers and skills that let AI agents work in 3D: Blender, Unity, Godot, Unreal, CAD, Three.js and 3D model generation. By type, each security-graded. English / 中文.
 
 ## Hugging Face Godot models
@@ -42,6 +42,8 @@ Status: **ok**
 Source: https://huggingface.co/api/models?search=godot&limit=10&sort=lastModified&direction=-1
 Status: **ok**
 
+- [2177-AI-LAB/Godot-Skills](https://huggingface.co/2177-AI-LAB/Godot-Skills) | updated: 2026-11-12T18:18:43.000Z | task: not stated
+- [badhorr/qwen-2.5-3b-godot-urdu](https://huggingface.co/badhorr/qwen-2.5-3b-godot-urdu) | updated: 2026-11-08T22:01:43.000Z | task: not stated
 - [rbrasga/Godoter3.8-27B-GGUF](https://huggingface.co/rbrasga/Godoter3.8-27B-GGUF) | updated: 2026-10-22T17:32:19.000Z | task: image-text-to-text
 - [rbrasga/Godoter3.8-27B](https://huggingface.co/rbrasga/Godoter3.8-27B) | updated: 2026-10-22T17:31:02.000Z | task: image-text-to-text
 - [mradermacher/Godoter3.8-27B-i1-GGUF](https://huggingface.co/mradermacher/Godoter3.8-27B-i1-GGUF) | updated: 2026-10-21T11:59:08.000Z | task: not stated
@@ -50,8 +52,6 @@ Status: **ok**
 - [arunsrajan/qwen3.5-2b-godot-thinking](https://huggingface.co/arunsrajan/qwen3.5-2b-godot-thinking) | updated: 2026-10-11T10:59:30.000Z | task: image-text-to-text
 - [arunsrajan/qwen3.5-2b-godot-docs-GGUF](https://huggingface.co/arunsrajan/qwen3.5-2b-godot-docs-GGUF) | updated: 2026-10-11T08:45:38.000Z | task: not stated
 - [arunsrajan/qwen3.5-2b-godot-docs](https://huggingface.co/arunsrajan/qwen3.5-2b-godot-docs) | updated: 2026-10-11T08:29:54.000Z | task: image-text-to-text
-- [mradermacher/Godoter-27B-GGUF](https://huggingface.co/mradermacher/Godoter-27B-GGUF) | updated: 2026-10-07T19:33:35.000Z | task: not stated
-- [Janstnkel/Godoter-27B](https://huggingface.co/Janstnkel/Godoter-27B) | updated: 2026-09-07T17:03:35.000Z | task: text-generation
 
 ## Review rules
 
